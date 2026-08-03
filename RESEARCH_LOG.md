@@ -281,3 +281,60 @@ source for reproducing the protocol verbatim.
 1. Ajay decides the repositioning and the fate of H1.
 2. Pull the interchange protocol from the UKPLab repo.
 3. Read Annex IV from EUR-Lex. Still unread, still load-bearing.
+
+---
+
+## 2026-08-03 (checkpoint) — Annex IV read started, not finished
+
+Session ended mid-task. Resume from here.
+
+**State.** Committed through `2b53115`. 35 tests passing. Gate 1 passed.
+Hypothesis structure revised (P0 / H2 / H3 / H4, see DESIGN-DELTAS D9).
+Edge-level fixed as the confirmatory grid (D8).
+
+**In progress: Regulation (EU) 2024/1689, Article 11 and Annex IV.**
+
+EUR-Lex does not serve the legal text to a plain HTTP fetch. Three URL forms
+were tried and all returned either empty or page chrome only:
+
+    https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=OJ:L_202401689
+    https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX:32024R1689
+    https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=celex%3A32024R1689
+
+The ELI form `https://eur-lex.europa.eu/eli/reg/2024/1689/oj/eng` returns the
+page shell with correct metadata (document date 2024-06-13, entry into force
+2025-08-02, CELEX 32024R1689) but no body. The document is client-rendered.
+
+A browser session was opened on the CELEX HTML URL and the text extraction was
+not completed. **Resume by extracting the page text in the browser**, not by
+retrying the plain fetch.
+
+**What must be answered from the primary text, before any drafting.**
+
+1. What exactly does Annex IV require in the description of the system? Quote
+   the operative wording verbatim. The paper currently assumes it asks for a
+   description of the logic that a discovered circuit could serve as evidence
+   for. That assumption is **unverified** and it carries the whole regulatory
+   premise.
+2. Does Article 11 or Annex IV say anything about the form, reproducibility, or
+   evidential standard of that description? If it does, the filability criterion
+   should be stated in the regulation's own vocabulary rather than invented.
+3. Which Annex IV paragraph numbers does the claim map target? The brief says
+   "Annex IV sections 2 and 3" and that numbering is unverified.
+4. Is a mechanistic circuit even an admissible form of that description, or does
+   Annex IV ask for something a circuit diagram does not answer? If the latter,
+   the propagation argument needs rebuilding and that is a same-day reframe.
+
+**Do not** cite artificialintelligenceact.eu or any summary for these. Primary
+text only. The AI Act Service Desk at ai-act-service-desk.ec.europa.eu is an
+official Commission source and is acceptable as a cross-check, but the operative
+quotes must come from the Official Journal text.
+
+**Other open items, unchanged.**
+
+- D1 and D2 still open. The evidence to close both is now in the log: 2407.08734
+  names four ablation values and crossed two, and declined to cross metrics at
+  all. Those two quotes make the ablation and metric axes defensible.
+- Interchange protocol still unread. Better source is the released code at
+  `github.com/UKPLab/arxiv2026-phantom-specialization`, not the paper prose.
+- Feasibility still unmeasured. Gate 2 has not been approached.
