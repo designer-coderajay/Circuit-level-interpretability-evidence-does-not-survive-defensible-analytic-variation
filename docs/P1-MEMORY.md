@@ -39,6 +39,7 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-03 | **Add the functional-equivalence arm** | arXiv:2606.06267 reports that structurally distinct circuits can implement the same computation. Without an interchange-intervention arm, a high flip rate does not license P1's conclusion. With it, the structural-versus-functional gap becomes the contribution. |
 | 2026-08-03 | Build in sandbox, **sweep on rented GPU** | Development environment has no GPU. Code is device-agnostic; the statistics layer has no torch dependency. |
 | 2026-08-03 | glassbox-mech-interp is **not** the primary instrument | P1 tests whether interpretability evidence is stable. Testing Ajay's own tool invites the objection that the instability is his implementation. It may appear as one specification among several. |
+| 2026-08-03 | Dev on Mac in VS Code, **sweep on a rented CUDA box**, no Colab | auto-circuit has one device line, `"cuda" if t.cuda.is_available() else "cpu"`, and no MPS support. VERIFIED from source. Apple Silicon falls back to CPU, and adding MPS would mean editing the instrument under test. Colab's ephemeral filesystem makes an environment hash meaningless. |
 
 ## Open decisions blocking pre-registration
 

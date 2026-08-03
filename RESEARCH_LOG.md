@@ -131,3 +131,37 @@ Full statements in `docs/DESIGN-DELTAS.md`.
 4. Resolve D1 and D2 with Ajay.
 5. Build the smoke config and measure per-run cost. Until that number exists,
    the schedule is unfounded.
+
+---
+
+## 2026-08-03 (later) — Device support verified, timeline written
+
+**VERIFIED** by grepping auto-circuit 1.0.1 source: the library contains exactly
+one device-selection line,
+
+    auto_circuit/tasks.py:157   device_str = "cuda" if t.cuda.is_available() else "cpu"
+
+and **zero references to MPS**. Consequence: on Apple Silicon,
+`torch.cuda.is_available()` is False and the library runs on CPU. The M-series
+GPU is not used.
+
+This is not fixable within the rules. Adding MPS support means editing
+`tasks.py`, which is part of the instrument under test. Rule 2 forbids it.
+
+**Consequence for tooling.** The Mac is the development machine: code, tests,
+git, writing, and a first order-of-magnitude timing on CPU. The sweep runs on a
+rented CUDA box over VS Code Remote-SSH. Google Colab is rejected for the sweep:
+ephemeral filesystem and session timeouts make an environment hash meaningless
+and a multi-hour resumable job fragile, which breaks rule 8.
+
+**Notebooks are scoped to `analysis/` only.** They read committed `results/` and
+produce figures. A number that first appears in a notebook cannot be traced to a
+config, a seed, and an environment hash, so no notebook may produce a result
+that enters the paper.
+
+**Written.** `docs/TIMELINE.md`, with phases, three binding gates, critical path,
+and a drift comparison against the brief's schedule.
+
+**Correction to the brief's schedule, recorded as drift.** The brief scheduled
+pre-registration for 24 to 31 Aug, after the 10 to 24 Aug sweep. That ordering
+violates standing rule 3. Corrected: the plan locks 16 Aug, before the sweep.
