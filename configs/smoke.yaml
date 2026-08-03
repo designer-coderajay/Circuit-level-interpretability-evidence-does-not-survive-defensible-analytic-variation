@@ -1,0 +1,34 @@
+# Smoke config. Purpose is timing, not science.
+#
+# The brief asserts that 2,160 runs are feasible on a single 24GB GPU in the
+# 10 to 24 August window. Nothing supports that claim. This config exists to
+# replace the assertion with a measured per-run cost, which is the first number
+# the harness must produce. Until it exists, the schedule is unfounded.
+#
+# Deliberately tiny. Not part of any confirmatory analysis, and its outputs must
+# never enter the pre-registered grid.
+
+name: smoke
+purpose: measure per-run wall clock and peak memory, nothing else
+
+model:
+  name: gpt2                 # 124M anchor. See docs/P1-MEMORY.md for why small.
+  device: auto               # cuda | mps | cpu | auto
+
+task:
+  name: ioi
+  n_prompts: 16              # small on purpose
+
+# Single point in the space. The real grid is defined only after D1 and D2 in
+# docs/DESIGN-DELTAS.md are resolved, and only inside the pre-registration.
+specification:
+  ablation: RESAMPLE         # verbatim auto_circuit.types.AblationType member
+  corruption: abc            # placeholder, pending D1
+  metric: logit_diff         # maps to auto-circuit LOGIT_DIFF_METRIC
+  threshold: 0.05
+  prompt_variant: base
+  seed: 0
+
+output:
+  dir: results/smoke
+  write_manifest: true       # config hash, seed, env hash, wall clock, peak mem

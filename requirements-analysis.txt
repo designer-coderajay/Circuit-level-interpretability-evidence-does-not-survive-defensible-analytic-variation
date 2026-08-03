@@ -1,0 +1,9 @@
+# Analysis-only subset. No torch, no GPU. Use this to run tests and the
+# statistics layer on any machine, including CI and the sandbox.
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+statsmodels>=0.14
+matplotlib>=3.8
+pyyaml>=6.0
+pytest>=8.0

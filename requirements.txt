@@ -1,0 +1,23 @@
+# Pinned for reproducibility. Regenerate the lock with:
+#   pip freeze > requirements.lock.txt
+# and record the hash in RESEARCH_LOG.md alongside every reported figure.
+
+# --- instrument, reproduced verbatim, never modified ---
+# auto-circuit 1.0.1 is the library released with arXiv:2407.08734 (COLM 2024).
+auto-circuit==1.0.1
+
+# auto-circuit pulls these; pinned here so the environment hash is stable
+torch>=2.1.1
+transformer-lens>=1.13.0
+einops>=0.6.1
+
+# --- analysis (no GPU needed, runs anywhere) ---
+numpy>=1.26
+scipy>=1.11
+pandas>=2.0
+statsmodels>=0.14
+matplotlib>=3.8
+pyyaml>=6.0
+
+# --- dev ---
+pytest>=8.0
