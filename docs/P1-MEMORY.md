@@ -40,6 +40,9 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-03 | Build in sandbox, **sweep on rented GPU** | Development environment has no GPU. Code is device-agnostic; the statistics layer has no torch dependency. |
 | 2026-08-03 | glassbox-mech-interp is **not** the primary instrument | P1 tests whether interpretability evidence is stable. Testing Ajay's own tool invites the objection that the instability is his implementation. It may appear as one specification among several. |
 | 2026-08-03 | Dev on Mac in VS Code, **sweep on a rented CUDA box**, no Colab | auto-circuit has one device line, `"cuda" if t.cuda.is_available() else "cpu"`, and no MPS support. VERIFIED from source. Apple Silicon falls back to CPU, and adding MPS would mean editing the instrument under test. Colab's ephemeral filesystem makes an environment hash meaningless. |
+| 2026-08-03 | **H1 demoted to premise; lead with the claim-level result** | 2606.06267 establishes that discovery samples from an equivalence class of valid subgraphs. Circuit multiplicity is no longer a contribution. The contribution is what that multiplicity does to an Annex IV filing. See DESIGN-DELTAS D9. |
+| 2026-08-03 | **Edge-level is the confirmatory grid**, node-level a contrast | Their section 6.2: source-level evaluation inflates apparent faithfulness. The granularity choice is itself a documented researcher degree of freedom. See DESIGN-DELTAS D8. |
+| 2026-08-03 | Gate 1 **passed**, P1 proceeds | Zero regulatory, conformity, audit, or technical-documentation content in either 2407.08734 or 2606.06267. The propagation and the filability criterion are unclaimed. |
 
 ## Open decisions blocking pre-registration
 
@@ -52,8 +55,9 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **D3** Grid size: 2,160 under the brief, 3,780 under D1(a). Feasibility in the
   10 to 24 August window is **unmeasured**. Do not repeat the brief's
   feasibility claim until the smoke config produces a timing number.
-- **D4** Functional-equivalence arm: protocol, granularity, and effect on the
-  random baseline all unresolved. Requires reading 2606.06267 in full.
+- **D4** Functional-equivalence arm: the interchange protocol is still unread.
+  Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
+- **D7** The brief's positioning sentence is unsupported and must not be used.
 
 ## What is built
 

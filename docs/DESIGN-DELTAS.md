@@ -191,3 +191,85 @@ GitHub README respectively.
 
 Cite the COLM version of record with the COLM title. Note the arXiv title in
 the ledger so a reader chasing the arXiv ID is not confused.
+
+---
+
+## D7. The brief's positioning sentence is unsupported
+
+**Status: open. Blocks the abstract and the related-work framing.**
+
+The brief says of 2407.08734: "they establish that one dimension matters; you
+measure the crossed space."
+
+**VERIFIED false.** Section 3.1 of that paper surveys five ablation-methodology
+dimensions: 3.1.1 circuit granularity, 3.1.2 ablation component type and
+associated model views, 3.1.3 ablation value, 3.1.4 token positions, 3.1.5
+ablation direction and testing circuits.
+
+Do not write the crossed-space claim as the differentiator. **P1's
+differentiation is the propagation to a regulatory claim and the filability
+criterion, and nothing else.** That differentiation is strong and verified: both
+2407.08734 and 2606.06267 score zero on every regulatory and conformity term
+tested.
+
+Two quotable gaps do survive and should be used instead.
+
+- On metrics, verbatim from section 3.2: "In this work we will focus on the
+  metrics used by the respective authors of the circuits that we study, but note
+  these choices are also in general free." They did not cross the metric
+  dimension. This is a documented gap P1 fills, and it is a stronger
+  justification for the metric axis than the brief supplied.
+- On ablation values, verbatim from section 3.1.3: "We focus on Mean and
+  Resample Ablations in this work." Two of the four values they name.
+
+---
+
+## D8. Evaluation granularity
+
+**Status: resolved 2026-08-03.**
+
+The brief treats the edge-level run as a secondary variant. 2606.06267 reports,
+verbatim from its abstract, that "source-level evaluation inflates apparent
+faithfulness, while edge-level evaluation reveals the many-to-one mapping from
+structure to function", and its section 6.2 carries the heading "Edge-level
+evaluation should be the primary metric."
+
+**Decision (Ajay, 2026-08-03): edge-level is the confirmatory grid. Node-level
+is a reported contrast, not a second grid.**
+
+Rationale beyond deference to their prescription: the difference between the two
+is itself a researcher degree of freedom with a documented instance. Verbatim
+from 2407.08734 section 4, the IOI circuit "is specified as an edge-level
+circuit, but Wang et al. (2023) evaluate its faithfulness via a node-wise
+ablation methodology". Both are defensible in the published literature, so the
+size of the claim shift attributable purely to granularity is a clean secondary
+result rather than a robustness footnote.
+
+---
+
+## D9. Hypothesis structure, revised
+
+**Status: resolved 2026-08-03. Supersedes the hypothesis list in the brief.**
+
+2606.06267 establishes, verbatim, that "discovery algorithms sample from an
+equivalence class of valid subgraphs rather than recovering a unique mechanism"
+and that "structural differences between circuits are not sufficient evidence
+for distinct mechanisms".
+
+**Decision (Ajay, 2026-08-03): demote H1 to a measured premise and lead the
+paper with the claim-level result.**
+
+| Label | Statement | Role |
+|---|---|---|
+| **P0** (was H1) | Expected pairwise circuit overlap across specifications is substantially below 1 | **Premise, not a contribution.** Cite 2606.06267, replicate on the analytic-specification axis, report in one figure. |
+| **H2** | The derived Annex IV claim flips across a non-trivial fraction of specification pairs | **Primary hypothesis.** Lead with this. |
+| **H3** | Claim instability for discovered circuits is not clearly separated from size-matched random circuits | Unchanged. The random-circuit null multiverse is the inferential backbone. |
+| **H4** (new) | The gap between structural and functional instability is non-trivial: filings differ where mechanisms do not | From the functional-equivalence arm. This is the sentence that answers 2606.06267 rather than being answered by it. |
+
+Labels H2 and H3 keep their original numbers so that earlier research-log
+entries remain readable. P0 and H4 are new labels.
+
+**Consequence for the abstract.** State plainly, in the abstract and not in
+section 7, that structural multiplicity is already established, and that the
+contribution is what that multiplicity does to a regulatory filing. Reviewers
+forgive an owned limitation and punish a hidden one.

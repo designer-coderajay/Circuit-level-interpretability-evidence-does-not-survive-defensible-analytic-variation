@@ -70,4 +70,19 @@ source PDF.
 
 | Claim | Attributed to | Located in source | Verified on |
 |---|---|---|---|
-| _(empty)_ | | | |
+| "discovery algorithms sample from an equivalence class of valid subgraphs rather than recovering a unique mechanism" | 2606.06267 | Abstract, quoted verbatim | 2026-08-03 |
+| "structural differences between circuits are not sufficient evidence for distinct mechanisms" | 2606.06267 | Abstract, quoted verbatim | 2026-08-03 |
+| "a core shared across most bands recovers at least 99% of circuit performance" | 2606.06267 | Abstract, quoted verbatim | 2026-08-03 |
+| "source-level evaluation inflates apparent faithfulness, while edge-level evaluation reveals the many-to-one mapping from structure to function" | 2606.06267 | Abstract, quoted verbatim | 2026-08-03 |
+| 75 circuits, Literal Sequence Copying, four frequency bands plus control, five Pythia models 70M to 1.4B | 2606.06267 | Abstract, quoted verbatim | 2026-08-03 |
+| "We focus on Mean and Resample Ablations in this work." | 2407.08734 | Section 3.1.3, quoted verbatim | 2026-08-03 |
+| "In this work we will focus on the metrics used by the respective authors of the circuits that we study, but note these choices are also in general free." | 2407.08734 | Section 3.2, quoted verbatim | 2026-08-03 |
+| Mean ablation carries "an additional choice in the size of the mean ablation dataset" | 2407.08734 | Section 3.1.3, quoted verbatim | 2026-08-03 |
+| The IOI circuit "is specified as an edge-level circuit, but Wang et al. (2023) evaluate its faithfulness via a node-wise ablation methodology" | 2407.08734 | Section 4, quoted verbatim | 2026-08-03 |
+| Section 3.1 enumerates five ablation-methodology dimensions | 2407.08734 | Section headings 3.1.1 to 3.1.5 | 2026-08-03 |
+| Neither paper contains any regulatory, conformity, audit, or technical-documentation analysis | 2407.08734 and 2606.06267 | Zero-hit term counts over full fetched text | 2026-08-03 |
+
+**Not yet located in source.** The interchange-intervention protocol, 2606.06267
+section 5.3.2. The HTML fetch truncated before the body of section 5. Their
+released code at `github.com/UKPLab/arxiv2026-phantom-specialization` is the
+better source for reproducing it verbatim.

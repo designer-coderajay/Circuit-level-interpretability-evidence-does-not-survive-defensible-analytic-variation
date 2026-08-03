@@ -165,3 +165,119 @@ and a drift comparison against the brief's schedule.
 **Correction to the brief's schedule, recorded as drift.** The brief scheduled
 pre-registration for 24 to 31 Aug, after the 10 to 24 Aug sweep. That ordering
 violates standing rule 3. Corrected: the plan locks 16 Aug, before the sweep.
+
+---
+
+## 2026-08-03 (Phase 1) — Gate 1 PASSED. H1 must be demoted.
+
+Read 2407.08734 and 2606.06267 from the arXiv HTML. Both abstracts and section
+structures VERIFIED verbatim. Body sections of 2606.06267 past section 3 were not
+in the fetched portion and remain unread.
+
+### Gate 1 verdict: PASS. Neither paper performs a downstream-claim analysis.
+
+Term counts over the full fetched text of each paper:
+
+| Term | 2407.08734 | 2606.06267 |
+|---|---|---|
+| regulat / AI Act / complian | 0 | 0 |
+| audit / conformity | 0 | 0 |
+| technical documentation | 0 | 0 |
+| stakeholder / legal / certif / polic | 0 | 0 |
+| multiverse / specification curve | not checked | 0 |
+| researcher degrees of freedom | not checked | 0 |
+| filab | not checked | 0 |
+
+The regulatory propagation and the filability criterion are untouched by both.
+**The kill criterion is not triggered. P1 proceeds.**
+
+### But the paper must be repositioned, and H1 demoted
+
+From the 2606.06267 abstract, VERIFIED verbatim:
+
+> "Repeated extractions within the same frequency band further suggest that
+> discovery algorithms sample from an equivalence class of valid subgraphs
+> rather than recovering a unique mechanism."
+
+> "Our results show that structural differences between circuits are not
+> sufficient evidence for distinct mechanisms, and that exposing this requires
+> edge-level evaluation and cross-condition transfer tests."
+
+Also verified: 75 circuits, Literal Sequence Copying, four token-frequency bands
+plus a control, five Pythia models 70M to 1.4B; "a core shared across most bands
+recovers at least 99% of circuit performance"; "source-level evaluation inflates
+apparent faithfulness, while edge-level evaluation reveals the many-to-one
+mapping from structure to function". Code released at
+https://github.com/UKPLab/arxiv2026-phantom-specialization
+
+Three consequences.
+
+1. **H1 is no longer a contribution.** That circuit discovery returns one of
+   many valid subgraphs is now established in print. P1 can still measure it on
+   a new axis, analytic specification rather than input statistics, but must
+   present it as replication and premise, not as a finding.
+
+2. **The inference from structural instability to "the evidence is worthless"
+   is explicitly refuted in the literature.** P1 cannot make that inference.
+   Any draft that does hands a reviewer the sentence above.
+
+3. **Edge-level evaluation must be primary, not a secondary variant.** The brief
+   treats the edge-level run as an extra. Their result says source-level
+   inflates apparent faithfulness.
+
+### Why this makes P1 stronger
+
+Their finding is P1's premise, not P1's competitor. If circuit discovery samples
+from an equivalence class of functionally equivalent subgraphs, then Annex IV
+asks a provider to file one arbitrary member of that class as *the* description
+of the system's logic. That is a sharper regulatory claim than instability, and
+it is not available to anyone who has not connected the two literatures.
+
+### 2407.08734, what was actually verified
+
+Section 3.1 enumerates **five** ablation-methodology dimensions, not one:
+3.1.1 circuit granularity, 3.1.2 ablation component type and model views,
+3.1.3 ablation value, 3.1.4 token positions, 3.1.5 ablation direction.
+
+Ablation values named in 3.1.3: zero, Gaussian noise on token embeddings,
+resample, and mean. Verbatim: **"We focus on Mean and Resample Ablations in this
+work."** So two of four were crossed. Mean ablation carries a further hidden
+choice, verbatim: "an additional choice in the size of the mean ablation
+dataset". Zero and Gaussian noise are noted to "take the model significantly out
+of distribution, producing noisy outputs".
+
+Section 3.2, on metrics, verbatim: **"In this work we will focus on the metrics
+used by the respective authors of the circuits that we study, but note these
+choices are also in general free."** They did not cross the metric dimension at
+all. This is a documented, quotable gap that P1 fills.
+
+Useful IOI grounding, verbatim: the IOI circuit "is specified as an edge-level
+circuit, but Wang et al. (2023) evaluate its faithfulness via a node-wise
+ablation methodology". Clean distribution is 15 sentence templates in ABBA or
+BABA order; corrupt is the ABC distribution. Wang et al.'s faithfulness metric
+is logit difference recovered.
+
+Author-year pairs now confirmed from a primary bibliography, still needing
+arXiv IDs: Wang et al. 2023 (IOI), Conmy et al. 2023 (ACDC), Meng et al. 2022,
+Vig et al. 2020, Zhang and Nanda 2024, Hanna et al. 2023, Heimersheim and
+Janiak 2023, Olsson et al. 2022, Cammarata et al. 2021, Makelov et al. 2023.
+
+### New delta
+
+**D7. The brief's positioning sentence is unsupported.** The brief says of
+2407.08734: "they establish that one dimension matters; you measure the crossed
+space." They survey five dimensions. P1's differentiation is the regulatory
+propagation and the filability criterion, and nothing else. Do not write the
+crossed-space claim as the differentiator.
+
+### Not obtained
+
+The interchange-intervention protocol in section 5.3.2 of 2606.06267. The HTML
+fetch truncated before the body of section 5. Their released code is the better
+source for reproducing the protocol verbatim.
+
+### Next
+
+1. Ajay decides the repositioning and the fate of H1.
+2. Pull the interchange protocol from the UKPLab repo.
+3. Read Annex IV from EUR-Lex. Still unread, still load-bearing.
