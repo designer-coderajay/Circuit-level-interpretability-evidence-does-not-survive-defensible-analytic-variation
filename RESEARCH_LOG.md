@@ -653,3 +653,63 @@ direction is publishable and neither is available to a single-map design.
 objection. Both maps must be fixed in the pre-registration before any pooled
 result is seen, and the qualitative conclusion must be shown stable across all
 three granularities for each addressee. If it is not, say so.
+
+---
+
+## 2026-08-03 (Phase 2 begins) — phi implemented and tested
+
+**Built.** `src/p1/claim_map.py` and `tests/test_claim_map.py`. **79 tests total,
+all passing**, verified by running the suite in this session (35 multiverse, 24
+spec, 20 claim map).
+
+**Design.** Three properties enforced by construction rather than by intention.
+
+1. **Deterministic.** Pure functions over a frozen `CircuitFeatures` record. No
+   model, no randomness, no LLM anywhere in the path.
+2. **Nested granularities.** COARSE, MEDIUM and FINE are built by *appending*
+   fields to a tuple key, so each partition provably refines the previous one.
+   The reviewer objection "you chose granularities that produced the flip rate
+   you wanted" is answered structurally: a test asserts over 150 randomised
+   circuits that agreement at FINE implies agreement at MEDIUM implies agreement
+   at COARSE, for **both** addressees, and a second asserts the coarser key is
+   literally a prefix of the finer one.
+3. **Pre-registerable.** Every threshold is a named argument with a default.
+   `DEFAULT_SIZE_BINS` and `DEFAULT_BAND_NAMES` are marked PROVISIONAL and must
+   be fixed in the pre-registration before any pooled result is seen.
+
+**The two maps are genuinely different functions, not one dressed twice.**
+
+- `phi_overseer` is **component-facing**: layer band, then subgraph size, then
+  attended segment. It answers Article 14(4)(c), addressed to a person assigned
+  human oversight.
+- `phi_affected` is **input-facing**: dominant input segment first, then how much
+  of the model was involved, then the runner-up segment. It answers Article
+  86(1), addressed to the person the decision is about, who is owed "the main
+  elements of the decision taken" and not a list of attention heads.
+
+A test asserts the separation directly: for a circuit whose attribution is
+dominated by an income field, the affected-person claim names income and the
+overseer claim does not.
+
+**Separation of concerns.** `CircuitFeatures` is the only thing phi sees.
+Populating it needs the model and belongs in the harness. This keeps phi pure,
+GPU-free, and testable now, and it means the six claim maps cost zero sweep time
+because they are applied post-hoc to circuits already discovered.
+
+**Tie-breaking is deterministic and documented.** Layer-band ties resolve to the
+earliest band; segment ties resolve by label ascending. Without this the claim
+would depend on set iteration order, which would be a silent reproducibility
+defect rather than a loud one.
+
+**Empty circuits map to a claim rather than raising.** An empty circuit is
+reachable at a strict threshold, and raising inside a 3,780-cell sweep would be
+worse than recording a stated absence.
+
+### Still to build before the harness runs
+
+- The feature extractor that turns an auto-circuit output into `CircuitFeatures`.
+  Needs the model, so it is GPU-side.
+- **Segment definitions per task.** `position_mass` keys are pre-registered input
+  segments: application fields for the credit arm, template slots for IOI. These
+  are not yet defined and are part of the pre-registration.
+- Size bins and band boundaries are PROVISIONAL and must be frozen at Gate 3.

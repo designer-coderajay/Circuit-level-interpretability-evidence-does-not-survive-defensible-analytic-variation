@@ -1,0 +1,225 @@
+"""Tests for the claim map phi.
+
+The load-bearing test is ``test_granularities_are_nested_partitions``. A reviewer
+will say the three granularities were chosen to produce a desired flip rate. The
+answer is that they are provably nested: if two circuits are indistinguishable at
+FINE they are indistinguishable at MEDIUM and COARSE, so the coarser maps cannot
+manufacture disagreement the finer one does not already see. That is asserted
+here over randomised circuits, for both addressees.
+"""
+
+from __future__ import annotations
+
+import random
+
+import pytest
+
+from p1.claim_map import (
+    DEFAULT_BAND_NAMES,
+    CircuitFeatures,
+    Component,
+    Granularity,
+    affected_key,
+    layer_band,
+    overseer_key,
+    phi_affected,
+    phi_overseer,
+    ranked_segments,
+    size_class,
+)
+
+SEGMENTS = ("income", "credit_history", "employment", "address")
+
+
+def make_features(rng: random.Random, n_layers: int = 12, n_heads: int = 12):
+    n = rng.randint(0, 40)
+    comps = frozenset(
+        Component(rng.randrange(n_layers), rng.randrange(n_heads)) for _ in range(n)
+    )
+    mass = {s: rng.random() for s in rng.sample(SEGMENTS, rng.randint(0, len(SEGMENTS)))}
+    return CircuitFeatures(
+        components=comps,
+        n_layers=n_layers,
+        n_components_full_model=n_layers * n_heads,
+        position_mass=mass,
+    )
+
+
+# --------------------------------------------------------------------------
+# The nesting property
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("key_fn", [overseer_key, affected_key])
+def test_granularities_are_nested_partitions(key_fn):
+    """FINE refines MEDIUM refines COARSE, for both addressees.
+
+    Checked as an implication over every pair: agreement at a finer granularity
+    must imply agreement at every coarser one.
+    """
+    rng = random.Random(20260803)
+    feats = [make_features(rng) for _ in range(150)]
+    for i in range(len(feats)):
+        for j in range(i + 1, len(feats)):
+            a, b = feats[i], feats[j]
+            if key_fn(a, Granularity.FINE) == key_fn(b, Granularity.FINE):
+                assert key_fn(a, Granularity.MEDIUM) == key_fn(b, Granularity.MEDIUM)
+            if key_fn(a, Granularity.MEDIUM) == key_fn(b, Granularity.MEDIUM):
+                assert key_fn(a, Granularity.COARSE) == key_fn(b, Granularity.COARSE)
+
+
+@pytest.mark.parametrize("key_fn", [overseer_key, affected_key])
+def test_distinct_claim_count_is_monotone_in_granularity(key_fn):
+    """A finer map can never produce fewer distinct claims than a coarser one."""
+    rng = random.Random(7)
+    feats = [make_features(rng) for _ in range(300)]
+    counts = [
+        len({key_fn(f, g) for f in feats})
+        for g in (Granularity.COARSE, Granularity.MEDIUM, Granularity.FINE)
+    ]
+    assert counts[0] <= counts[1] <= counts[2]
+
+
+@pytest.mark.parametrize("key_fn", [overseer_key, affected_key])
+def test_coarse_key_is_a_prefix_of_finer_keys(key_fn):
+    """Nesting is structural: each granularity appends, never rewrites."""
+    rng = random.Random(3)
+    for _ in range(100):
+        f = make_features(rng)
+        c = key_fn(f, Granularity.COARSE)
+        m = key_fn(f, Granularity.MEDIUM)
+        fine = key_fn(f, Granularity.FINE)
+        assert m[: len(c)] == c
+        assert fine[: len(m)] == m
+
+
+# --------------------------------------------------------------------------
+# Determinism
+# --------------------------------------------------------------------------
+
+
+def test_phi_is_deterministic_across_repeated_calls():
+    rng = random.Random(11)
+    for _ in range(80):
+        f = make_features(rng)
+        for g in Granularity:
+            assert phi_overseer(f, g) == phi_overseer(f, g)
+            assert phi_affected(f, g) == phi_affected(f, g)
+
+
+def test_phi_is_invariant_to_component_insertion_order():
+    """Sets are unordered; the claim must not depend on how they were built."""
+    comps = [Component(2, 5), Component(9, 1), Component(2, 3), Component(11, 7)]
+    mass = {"income": 0.6, "employment": 0.4}
+    a = CircuitFeatures(frozenset(comps), 12, 144, mass)
+    b = CircuitFeatures(frozenset(reversed(comps)), 12, 144, dict(reversed(list(mass.items()))))
+    for g in Granularity:
+        assert phi_overseer(a, g) == phi_overseer(b, g)
+        assert phi_affected(a, g) == phi_affected(b, g)
+
+
+def test_tie_breaking_is_deterministic_and_favours_the_earliest_band():
+    # Two components in the early band, two in the late band, none in the middle.
+    f = CircuitFeatures(
+        frozenset({Component(0, 0), Component(1, 0), Component(10, 0), Component(11, 0)}),
+        n_layers=12,
+        n_components_full_model=144,
+    )
+    assert layer_band(f) == "early"
+
+
+def test_segment_ties_break_by_label_ascending():
+    f = CircuitFeatures(
+        frozenset({Component(0, 0)}), 12, 144, {"zulu": 0.5, "alpha": 0.5}
+    )
+    assert ranked_segments(f, 2) == ("alpha", "zulu")
+
+
+# --------------------------------------------------------------------------
+# Edge cases that are reachable inside a sweep
+# --------------------------------------------------------------------------
+
+
+def test_empty_circuit_maps_to_a_claim_rather_than_raising():
+    """A strict threshold can return an empty circuit. It must still map."""
+    f = CircuitFeatures(frozenset(), 12, 144, {})
+    for g in Granularity:
+        assert isinstance(phi_overseer(f, g), str)
+        assert isinstance(phi_affected(f, g), str)
+    assert layer_band(f) == DEFAULT_BAND_NAMES[0]
+    assert size_class(f) == "sparse"
+
+
+def test_no_attribution_recorded_yields_a_stated_absence():
+    f = CircuitFeatures(frozenset({Component(1, 1)}), 12, 144, {})
+    assert "no single input region" in phi_affected(f, Granularity.COARSE)
+
+
+def test_full_model_circuit_is_distributed():
+    comps = frozenset(Component(l, h) for l in range(12) for h in range(12))
+    f = CircuitFeatures(comps, 12, 144)
+    assert size_class(f) == "distributed"
+
+
+# --------------------------------------------------------------------------
+# The two addressees must actually differ
+# --------------------------------------------------------------------------
+
+
+def test_the_two_maps_are_not_the_same_function():
+    """If they agreed everywhere, reporting both would be padding."""
+    rng = random.Random(99)
+    feats = [make_features(rng) for _ in range(200)]
+    for g in Granularity:
+        o = len({overseer_key(f, g) for f in feats})
+        a = len({affected_key(f, g) for f in feats})
+        pairs_o = {(overseer_key(x, g) == overseer_key(y, g)) for x in feats[:40] for y in feats[:40]}
+        pairs_a = {(affected_key(x, g) == affected_key(y, g)) for x in feats[:40] for y in feats[:40]}
+        assert pairs_o == {True, False} and pairs_a == {True, False}
+        assert o > 1 and a > 1
+
+
+def test_overseer_is_component_facing_and_affected_is_input_facing():
+    f = CircuitFeatures(
+        frozenset({Component(1, 0), Component(2, 0)}), 12, 144, {"income": 1.0}
+    )
+    o = phi_overseer(f, Granularity.COARSE)
+    a = phi_affected(f, Granularity.COARSE)
+    assert "layers of the model" in o
+    assert "income" in a
+    assert "income" not in o
+
+
+# --------------------------------------------------------------------------
+# Validation
+# --------------------------------------------------------------------------
+
+
+def test_component_outside_model_depth_is_rejected():
+    with pytest.raises(ValueError, match="outside"):
+        CircuitFeatures(frozenset({Component(12, 0)}), 12, 144)
+
+
+def test_negative_attribution_is_rejected():
+    with pytest.raises(ValueError, match="negative"):
+        CircuitFeatures(frozenset(), 12, 144, {"income": -0.1})
+
+
+def test_nonpositive_layer_count_is_rejected():
+    with pytest.raises(ValueError, match="n_layers"):
+        CircuitFeatures(frozenset(), 0, 144)
+
+
+def test_ranked_segments_rejects_k_below_one():
+    f = CircuitFeatures(frozenset(), 12, 144, {"income": 1.0})
+    with pytest.raises(ValueError):
+        ranked_segments(f, 0)
+
+
+def test_claims_end_as_sentences():
+    rng = random.Random(5)
+    for _ in range(30):
+        f = make_features(rng)
+        for g in Granularity:
+            assert phi_overseer(f, g).endswith(".")
+            assert phi_affected(f, g).endswith(".")

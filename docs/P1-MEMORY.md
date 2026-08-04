@@ -84,8 +84,17 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
   enumeration, and a machine-independent `spec_id` (truncated SHA-256 of a
   canonical encoding, pinned by regression test, verified stable across
   PYTHONHASHSEED values). **59 tests total, all passing 2026-08-03.**
-- Not built: the sweep harness, the claim map `phi`, the interchange-intervention
-  arm, the specification curve, the variance decomposition.
+- `src/p1/claim_map.py` and `tests/test_claim_map.py`: **phi**, both addressees,
+  three nested granularities. Deterministic, no LLM, thresholds all named
+  arguments. The nesting property (FINE refines MEDIUM refines COARSE) is
+  unit-tested over randomised circuits for both maps, which is the structural
+  answer to "you tuned phi". **79 tests total, all passing 2026-08-03.**
+- Not built: the sweep harness, the `CircuitFeatures` extractor (GPU-side), the
+  interchange-intervention arm, the specification curve, the variance
+  decomposition.
+- **Pre-registration must freeze:** `DEFAULT_SIZE_BINS`, `DEFAULT_BAND_NAMES`,
+  and the per-task input segment definitions used as `position_mass` keys. All
+  three are currently PROVISIONAL.
 
 ## Standing hazards
 
