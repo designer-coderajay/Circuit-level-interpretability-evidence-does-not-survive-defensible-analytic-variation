@@ -1213,3 +1213,46 @@ and the `load_tl_model` incident on 2026-08-04 showed how a plausible hand-rolle
 version silently diverges.
 
 **D4 remains open.** It is the last non-writing blocker before Gate 3.
+
+---
+
+## 2026-08-04 — D4 RESOLVED. Interchange protocol extracted from their code.
+
+Cloned `UKPLab/arxiv2026-phantom-specialization` (Apache 2.0) to
+`.external/phantom-spec`, gitignored. Full analysis in `docs/DESIGN-DELTAS.md`
+under D4. Everything below is VERIFIED verbatim from their source.
+
+**The protocol.** `05_Phase_Targeted/13_activation_patching.ipynb` implements
+`compute_interchange_metrics`. Cache source activations at a hook, run the base
+input with them patched in, and measure **IIA**, the fraction of pairs where the
+patched base now predicts the source's target token, plus a logit difference.
+Constants: `N_PAIRS = 100`, `EVAL_SEED = 123`, `batch_size = 50`.
+
+**P1 cannot reproduce it verbatim, and must say so.** They vary input statistics
+with the analysis fixed. P1 varies analytic specification with the input fixed.
+The IIA machinery transfers; the pairing logic does not. Report it as a cited
+adaptation, not a reproduction. Claiming otherwise would be false and is exactly
+what the instrument-verbatim rule is meant to prevent.
+
+**A cheaper measure found alongside it.** `per_example_agreement.py` compares
+circuits by per-example correct/incorrect verdicts using `agreement_rate` and
+`cohens_kappa`. It needs no patching and is computable from `run_circuits` output
+the sweep already produces. **Plan: agreement and kappa across the full grid,
+expensive IIA reserved for a pre-registered subset of low-Jaccard pairs.**
+
+**Random-Jaccard closed form adopted.** Their
+`jaccard_calibration.py` uses `j_rand = k / (2N - k)`. Implemented as
+`p1.multiverse.expected_random_jaccard` with a Monte Carlo agreement test to
+within 0.02 and pinned boundaries. **156 tests total, all passing.**
+
+**A warning that falls out of it.** Their reported calibration is "Observed
+Jaccard is 4-27x higher than random". At P1's measured scale, GPT-2 small with
+32,491 edges, a 500-edge circuit has `J_rand = 0.008`. **Any observed overlap
+above roughly one percent is already far above chance, so H3 should be expected
+to fail if stated about circuit overlap.** H3 is stated about the claim, and the
+distinction is the substance of the hypothesis rather than a phrasing detail:
+circuits can be statistically far from random while the claims derived from them
+are not. Say so in advance in the pre-registration, and keep the two levels
+rigorously separate in the manuscript.
+
+**D4 closed.** The last non-writing blocker before Gate 3 is cleared.

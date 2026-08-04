@@ -311,3 +311,71 @@ def test_percentile_interval_rejects_bad_level():
     res = bootstrap_over_specifications(["a", "b"], flip_rate, n_boot=10, seed=0)
     with pytest.raises(ValueError):
         res.percentile_interval(1.0)
+
+
+# --------------------------------------------------------------------------
+# Analytic random-Jaccard reference
+# --------------------------------------------------------------------------
+
+
+def test_expected_random_jaccard_matches_simulation():
+    """The closed form must track a Monte Carlo estimate.
+
+    It is a ratio of expectations rather than an expectation of the ratio, so
+    agreement is expected to be close but not exact. This pins how close, so a
+    future edit that breaks the formula fails rather than drifting.
+    """
+    from p1.multiverse import expected_random_jaccard
+
+    rng = np.random.default_rng(2026)
+    for n, k in [(500, 50), (1000, 100), (2000, 40), (144, 12)]:
+        sims = []
+        for _ in range(400):
+            a = set(rng.choice(n, size=k, replace=False).tolist())
+            b = set(rng.choice(n, size=k, replace=False).tolist())
+            sims.append(jaccard_similarity(a, b))
+        empirical = float(np.mean(sims))
+        analytic = expected_random_jaccard(k, n)
+        assert abs(analytic - empirical) < 0.02, (
+            f"n={n} k={k}: analytic {analytic:.4f} vs empirical {empirical:.4f}"
+        )
+
+
+def test_expected_random_jaccard_boundaries():
+    from p1.multiverse import expected_random_jaccard
+
+    assert expected_random_jaccard(0, 100) == 0.0          # empty circuits
+    assert expected_random_jaccard(100, 100) == 1.0        # both are the universe
+    # Sparse circuits overlap barely at all by chance, which is why a low observed
+    # Jaccard is not by itself evidence of instability.
+    assert expected_random_jaccard(10, 10_000) < 0.001
+
+
+def test_expected_random_jaccard_is_monotone_in_k():
+    from p1.multiverse import expected_random_jaccard
+
+    vals = [expected_random_jaccard(k, 1000) for k in range(1, 500, 25)]
+    assert all(x < y for x, y in zip(vals, vals[1:]))
+
+
+@pytest.mark.parametrize("k,n", [(-1, 10), (5, 0), (11, 10)])
+def test_expected_random_jaccard_rejects_invalid(k, n):
+    from p1.multiverse import expected_random_jaccard
+
+    with pytest.raises(ValueError):
+        expected_random_jaccard(k, n)
+
+
+def test_their_reported_calibration_is_reproducible_in_shape():
+    """Sanity-check the regime their 4-27x figure lives in.
+
+    32,491 edges is P1's own measured GPT-2 small edge count from the Gate 2 run.
+    A circuit of a few hundred edges has a random Jaccard near zero, so any
+    observed overlap above a few percent is already far above chance. This is
+    the reason H3 is stated at the CLAIM level and not at the circuit level.
+    """
+    from p1.multiverse import expected_random_jaccard
+
+    n_edges = 32_491
+    for k in (100, 500, 2000):
+        assert expected_random_jaccard(k, n_edges) < 0.04

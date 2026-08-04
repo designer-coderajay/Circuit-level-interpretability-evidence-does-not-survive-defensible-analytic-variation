@@ -422,3 +422,128 @@ pre-registration fixes the level set.
 **Also VERIFIED:** `mask_gradient.py` line 62 asserts
 `(mask_val is not None) XOR (integrated_grad_samples is not None)`. Exactly one
 must be set; passing neither raises a bare `AssertionError` with no message.
+
+---
+
+## D4 resolved. The interchange protocol, and what P1 can and cannot reuse
+
+Source: `UKPLab/arxiv2026-phantom-specialization`, Apache 2.0, cloned to
+`.external/phantom-spec` (gitignored). All quotations below are **VERIFIED
+verbatim from their code**, 2026-08-04.
+
+### Their protocol, from `05_Phase_Targeted/13_activation_patching.ipynb`
+
+```python
+@dataclass
+class InterchangePair:
+    base_ids: t.Tensor          # (1, seq_len) with BOS prepended
+    source_ids: t.Tensor
+    base_target_id: int
+    source_target_id: int
+```
+
+`compute_interchange_metrics(model, pairs, hook_name, position, batch_size=50)`,
+decorated `@t.no_grad()`, does exactly four things, quoted from its docstring:
+
+> 1. Cache source activations at hook_name
+> 2. Run base input with patched source activations
+> 3. Check if prediction matches source target (IIA)
+> 4. Compute logit difference: logit[source_target] - logit[base_target]
+
+Mechanically: `model.run_with_cache(s_ids, prepend_bos=False,
+names_filter=[hook_name])` to grab the source activation, then
+`model.run_with_hooks(b_ids, prepend_bos=False, fwd_hooks=[(hook_name, hook_fn)])`
+to run the base with it patched in. Attention is detected by
+`is_attn = "hook_z" in hook_name`.
+
+**The headline metric is IIA, interchange intervention accuracy**: the fraction
+of pairs where the patched base input now predicts the **source's** target token.
+If patching a component's representation makes the model produce the other
+condition's answer, that representation carries the causally relevant content.
+
+Constants, verbatim: `N_PAIRS = 100` per condition, `EVAL_SEED = 123`,
+`batch_size = 50`, pairs drawn by `np.random.default_rng(seed).permutation`.
+
+### The distinction P1 must state plainly
+
+**P1 cannot reproduce this protocol verbatim, because the thing being varied is
+different.** They vary **input statistics** with the task and the analysis held
+fixed, and ask whether representations are interchangeable across frequency
+bands. P1 varies **analytic specification** with the input held fixed, and asks
+whether two circuits recovered under different defensible settings are
+functionally equivalent.
+
+The IIA machinery transfers directly. The pairing logic does not: their pairs are
+(base example, source example) across bands, whereas P1's comparison is between
+two circuits over the same examples.
+
+**This must be reported as an adaptation, not a reproduction.** Claiming verbatim
+reproduction here would be false, and the distinction is exactly the sort of thing
+the instrument-verbatim rule exists to keep honest. Cite their protocol, state the
+adaptation, and justify it.
+
+### The cheaper measure P1 should also take
+
+`05_Phase_Targeted/per_example_agreement.py` supplies a second, far cheaper
+functional-equivalence measure that needs no patching at all:
+
+```python
+def agreement_rate(preds_a, preds_b):    # fraction of examples where both agree
+def cohens_kappa(preds_a, preds_b):      # chance-corrected agreement
+```
+
+Two circuits are compared by their per-example correct/incorrect verdicts.
+**Cohen's kappa matters here**: raw agreement is inflated when both circuits are
+mostly correct, which they will be. Report both.
+
+This is attractive for P1 because it is computable from the
+`run_circuits` output already produced by the sweep, at no extra forward passes.
+**Recommendation: run agreement and kappa across the full grid, and reserve the
+expensive IIA interchange arm for a pre-registered subset of low-Jaccard pairs.**
+
+### The random-Jaccard closed form, now adopted and implemented
+
+From `05_Phase_Targeted/jaccard_calibration.py`, verbatim:
+
+```python
+j_rand = k / (2 * N - k)
+```
+
+with `k = mean_circuit_edges`, `N = total_possible_edges`. Implemented as
+`p1.multiverse.expected_random_jaccard`, with a test checking it against Monte
+Carlo simulation to within 0.02 and pinning the boundary cases. Using their
+formula keeps P1's random reference commensurable with the paper it answers.
+
+**It is a ratio of expectations, not an expectation of a ratio**, so it is an
+approximation and a reference line only. It does **not** replace the sampled
+random-circuit null multiverse that H3 is actually tested against.
+
+### Their calibration, and what it implies for H3
+
+Verbatim from the same file:
+
+> "Observed Jaccard is 4-27x higher than random -> circuits share far more edges
+> than chance"
+
+> "Within-between gap is 2-5% of observed Jaccard -> modest relative to shared
+> structure"
+
+Applying their formula at P1's own measured scale, GPT-2 small with **32,491
+edges** from the Gate 2 run:
+
+| circuit size | `J_rand` |
+|---|---|
+| 100 edges | 0.0015 |
+| 500 edges | 0.0078 |
+| 2,000 edges | 0.0318 |
+| 5,000 edges | 0.0834 |
+
+**Any observed Jaccard above about one percent is already far above chance.**
+
+**Consequence, and it is a warning.** At the structural level the random null is
+almost certainly clearly separated, so **H3 should be expected to fail if stated
+about circuit overlap.** H3 is stated about the **claim**, and that is not an
+accident of phrasing but the substance of the hypothesis: circuits can be
+statistically far from random while the *claims derived from them* are not.
+Keep the two levels rigorously distinct in the manuscript, and say in advance
+that structural separation from the null is expected.

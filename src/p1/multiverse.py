@@ -29,6 +29,7 @@ from typing import Hashable, Iterable, Sequence
 import numpy as np
 
 __all__ = [
+    "expected_random_jaccard",
     "jaccard_similarity",
     "jaccard_distance",
     "pairwise_jaccard_similarities",
@@ -45,6 +46,41 @@ __all__ = [
 # --------------------------------------------------------------------------
 # Set overlap
 # --------------------------------------------------------------------------
+
+
+def expected_random_jaccard(k: int, n: int) -> float:
+    """Analytic reference: expected Jaccard of two independent size-k subsets of n.
+
+        E|A n B| = k^2 / n
+        E|A u B| = 2k - k^2 / n
+        J_rand  ~= k / (2n - k)
+
+    **Provenance.** This closed form is used by the authors of arXiv:2606.06267 in
+    `LSC_circuit_analysis/05_Phase_Targeted/jaccard_calibration.py`, verbatim as
+    ``j_rand = k / (2 * N - k)`` with ``k = mean_circuit_edges`` and
+    ``N = total_possible_edges``. Adopting their formula rather than inventing one
+    keeps P1's random reference commensurable with the paper it answers.
+
+    **What it is not.** This is a ratio of expectations, not the expectation of
+    the ratio, so it is an approximation to E[J] and not E[J] itself. It is a
+    cheap analytic *reference line*, and it does not replace the sampled
+    random-circuit null multiverse, which is what H3 is actually tested against.
+    A test checks it against simulation and records the size of the gap.
+
+    Their reported calibration, quoted from the same file: "Observed Jaccard is
+    4-27x higher than random". So at the structural level the null is clearly
+    separated, and P1 should expect the same. The open question H3 asks is
+    whether that separation survives the claim map.
+    """
+    if k < 0:
+        raise ValueError(f"k must be non-negative, got {k}")
+    if n <= 0:
+        raise ValueError(f"n must be positive, got {n}")
+    if k > n:
+        raise ValueError(f"k cannot exceed n, got k={k}, n={n}")
+    if k == 0:
+        return 0.0
+    return k / (2 * n - k)
 
 
 def jaccard_similarity(a: Iterable[Hashable], b: Iterable[Hashable]) -> float:

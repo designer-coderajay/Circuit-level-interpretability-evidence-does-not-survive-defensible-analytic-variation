@@ -54,6 +54,7 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-04 | **GATE 2 PASSED.** discovery 9.301s, evaluation-per-cut 1.581s, ratio 5.88 (CPU, gpt2, 32 prompts) | Reuse architecture confirmed. Full EAP grid is **2.47 h CPU** versus 11.43 h naive, a **4.62x** saving. The 12x inferred on 08-03 was wrong: evaluation is 67% of cost, not near-free. |
 | 2026-08-04 | **D15 resolved: discovery-objective axis = auto-circuit's eight named PruneAlgo constants**, not a synthetic 4x3 grid | They are named, shipped and used by the instrument's authors, so "cite a published implementation per level" holds by construction. Also catches EAP vs IEG, which is the mask_val/IG XOR and not a grad_function value. |
 | 2026-08-04 | **D3 closed: confirmatory grid = 6 EAP + IEG-50 fully crossed (26,460 specs); IEG-1000 as a pre-registered seed-only slice** | ~70 h CPU total. IEG-1000 fully crossed would be 814 h. The slice answers "is 50 IG samples enough" at 1.5% of the cost, and the reduction rule is fixed before any pooled result is seen. |
+| 2026-08-04 | **D4 closed: interchange protocol extracted from their code.** IIA machinery adopted as a cited **adaptation**, not a reproduction | They vary input statistics; P1 varies analytic specification. Pairing logic differs, IIA transfers. Cheaper `agreement_rate` + `cohens_kappa` runs across the full grid; expensive IIA on a pre-registered low-Jaccard subset. Their `j_rand = k/(2N-k)` adopted and implemented. |
 
 ## Open decisions blocking pre-registration
 
@@ -62,12 +63,6 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **D17** The CPU to GPU speedup is **unmeasured**. Every GPU figure quoted so
   far assumes 20x, which is a guess. Run one smoke config on the rented box
   before committing to the sweep window.
-- **D4** Functional-equivalence arm. README read and VERIFIED; **they use
-  auto-circuit too**, so the protocol is expressible in primitives P1 already
-  uses. The interchange code itself is not locatable remotely (GitHub tree
-  returns empty to a plain fetch). **Clone the repo** and grep for "interchange";
-  it is likely in `03_Phase_Representational/` or `05_Phase_Targeted/`. Do not
-  reimplement from prose. Last non-writing blocker before Gate 3.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
 - **D16** `PatchType.TREE_PATCH` may give ERASER sufficiency and `EDGE_PATCH`
   comprehensiveness directly, which would remove the need for the D2 extension
@@ -131,6 +126,10 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **Report three granularities of `phi`.** A reviewer will say the flip rate was
   tuned. The three-granularity stability result is the answer.
 - **The random-circuit baseline is not optional.** H3 has no meaning without it.
+- **Expect H3 to FAIL at the circuit level.** Their calibration puts observed
+  Jaccard 4-27x above random, and at 32,491 edges a 500-edge circuit has
+  `J_rand = 0.008`. H3 is about the CLAIM, not circuit overlap. Keep the two
+  levels separate and state the expectation in the pre-registration.
 - **Feasibility is unmeasured.** The 2,160-runs-on-one-24GB-GPU claim came from
   the brief with no timing behind it.
 
