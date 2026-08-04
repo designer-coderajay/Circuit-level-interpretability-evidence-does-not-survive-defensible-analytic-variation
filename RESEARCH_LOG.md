@@ -597,3 +597,59 @@ decision.
 
 **D10 status.** Articles 13, 14, 86 read. **Article 11 still unread**, three
 attempts, one timeout. Annex III unread and now needed.
+
+---
+
+## 2026-08-03 (Phase 1 cont.) — Annex III verified. The applied arm binds.
+
+Retrieved in full, same Commission source and caveat.
+
+**Annex III point 5(b), verbatim:** "AI systems intended to be used to evaluate
+the creditworthiness of natural persons or establish their credit score, with
+the exception of AI systems used for the purpose of detecting financial fraud."
+
+**Annex III point 2, verbatim** (the point Article 86 expressly excludes):
+"Critical infrastructure: AI systems intended to be used as safety components in
+the management and operation of critical digital infrastructure, road traffic,
+or in the supply of water, gas, heating or electricity."
+
+**Result: the BFSI credit underwriting applied arm is fully inside Article 86.**
+Credit sits at 5(b), it is not the excluded point 2, and a credit refusal plainly
+produces legal effects. All four links of the chain bind on the applied arm
+simultaneously. This was RECALLED yesterday and is now VERIFIED.
+
+**One framing constraint.** 5(b) carves out fraud detection. The prototype must
+be described as creditworthiness evaluation and never as fraud detection, or the
+Annex III classification fails and Article 86 does not apply.
+
+The applied arm is therefore no longer an illustration. It is the case where
+provider choice, technical documentation, deployer oversight, and an individual's
+right to an explanation all meet.
+
+**Decision (Ajay, 2026-08-03): phi is two claim maps, not one.**
+
+- `phi_overseer`, targeting Annex IV 2(e) and 3 read with Article 14(4)(c).
+  Addressee is a human overseer at the deployer. Standard: "correctly interpret
+  ... taking into account, for example, the interpretation tools and methods
+  available".
+- `phi_affected`, targeting Article 86(1). Addressee is the person the decision
+  is about. Standard: "clear and meaningful explanations of the role of the AI
+  system in the decision-making procedure and the main elements of the decision
+  taken".
+
+Each is reported at three granularities, so six deterministic maps in total.
+
+**Why this costs nothing.** `phi` is deterministic code applied post-hoc to
+circuits that have already been discovered. Six maps over the same 3,780
+circuits add zero GPU time. The cost is implementation and reporting surface
+only.
+
+**Why it is more than a free extra.** If the two flip rates diverge, that is
+itself a finding: the same circuit set would support a stable technical filing
+while producing an unstable individual explanation, or the reverse. Either
+direction is publishable and neither is available to a single-map design.
+
+**Reporting discipline.** Six maps is a large surface for the "you tuned phi"
+objection. Both maps must be fixed in the pre-registration before any pooled
+result is seen, and the qualitative conclusion must be shown stable across all
+three granularities for each addressee. If it is not, say so.

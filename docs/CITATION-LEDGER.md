@@ -58,8 +58,14 @@ All **RECALLED**, none verified.
 
 ## Primary legal text
 
-Regulation (EU) 2024/1689, Article 11 and Annex IV. **Not yet read in this
-project.** Read the regulation itself from EUR-Lex, not summaries and not
+Regulation (EU) 2024/1689. **Read 2026-08-03 from the AI Act Service Desk**
+(`ai-act-service-desk.ec.europa.eu`), an official Commission site run by DG
+CNECT which states it reproduces the official version of 13 June 2024:
+**Annex III, Annex IV, Articles 13, 14, 86.** Still unread: **Article 11**.
+All strings are from a Commission rendering, **not the Official Journal**, and
+must be cross-checked against the OJ before entering the manuscript.
+
+Superseded note: Read the regulation itself from EUR-Lex, not summaries and not
 artificialintelligenceact.eu, before writing any sentence that characterises
 what Annex IV requires. The entire regulatory premise of P1 rests on this.
 
@@ -81,6 +87,16 @@ source PDF.
 | The IOI circuit "is specified as an edge-level circuit, but Wang et al. (2023) evaluate its faithfulness via a node-wise ablation methodology" | 2407.08734 | Section 4, quoted verbatim | 2026-08-03 |
 | Section 3.1 enumerates five ablation-methodology dimensions | 2407.08734 | Section headings 3.1.1 to 3.1.5 | 2026-08-03 |
 | Neither paper contains any regulatory, conformity, audit, or technical-documentation analysis | 2407.08734 and 2606.06267 | Zero-hit term counts over full fetched text | 2026-08-03 |
+| "the general logic of the AI system and of the algorithms" (design specifications frame) | Reg (EU) 2024/1689 Annex IV 2(b) | AI Act Service Desk, quoted verbatim | 2026-08-03 |
+| "an assessment of the technical measures needed to facilitate the interpretation of the outputs" | Annex IV 2(e) | AI Act Service Desk, verbatim | 2026-08-03 |
+| "the technical measures put in place to facilitate the interpretation of the outputs" | Annex IV 3 and Article 13(3)(d) | AI Act Service Desk, verbatim, appears in both | 2026-08-03 |
+| "A description of the appropriateness of the performance metrics for the specific AI system" | Annex IV 4 | AI Act Service Desk, verbatim | 2026-08-03 |
+| "to correctly interpret the high-risk AI system's output, taking into account, for example, the interpretation tools and methods available" | Article 14(4)(c) | AI Act Service Desk, verbatim | 2026-08-03 |
+| automation bias named as a thing oversight must guard against | Article 14(4)(b) | AI Act Service Desk, verbatim | 2026-08-03 |
+| "clear and meaningful explanations of the role of the AI system in the decision-making procedure and the main elements of the decision taken", owed by the deployer | Article 86(1) | AI Act Service Desk, verbatim | 2026-08-03 |
+| Article 86 is subsidiary: applies "only to the extent that the right ... is not otherwise provided for under Union law" | Article 86(3) | AI Act Service Desk, verbatim | 2026-08-03 |
+| Creditworthiness evaluation is high-risk, fraud detection excluded | Annex III point 5(b) | AI Act Service Desk, verbatim | 2026-08-03 |
+| Article 86's excluded point 2 is critical infrastructure, not credit | Annex III point 2 | AI Act Service Desk, verbatim | 2026-08-03 |
 
 **Not yet located in source.** The interchange-intervention protocol, 2606.06267
 section 5.3.2. The HTML fetch truncated before the body of section 5. Their
