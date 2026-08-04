@@ -713,3 +713,62 @@ worse than recording a stated absence.
   segments: application fields for the credit arm, template slots for IOI. These
   are not yet defined and are part of the pre-registration.
 - Size bins and band boundaries are PROVISIONAL and must be frozen at Gate 3.
+
+---
+
+## 2026-08-03 (Phase 2) — Feature extractor built. D14 opened.
+
+**Built.** `src/p1/features.py` and `tests/test_features.py`. **103 tests total,
+all passing** (35 multiverse, 24 spec, 20 claim map, 24 features).
+
+**The layer trap.** auto-circuit's `Node.layer` is not the transformer block
+index. Quoted verbatim from `auto_circuit/types.py`: "Transformer blocks count as
+2 layers (one for the attention layer and one for the MLP layer)". GPT-2 small
+therefore exposes about 24 auto-circuit layers, not 12. Feeding that straight
+into a claim map assuming twelve would have placed every real component in the
+"early" band and corrupted every claim in the sweep, silently. `features.py`
+makes the conversion explicit and a regression test asserts that a component in
+the final block lands in the "late" band. A second test confirms the mixed
+convention raises rather than miscomputing, because `CircuitFeatures` validation
+catches an out-of-range layer.
+
+**D14 opened, blocking.** Only two of ten discovery algorithms accept
+`ablation_type`. ACDC accepts none and hardcodes corrupt-batch resample at
+`ACDC.py` lines 96 to 97. `run_circuits` does accept it, so under ACDC the
+ablation operator acts on **evaluation only**, not on the prune-score ranking.
+
+**Consequence, and a retroactive vindication of D12.** Metric-relative `tau`
+means the cut point is chosen by evaluating the metric under a given ablation, so
+`(a, m, tau)` jointly select `C` and the ablation axis stays live. **Under
+absolute `tau` with ACDC, both the ablation and metric axes would have been
+inert and the grid would have collapsed from 3,780 to 45 distinct circuits.**
+
+**A finding falls out of this.** The field treats choice of ablation as a single
+degree of freedom. Whether it acts on discovery or only on evaluation depends on
+the algorithm, and no paper appears to say so. Free to report, and it sharpens
+the multiverse argument.
+
+**Torch could not be installed in the sandbox.** The 155MB aarch64 CPU wheel
+stalled mid-download after several minutes. Gate 2 must be measured on Ajay's
+Mac, which is the right place anyway since the environment hash that goes in the
+paper should come from a machine that will be used again.
+
+**D14 closed (Ajay, 2026-08-03): `mask_gradient` is primary, ACDC is a contrast.**
+
+`mask_gradient_prune_scores` takes `ablation_type` directly, so all seven
+operators act on the prune-score ranking and the ablation axis is live at
+discovery rather than only through the tau cut. Independently supported by MIB
+(2504.13151, VERIFIED), which reports attribution and mask-optimisation methods
+performing best on circuit localisation.
+
+ACDC runs as a labelled contrast, not a second grid. Reporting both lets the
+paper state, with source evidence, that the same nominal degree of freedom acts
+on discovery under one algorithm and only on evaluation under another. No paper
+appears to say this and it costs one extra arm.
+
+**Open sub-decision.** `mask_gradient_prune_scores` also exposes
+`grad_function` with four levels and `answer_function` with three, twelve
+combinations in total. These are discovery objectives, distinct from the
+evaluation metric axis already in the grid. Whether any of them enter the
+confirmatory grid, are fixed at a pre-registered default, or form a separate
+robustness arm is **not yet decided** and must be settled before Gate 3.

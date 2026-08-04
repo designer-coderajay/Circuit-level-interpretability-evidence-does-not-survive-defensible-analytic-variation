@@ -325,3 +325,53 @@ this space. It is a stronger axis than the one the brief specified.
 **Decision required before the grid is fixed.** Options are set out for Ajay.
 Until this is resolved, `METRICS` in `src/p1/spec.py` and the 3,780 figure are
 provisional.
+
+---
+
+## D14. The ablation operator does not reach discovery under ACDC
+
+**Status: OPEN and blocking. Found 2026-08-03 while writing the smoke script.**
+
+**VERIFIED** by grepping `ablation_type` across `auto_circuit/prune_algos/` in
+auto-circuit 1.0.1:
+
+| Algorithm | `ablation_type` references | Ablation reaches discovery? |
+|---|---|---|
+| `mask_gradient` | 3, `ablation_type: AblationType = RESAMPLE` in signature | **Yes** |
+| `subnetwork_probing` | 4 | **Yes** |
+| `ACDC` | **0** | **No** |
+| `edge_attribution_patching` | 0 | No |
+| `activation_magnitude`, `ground_truth`, `parameter_integrated_gradients`, `circuit_probing`, `random_edges` | 0 | No |
+
+ACDC hardcodes its internal patching. From `ACDC.py` lines 96 to 97, verbatim:
+
+```
+patch_outs_tensor = src_ablations(model, corrupt_batch)
+src_outs_tensor  = src_ablations(model, clean_batch)
+```
+
+That is corrupt-batch resample ablation, fixed. Separately, `run_circuits` in
+`prune.py` does take `ablation_type: AblationType = AblationType.RESAMPLE`, so
+the operator enters at **evaluation**.
+
+**The problem.** Under ACDC the seven-operator ablation axis does not change the
+prune-score ranking at all. It changes only how a circuit is scored afterwards.
+This is the same structural defect as D12, one level up.
+
+**What rescues it, and why D12 now matters more than it looked.** Because `tau`
+is metric-relative, the cut point on the ranking is chosen by evaluating the
+metric under a given `ablation_type`. So `(a, m, tau)` jointly select `C`, and
+the ablation axis stays live even under ACDC. **With absolute `tau`, under ACDC,
+both the ablation and metric axes would have been inert and the grid would have
+collapsed from 3,780 to 45 distinct circuits.** The D12 decision was load-bearing
+for far more than the metric axis.
+
+**The reportable finding hiding in here.** The field treats "choice of ablation"
+as one degree of freedom. It is not. Whether it acts on discovery or only on
+evaluation depends on which algorithm you run, and no paper says so. That is a
+contribution in its own right and it costs nothing extra to report.
+
+**Decision required.** Which discovery algorithm is primary. Options are set out
+for Ajay. Note that MIB (2504.13151, VERIFIED) reports attribution and mask
+optimisation methods performing best on circuit localisation, which is
+independent support for the mask-gradient family.

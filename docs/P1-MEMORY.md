@@ -50,6 +50,7 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-03 | **D12 closed: tau is metric-relative** | tau is the smallest circuit recovering (1 - tau) of metric m on the full model. Without this the evaluation metric never changes C and the metric axis would carry zero claim variance at four times the cost. Must be stated verbatim in the pre-registration; absolute tau is equally defensible. |
 | 2026-08-03 | **Annex III VERIFIED: credit is 5(b), Article 86's excluded point 2 is critical infrastructure** | The BFSI applied arm is fully inside Article 86 and all four regulatory links bind on it. Describe it as creditworthiness evaluation, never fraud detection, which 5(b) carves out. |
 | 2026-08-03 | **phi is two claim maps**: `phi_overseer` (Annex IV 2(e)/3 with Art 14(4)(c)) and `phi_affected` (Art 86(1)) | Two addressees, two legal standards, "correctly interpret" versus "clear and meaningful". phi is post-hoc deterministic code so six maps cost zero GPU time, and a divergence between the two flip rates is itself a finding. |
+| 2026-08-03 | **D14 closed: `mask_gradient` is the primary discovery algorithm**, ACDC a contrast | Only `mask_gradient` and `subnetwork_probing` accept `ablation_type`. ACDC hardcodes corrupt-batch resample, so under ACDC the ablation axis touches evaluation only. MIB independently reports attribution and mask-optimisation methods best on circuit localisation. |
 
 ## Open decisions blocking pre-registration
 
@@ -63,6 +64,9 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **D4** Functional-equivalence arm: the interchange protocol is still unread.
   Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
+- **D15** `mask_gradient` exposes `grad_function` (4) x `answer_function` (3),
+  twelve discovery objectives, distinct from the evaluation-metric axis. Whether
+  any enter the grid, or are fixed at a pre-registered default, is undecided.
 - **D10** Mostly closed. **Read: Annex III, Annex IV, Articles 13, 14, 86.**
   phi is unblocked and targets two addressees. **Article 11 still unread**, four
   attempts, one timeout. Article 11 governs the documentation obligation itself.
@@ -89,9 +93,13 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
   arguments. The nesting property (FINE refines MEDIUM refines COARSE) is
   unit-tested over randomised circuits for both maps, which is the structural
   answer to "you tuned phi". **79 tests total, all passing 2026-08-03.**
-- Not built: the sweep harness, the `CircuitFeatures` extractor (GPU-side), the
-  interchange-intervention arm, the specification curve, the variance
-  decomposition.
+- `src/p1/features.py` and `tests/test_features.py`: the auto-circuit to
+  `CircuitFeatures` seam. Handles the layer-convention trap, auto-circuit counts
+  each transformer block as **two** layers, with a regression test asserting a
+  final-block component lands in the "late" band. **Written against the source,
+  NOT yet executed against the library.**
+- Not built: the sweep harness, the smoke script, the interchange-intervention
+  arm, the specification curve, the variance decomposition.
 - **Pre-registration must freeze:** `DEFAULT_SIZE_BINS`, `DEFAULT_BAND_NAMES`,
   and the per-task input segment definitions used as `position_mass` keys. All
   three are currently PROVISIONAL.
