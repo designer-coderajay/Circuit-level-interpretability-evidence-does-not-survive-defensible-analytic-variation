@@ -1256,3 +1256,65 @@ are not. Say so in advance in the pre-registration, and keep the two levels
 rigorously separate in the manuscript.
 
 **D4 closed.** The last non-writing blocker before Gate 3 is cleared.
+
+---
+
+## 2026-08-04 — Pre-registration DRAFTED (not locked)
+
+`preregistration/PLAN.md` written, and `preregistration/DEVIATIONS.md` created
+empty. **The plan is not a pre-registration until it is committed, tagged, and
+the tag pushed to a public remote**, with hash and UTC timestamp in this log.
+
+**Ordering satisfied.** Pipeline built and unit-tested (156 tests). Validated on
+the Gate 2 smoke configuration, which is 32 prompts, is marked in
+`configs/smoke.yaml` as excluded from any confirmatory analysis, and produced a
+timing only: no claim, no flip rate, no overlap figure. **No pooled result from
+the confirmatory grid has been inspected by anyone.**
+
+**Contents.** Hypotheses P0, H2 primary, H3, H4, each with a decision quantity.
+One primary outcome, `F` for `phi_overseer` at MEDIUM, with the estimator written
+as a formula. The 26,460-specification grid from 2,205 rankings. Metric-relative
+`tau` stated verbatim with the absolute alternative acknowledged. Six claim maps
+with the nesting property. Bootstrap resampling specifications with B = 10,000.
+Random null multiverse for joint inference. Variance decomposition by axis. The
+exclusion rule, with discards written as manifests so the rate is computable from
+`results/` rather than remembered. **Both abstracts drafted**, per standing rule
+6. Kill criteria. What would falsify the claim.
+
+**One thing recorded deliberately in advance.** The plan states, before any
+result is seen, that H3 is expected to *fail* if tested at the circuit level,
+because 2606.06267 report observed Jaccard 4 to 27 times random and at P1's
+measured 32,491 edges a 500-edge circuit has `J_rand = 0.008`. H3 is stated about
+the claim. Writing that expectation down now is what stops it becoming a
+post-hoc rescue later.
+
+**Seven items marked [CONFIRM] and blocking the lock.** H2 and H4 numeric
+thresholds; the corruption, `tau`, and prompt-variant level sets, none of which
+are yet fixed; and `phi`'s size bins, band names, and per-task segment labels,
+all still PROVISIONAL in code. These are the last design decisions in the paper.
+
+**Also blocking:** the private GitHub remote does not exist yet, so there is
+nowhere to push a tag, and a pre-registration timestamp attested only by a local
+clock is not evidence.
+
+**Spotlight was the git lock culprit.** `lsof` showed `com.apple` PID 75678
+holding `.git/index.lock`, indexing the 139MB cloned repo under `.external/`.
+Fixed with `.external/.metadata_never_index`. Recorded because it will recur on
+any machine that clones a large upstream repo inside the working tree.
+
+**Housekeeping, 2026-08-04.** The cloned UKPLab repo under `.external/` caused
+repeated `.git/index.lock` collisions. `lsof` identified the holder as
+`com.apple` PID 75678, i.e. Spotlight indexing 139MB of newly appeared files
+inside the working tree. `.metadata_never_index` did not help once indexing had
+already begun.
+
+**Resolution: move the clone out of the repository tree entirely.** Everything
+P1 needs from it is already extracted and quoted verbatim in
+`docs/DESIGN-DELTAS.md` under D4: the `compute_interchange_metrics` procedure and
+its constants, the `agreement_rate` and `cohens_kappa` definitions, and the
+`j_rand = k / (2N - k)` calibration formula. The clone is no longer a dependency.
+
+**General rule, worth keeping.** Do not clone large upstream repositories inside
+a working tree that git and a desktop indexer both watch. Read them, extract what
+is needed into the log with provenance, and delete. A cloned repo is a transient
+research input, not a project artefact.
