@@ -1318,3 +1318,57 @@ its constants, the `agreement_rate` and `cohens_kappa` definitions, and the
 a working tree that git and a desktop indexer both watch. Read them, extract what
 is needed into the log with provenance, and delete. A cloned repo is a transient
 research input, not a project artefact.
+
+---
+
+## 2026-08-04 — D18 opened while grounding corruption levels. Blocks the lock.
+
+Started fixing the three unfixed axis level sets and found that the corruption
+axis is **degenerate for two of the seven ablation operators**. VERIFIED from
+`ablation_activations.py` and the `corrupt_dataset` property in `types.py`.
+
+**ZERO** produces `t.zeros_like(out)` and has its input forced to `batch.clean`.
+**TOKENWISE_MEAN_CLEAN** is `clean_dataset` only. Neither reads the corrupt
+distribution, so crossing them against three corruption levels yields three
+identical specifications.
+
+Computed exactly: **5,040 of 26,460 specifications are exact duplicates, 19% of
+the grid**, and **420 of 2,205 discoveries are wasted, 19% of the sweep budget**,
+about 65 minutes of CPU.
+
+**The bias on `F` is 2.16e-05, negligible.** The problem is methodological rather
+than numerical: a multiverse whose specifications are not distinct
+specifications misrepresents itself, and the specification curve would plot three
+identical points where one specification exists.
+
+Recommendation is to **nest corruption within ablation**, cross it only for the
+five corruption-dependent operators, and switch the variance decomposition from
+the closed-form EMS estimator to REML because the design is then unbalanced.
+Full statement and alternatives in `docs/DESIGN-DELTAS.md` D18.
+
+**A second finding alongside it.** `clean_corrupt` must be supplied for RESAMPLE,
+BATCH_TOKENWISE_MEAN and BATCH_ALL_TOK_MEAN; the assert makes it mandatory and
+there is no default at that layer, though `mask_gradient_prune_scores` defaults
+it to `"corrupt"`. **P1's specification space does not contain this axis.** It is
+an undocumented researcher degree of freedom affecting three of seven operators,
+and it is exactly the kind of choice the paper is about. Add it, or fix it at
+`"corrupt"` and record the choice. Do not leave it implicit.
+
+**Why this matters more than its size.** Both findings were invisible from the
+brief, from the paper, and from the API signatures. They surfaced only from
+reading how the ablation values are actually computed. The pattern across this
+whole session holds: every axis P1 assumed was simple turned out to have
+structure inside it, and each time the structure was a researcher degree of
+freedom nobody had written down. That is the paper's thesis reproducing itself
+in its own construction, and it belongs in the discussion.
+
+**Workflow, 2026-08-04.** The `.git/index.lock` collisions continued after the
+`.external/` clone was deleted, so the clone was not the only cause. The repo
+lives under `~/Desktop`, which Spotlight indexes, and is normally open in an
+editor with git integration; both take the index lock periodically. When one
+holds it as a git command starts, git aborts and **leaves the lock file behind**,
+so every subsequent commit fails until it is removed by hand.
+
+Added `scripts/commit.sh`, which checks for a real running git process, clears
+any stale lock, then stages and commits. Chasing the root cause further is not a
+good use of research time. Recorded so the next person does not rediscover it.

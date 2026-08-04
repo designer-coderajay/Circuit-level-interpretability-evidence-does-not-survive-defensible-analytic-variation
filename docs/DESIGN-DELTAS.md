@@ -547,3 +547,88 @@ accident of phrasing but the substance of the hypothesis: circuits can be
 statistically far from random while the *claims derived from them* are not.
 Keep the two levels rigorously distinct in the manuscript, and say in advance
 that structural separation from the null is expected.
+
+---
+
+## D18. The corruption axis is degenerate for two ablation operators
+
+**Status: OPEN and blocking the lock. Found 2026-08-04 while grounding the
+corruption levels.**
+
+**VERIFIED** from `auto_circuit/utils/ablation_activations.py` and
+`auto_circuit/types.py`.
+
+`batch_src_ablations` lines 160 to 165, verbatim:
+
+```python
+if ablation_type == AblationType.ZERO:
+    input_batch = batch.clean
+else:
+    input_batch = batch.clean if clean_corrupt == "clean" else batch.corrupt
+```
+
+`src_out_hook` for ZERO, verbatim: `out = t.zeros_like(out)`.
+
+The `corrupt_dataset` property, verbatim, is true only for
+`TOKENWISE_MEAN_CORRUPT` and `TOKENWISE_MEAN_CLEAN_AND_CORRUPT`.
+
+| Operator | Reads the corrupt distribution? |
+|---|---|
+| RESAMPLE | yes |
+| **ZERO** | **no** — zeros regardless, and the input is forced to `batch.clean` |
+| **TOKENWISE_MEAN_CLEAN** | **no** — `clean_dataset` only |
+| TOKENWISE_MEAN_CORRUPT | yes |
+| TOKENWISE_MEAN_CLEAN_AND_CORRUPT | yes |
+| BATCH_TOKENWISE_MEAN | depends on the `clean_corrupt` argument |
+| BATCH_ALL_TOK_MEAN | depends on the `clean_corrupt` argument |
+
+**Consequence.** Two of seven operators ignore the corruption axis entirely, so
+crossing them against three corruption levels produces three **identical**
+specifications. Computed exactly:
+
+    grid                        26,460 specifications
+    specs on ZERO/MEAN_CLEAN     7,560, of which distinct  2,520
+    EXACT DUPLICATES             5,040 = 19% of the grid
+
+    discovery cells              2,205
+    wasted discoveries             420 = 19% of the sweep budget, ~65 min CPU
+
+**The bias on `F` is negligible in magnitude**, 2.16e-05, because duplicates
+contribute only 7,560 guaranteed-agreeing pairs out of 350 million. **The
+problem is not numerical, it is methodological.** A multiverse containing 5,040
+specifications that are not distinct specifications misrepresents the grid. The
+specification curve would plot three identical points where one specification
+exists, and a reviewer who checks will call it padding.
+
+**Three ways out, none free.**
+
+- **(a) Nest corruption within ablation.** Cross corruption only for the five
+  corruption-dependent operators. Honest and cheapest, but the design becomes
+  **unbalanced**, which breaks the closed-form EMS variance-components estimator
+  the plan currently specifies. REML would be required instead.
+- **(b) Keep the full crossing, deduplicate before analysis**, and report the
+  duplicate rate. Preserves balance for the sweep but the analysis set is then
+  unbalanced anyway, so it buys little.
+- **(c) Keep it as-is and report the degeneracy** as a finding about the
+  instrument. Defensible only if stated loudly, and it still wastes 19% of the
+  budget.
+
+**Recommendation (INFERRED): (a).** The design should reflect what actually
+varies. State in the paper that two of the seven shipped operators are
+independent of the corruption distribution, which is itself a small reportable
+fact about the instrument, and use REML for the variance components.
+
+### A second, related finding: `clean_corrupt` is an undeclared degree of freedom
+
+`batch_src_ablations` asserts
+`(clean_corrupt is not None) == (ablation_type in batch_specific_ablation)`,
+where `batch_specific_ablation = [RESAMPLE, BATCH_TOKENWISE_MEAN,
+BATCH_ALL_TOK_MEAN]`. For those three operators the analyst **must** choose
+`"clean"` or `"corrupt"`; there is no default at that layer.
+`mask_gradient_prune_scores` defaults it to `"corrupt"`.
+
+**P1's specification space does not currently contain this axis.** It is a real,
+undocumented researcher degree of freedom of exactly the kind the paper is about,
+and it applies to three of the seven operators. Either add it, or fix it at
+`"corrupt"` and record the choice in the pre-registration. **Do not leave it
+implicit.**
