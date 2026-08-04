@@ -552,8 +552,35 @@ that structural separation from the null is expected.
 
 ## D18. The corruption axis is degenerate for two ablation operators
 
-**Status: OPEN and blocking the lock. Found 2026-08-04 while grounding the
-corruption levels.**
+**Status: RESOLVED 2026-08-05. Option (a) adopted by Ajay: nest corruption
+within ablation.** Grid drops from 2,205 discovery cells to 1,785 on this
+decision alone. Variance components move from the closed-form EMS estimator to
+REML, with EMS retained as a cross-check on the balanced five-operator block.
+The related `clean_corrupt` finding is resolved by fixing it at `"corrupt"`, the
+library default, and recording it in the pre-registration as a fixed choice with
+a named limitation. Found 2026-08-04 while grounding the corruption levels.
+
+**Still open, and now the blocking item: what the three corruption levels
+actually are.** Nesting settles the design; it does not source the levels. Each
+must cite a published implementation, which is the standard every other axis in
+this grid meets.
+
+### Withdrawn: mean-ablation dataset size as a replacement axis
+
+Proposed 2026-08-04 as a way to dissolve D18 by swapping the degenerate axis for
+one that 2407.08734 flags without crossing. **VERIFIED false as implementable,
+2026-08-05.** From `auto_circuit/prune_algos/mask_gradient.py`, the signature is
+`mask_gradient_prune_scores(model, dataloader, ...)` and the single `dataloader`
+is passed both to `batch_src_ablations`, which computes the ablation values, and
+to the `for batch in dataloader` gradient loop, which is the discovery data.
+There is one dataset, used twice. Varying the size of the set the mean is taken
+over necessarily varies the set discovery runs on, so the two are confounded by
+construction. Separating them requires modifying the instrument. Forbidden. The
+axis does not exist and must not reappear in a later draft.
+
+This is recorded rather than deleted because it is the second time in this
+project an attractive design move died on a source check, and the pattern is
+worth keeping visible.
 
 **VERIFIED** from `auto_circuit/utils/ablation_activations.py` and
 `auto_circuit/types.py`.

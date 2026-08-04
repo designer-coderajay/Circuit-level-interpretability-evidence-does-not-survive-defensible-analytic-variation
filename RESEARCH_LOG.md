@@ -1516,3 +1516,90 @@ COARSE / MEDIUM / FINE keys are unchanged, so the nesting property is untouched.
 Whether the role enters a granularity is a pre-registration decision for Ajay.
 
 **165 tests, all passing.**
+
+---
+
+## 2026-08-05. Backup closed; four pre-registration decisions taken; one design
+## move withdrawn on a source check
+
+### Backup
+
+`origin` now exists: `https://github.com/designer-coderajay/p1-circuit-multiverse`,
+private, `main` at `751573f`, 171 objects, 130 KiB. SSH was not configured on the
+machine (`Permission denied (publickey)`), so HTTPS with browser auth was used.
+
+Before pushing, `git gc --prune=now` removed 44 orphaned `tmp_obj_*` objects,
+228 KB, left behind by the Spotlight index-lock collisions logged on 08-04.
+`git fsck --no-progress` printed nothing afterwards. Branch renamed `master` to
+`main` in the same operation; the only reference to `master` in the repo is a
+historical line in this log, which is append-only and was not edited.
+
+The pre-registration checklist item "private remote exists and history is
+pushed" is now satisfied, which was a hard precondition for locking.
+
+### Four decisions, all by Ajay
+
+1. **Corruption is nested within ablation, not crossed.** D18 option (a).
+2. **`clean_corrupt` fixed at `"corrupt"`**, recorded in the plan as a fixed
+   choice and named in the limitations.
+3. **Prompt variant = ABBA, BABA.** Two levels, both verbatim in 2407.08734
+   section 4.
+4. **H2 rule: `F > 0.20` with the 95% bootstrap CI lower bound above 0.20.**
+
+Grid consequence, exact:
+
+    ablation x corruption cells   5 x 3 + 2 x 1 = 17
+    discovery cells               7 x 17 x 2 x 5 = 1,190
+    specifications                1,190 x 4 x 3 = 14,280
+
+Down from 2,205 and 26,460. Both fall to 54.0%.
+
+Statistical consequence: the design is unbalanced, so **REML replaces the
+closed-form EMS estimator** as the primary variance-components method. The five
+corruption-dependent operators form a balanced sub-block where EMS still runs, so
+it is retained there as an independent cross-check on the REML fit. This is a
+real cost of the nesting decision and is recorded as one rather than glossed.
+
+### Withdrawn: the mean-ablation dataset-size axis
+
+Proposed on 08-04 as a replacement for the degenerate corruption axis. Checked
+against source today and it does not survive.
+
+`mask_gradient_prune_scores(model, dataloader, ...)` takes a single
+`PromptDataLoader`. That same object is passed to `batch_src_ablations`, which
+computes the ablation values, and is also the iterable in the
+`for batch in dataloader` gradient loop, which is the discovery data. One
+dataset, two uses. Varying the size of the set the ablation mean is taken over
+necessarily varies the set discovery runs on. The two cannot be separated without
+modifying the instrument, which is forbidden.
+
+**This is the second time in this project a design move that read well died on a
+source check.** The first was the 12x reuse saving, which measured at 4.62x. The
+pattern is the same in both cases: an inference about the instrument's behaviour
+was treated as a property of the instrument. Recording it here rather than
+quietly deleting it, because the recurrence is the useful part.
+
+### A cost figure I should not have written
+
+Gate 2 measured EAP discovery at 9.301 s and marginal evaluation at 1.581 s per
+cut. It did **not** measure IEG. `mask_gradient_prune_scores` loops over
+`range(integrated_grad_samples + 1)`, each iteration a full pass over the
+dataloader with a backward pass, so IEG-50 does 51 passes where EAP does 1.
+
+The 57-hour confirmatory figure and the 814-hour IEG-1000 figure both rest on
+that unmeasured factor. **Both are withdrawn from the plan.** No total-hours
+number appears in `preregistration/PLAN.md` until the measurement exists.
+
+`configs/smoke-ieg.yaml` added. It is byte-identical to `configs/smoke.yaml`
+except that `mask_val: 0.0` is replaced by `integrated_grad_samples: 50`, so the
+two `discovery_s` values are directly comparable. `scripts/smoke.py` needed no
+change: it already reads both parameters with `.get`, which returns `None` for
+the absent one, satisfying the library's XOR assertion.
+
+### Still blocking the lock
+
+- The three corruption **levels** themselves. Nesting settled the design, not the
+  levels. Each needs a published implementation to cite.
+- H4 threshold, `tau` levels, and the `phi` constants (`DEFAULT_SIZE_BINS`,
+  `DEFAULT_BAND_NAMES`, segment labels), all still PROVISIONAL in code.
+- The IEG-50 measurement above.

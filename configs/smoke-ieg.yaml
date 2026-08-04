@@ -1,0 +1,53 @@
+# Gate 2 addendum. Measures the one cost Gate 2 did not.
+#
+# Gate 2 measured EAP discovery at 9.301 s and marginal evaluation at 1.581 s
+# per cut. It did not measure IEG. That gap matters more than it looks:
+# mask_gradient_prune_scores runs its outer loop over
+# `range(integrated_grad_samples + 1)`, and each iteration is a full pass over
+# the dataloader with a backward pass. IEG-50 therefore does 51 passes where EAP
+# does 1, so IEG-50 is one of seven discovery objectives but plausibly the
+# majority of the sweep budget.
+#
+# Every total-hours figure in preregistration/PLAN.md is withheld until this
+# config has been run. A sweep budget that rests on an unmeasured 51x factor is
+# an inference wearing a number's clothes.
+#
+# Identical to configs/smoke.yaml in every respect except the EAP/IEG switch, so
+# discovery_s from the two runs is directly comparable. Do not change n_prompts,
+# batch_size, order, or seed here without changing them there.
+#
+# Outputs must never enter the pre-registered grid.
+
+name: smoke-ieg
+purpose: measure IEG-50 discovery cost against the EAP baseline, nothing else
+
+model:
+  name: gpt2
+  device: auto
+
+task:
+  name: ioi
+  n_prompts: 32
+  batch_size: 8
+  order: ABBA
+
+specification:
+  algorithm: mask_gradient
+
+  ablation: RESAMPLE
+
+  grad_function: logit
+  answer_function: avg_diff
+
+  # The XOR. mask_gradient_prune_scores asserts
+  #   (mask_val is not None) ^ (integrated_grad_samples is not None)
+  # so mask_val must be ABSENT here, not set to null-with-a-value. This is the
+  # only line that differs from configs/smoke.yaml.
+  integrated_grad_samples: 50
+
+  test_edge_counts: [10, 50, 100, 200, 500]
+
+  seed: 0
+
+output:
+  dir: results/smoke-ieg
