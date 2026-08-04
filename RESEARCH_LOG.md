@@ -1100,3 +1100,43 @@ fits the 16 to 28 August window with room. **Gate 2 does not pass for a grid
 containing IEG-1000** and that level needs an explicit pre-registered decision.
 
 D3 is closed on the arithmetic and reopened as a scoping question about IEG.
+
+### D3 closed (Ajay, 2026-08-04): IEG scoping fixed
+
+The discovery-objective axis adopts auto-circuit's eight named algorithms (D15),
+which makes IEG-1000 the single most expensive object in the design. Resolved as:
+
+| Arm | Levels | Design | Discoveries | CPU |
+|---|---|---|---|---|
+| Confirmatory | 6 EAP + IEG-50 | fully crossed | 7x315 = 2,205 | ~57 h |
+| IEG-1000 | 1 | **seed-only slice**: one ablation, one corruption, one prompt variant, five seeds | 5 | ~13 h |
+
+Total ~70 h CPU, comfortably inside the 16 to 28 August window even with no GPU,
+and far less on one.
+
+**Why a seed-only slice rather than exclusion.** IEG-50 versus IEG-1000 differs
+only in integrated-gradient sample count, so it is a precision choice rather than
+a conceptual one. But it is still a researcher degree of freedom, and a reviewer
+can reasonably ask whether 50 samples suffices. The seed-only slice answers that
+question with evidence at 1.5% of the full cost. **The reduction rule is fixed
+now, before any pooled result is seen, so it is a design decision and not a
+deviation.** Record it verbatim in the pre-registration.
+
+**Grid arithmetic, computed from the measured 9.301 s and 1.581 s:**
+
+    per discovery-objective level   315 discoveries, 3,780 specifications
+    confirmatory (7 levels)         26,460 specs   45.6 h disc + 11.6 h eval
+    IEG-1000 seed-only slice         5 discoveries ~12.9 h
+    TOTAL                                          ~70 h CPU
+
+**Unmeasured and load-bearing: the CPU to GPU speedup.** Every GPU figure quoted
+so far assumes 20x, which is a guess. **Measure it with one smoke run on the
+rented box before committing to the sweep window.** At 5x the confirmatory arm is
+11 h rather than 3 h, which is still fine; the assumption only became dangerous
+for the full-IEG option, which is no longer being taken.
+
+### Gate 2 verdict, final
+
+**PASSED.** Feasibility is now measured rather than asserted, the grid is scoped,
+and the reuse architecture is confirmed with a corrected 4.62x saving. D3 is
+closed on both arithmetic and scope.

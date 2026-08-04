@@ -53,16 +53,15 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-03 | **D14 closed: `mask_gradient` is the primary discovery algorithm**, ACDC a contrast | Only `mask_gradient` and `subnetwork_probing` accept `ablation_type`. ACDC hardcodes corrupt-batch resample, so under ACDC the ablation axis touches evaluation only. MIB independently reports attribution and mask-optimisation methods best on circuit localisation. |
 | 2026-08-04 | **GATE 2 PASSED.** discovery 9.301s, evaluation-per-cut 1.581s, ratio 5.88 (CPU, gpt2, 32 prompts) | Reuse architecture confirmed. Full EAP grid is **2.47 h CPU** versus 11.43 h naive, a **4.62x** saving. The 12x inferred on 08-03 was wrong: evaluation is 67% of cost, not near-free. |
 | 2026-08-04 | **D15 resolved: discovery-objective axis = auto-circuit's eight named PruneAlgo constants**, not a synthetic 4x3 grid | They are named, shipped and used by the instrument's authors, so "cite a published implementation per level" holds by construction. Also catches EAP vs IEG, which is the mask_val/IG XOR and not a grad_function value. |
+| 2026-08-04 | **D3 closed: confirmatory grid = 6 EAP + IEG-50 fully crossed (26,460 specs); IEG-1000 as a pre-registered seed-only slice** | ~70 h CPU total. IEG-1000 fully crossed would be 814 h. The slice answers "is 50 IG samples enough" at 1.5% of the cost, and the reduction rule is fixed before any pooled result is seen. |
 
 ## Open decisions blocking pre-registration
 
 See `docs/DESIGN-DELTAS.md` for the full statement of each.
 
-- **D3 CLOSED on arithmetic, REOPENED on scope.** Grid is 3,780 (edge-level),
-  measured at **2.47 h CPU** for the EAP-only grid via 315 discoveries plus
-  3,780 cheap cuts. **But IEG-1000 alone would cost ~814 h CPU across 315
-  cells.** Whether IEG enters the grid, enters as a pre-registered reduced arm,
-  or is excluded with justification, is undecided and must settle before Gate 3.
+- **D17** The CPU to GPU speedup is **unmeasured**. Every GPU figure quoted so
+  far assumes 20x, which is a guess. Run one smoke config on the rented box
+  before committing to the sweep window.
 - **D4** Functional-equivalence arm: the interchange protocol is still unread.
   Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
