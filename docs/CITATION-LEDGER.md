@@ -73,13 +73,29 @@ not the other two, the answer is that they are properties of a single circuit
 against a ground truth, whereas P1 measures agreement *between* circuits. Worth
 one sentence.
 
-### Still name-only after this pass
+## The last four name-only references, resolved 2026-08-04
 
-`Nanda et al.` attribution patching, `Steegen et al.` multiverse analysis,
-`Simmons et al.` researcher degrees of freedom, `Simonsohn et al.` specification
-curve analysis. **None may be cited until resolved to identifiers and fetched.**
-The last three are the method provenance for the entire design, so they are not
-optional.
+| Was | Now | State | Notes |
+|---|---|---|---|
+| "Nanda et al., attribution patching" | **arXiv:2310.10348**, *Attribution Patching Outperforms Automated Circuit Discovery*, **Aaquib Syed, Can Rager, Arthur Conmy**. NeurIPS 2023 ATTRIB Workshop. Submitted 16 Oct 2023, v2 20 Nov 2023 | **VERIFIED**, abs page fetched | **The brief's attribution was wrong.** The citable paper is Syed, Rager and Conmy, not Nanda. Nanda's attribution patching is a blog post, citable as such but not a peer-reviewed paper. **Correct this before writing.** This also resolves the bare `2310.10348` URL found in auto-circuit's source. Abstract, verbatim: the method requires "just two forward passes and a backward pass", which is the reason P1's measured EAP discovery is 9.3 s. |
+| "Steegen et al., multiverse analysis" | Steegen, S., Tuerlinckx, F., Gelman, A., and Vanpaemel, W. (2016). *Increasing Transparency Through a Multiverse Analysis*. **Perspectives on Psychological Science, 11(5), 702-712.** DOI **10.1177/1745691616658637** | **RECALLED-plus**: title, authors, venue, volume, pages and DOI all agree across a Sage journal page, Semantic Scholar and Gelman's own posted copy, but the DOI has **not been resolved directly**. Resolve `doi.org/10.1177/1745691616658637` before the bibliography is final. | Method provenance for the whole multiverse design. |
+| "Simmons et al., researcher degrees of freedom" | Simmons, J. P., Nelson, L. D., and Simonsohn, U. (2011). *False-Positive Psychology: Undisclosed Flexibility in Data Collection and Analysis Allows Presenting Anything as Significant*. **Psychological Science, 22(11), 1359-1366.** DOI **10.1177/0956797611417632**, PMID 22006061 | **RECALLED-plus**, same caveat | The origin of "researcher degrees of freedom". |
+| "Simonsohn et al., specification curve analysis" | Simonsohn, U., Simmons, J. P., and Nelson, L. D. (2020). *Specification Curve Analysis*. **Nature Human Behaviour, 4(11), 1208-1214.** DOI **10.1038/s41562-020-0912-z** | **RECALLED-plus**, same caveat. **A Publisher Correction exists**, DOI 10.1038/s41562-020-00974-w. Check whether it affects anything P1 relies on. | Figure 1 and the joint-inference procedure. |
+
+**Author-order note.** The same three people appear in both 2011 and 2020 in
+different orders: Simmons, Nelson and Simonsohn in 2011; Simonsohn, Simmons and
+Nelson in 2020. Getting this backwards is a small error that signals the
+bibliography was not checked. It is right above.
+
+**`RECALLED-plus` is a new state and it is deliberately not `VERIFIED`.** These
+are journal articles, not arXiv preprints, and the fields above come from search
+results and publisher landing pages rather than from resolving the DOI. The
+agreement across independent sources is strong, but the standing rule says
+verified means fetched. **Resolve all three DOIs before the bibliography is
+final.**
+
+**All six name-only references from the brief are now resolved to identifiers.**
+None is yet at full `VERIFIED` except 2310.10348, 2211.00593 and 2304.14997.
 
 
 ## Still name-only, must be resolved to identifiers before citing

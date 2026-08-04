@@ -1417,3 +1417,50 @@ whereas P1 measures agreement *between* circuits. One sentence in the paper.
 Steegen (multiverse), Simmons (researcher degrees of freedom), Simonsohn
 (specification curve). The last three are the method provenance for the entire
 design, so they are not optional.
+
+---
+
+## 2026-08-04 — All six name-only references resolved. One attribution corrected.
+
+**Nanda attribution patching = arXiv:2310.10348**, *Attribution Patching
+Outperforms Automated Circuit Discovery*, **Syed, Rager and Conmy**, NeurIPS 2023
+ATTRIB Workshop. Abs page fetched, VERIFIED.
+
+**The brief's attribution was wrong.** The citable paper is Syed, Rager and
+Conmy. Neel Nanda's attribution patching is a blog post, citable as a blog post
+but not as a peer-reviewed paper. Correct this before writing; attributing a
+paper to the wrong authors is the kind of error a reviewer treats as evidence the
+bibliography was not checked.
+
+This also identifies the bare `2310.10348` URL found earlier in auto-circuit's
+source, which had no citation text attached. Both loose ends were the same paper.
+
+Its abstract, verbatim, explains P1's own cost profile: the method requires
+"just two forward passes and a backward pass". That is why measured EAP discovery
+is 9.3 seconds where their ACDC run is roughly 6 GPU-hours per circuit.
+
+**The three methods papers, all located:**
+
+- Steegen, Tuerlinckx, Gelman and Vanpaemel (2016), *Increasing Transparency
+  Through a Multiverse Analysis*, Perspectives on Psychological Science 11(5)
+  702-712, DOI 10.1177/1745691616658637.
+- Simmons, Nelson and Simonsohn (2011), *False-Positive Psychology*,
+  Psychological Science 22(11) 1359-1366, DOI 10.1177/0956797611417632.
+- Simonsohn, Simmons and Nelson (2020), *Specification Curve Analysis*, Nature
+  Human Behaviour 4(11) 1208-1214, DOI 10.1038/s41562-020-0912-z. **A Publisher
+  Correction exists at 10.1038/s41562-020-00974-w**; check whether it touches
+  anything P1 relies on.
+
+**Marked `RECALLED-plus`, deliberately not `VERIFIED`.** These are journal
+articles and the fields come from publisher landing pages and search results, not
+from resolving the DOIs directly. Agreement across independent sources is strong,
+but the standing rule says verified means fetched. **Resolve all three DOIs before
+the bibliography is final.**
+
+**Author-order trap recorded.** The same three authors appear in both 2011 and
+2020 in different orders: Simmons, Nelson, Simonsohn in 2011; Simonsohn, Simmons,
+Nelson in 2020.
+
+**All six name-only references from the brief are now resolved to identifiers.**
+The bibliography has stopped being a blocker, though three DOI resolutions and
+several author-list fetches remain before submission.
