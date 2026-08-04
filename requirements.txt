@@ -6,9 +6,16 @@
 # auto-circuit 1.0.1 is the library released with arXiv:2407.08734 (COLM 2024).
 auto-circuit==1.0.1
 
-# auto-circuit pulls these; pinned here so the environment hash is stable
-torch>=2.1.1
-transformer-lens>=1.13.0
+# auto-circuit pulls these. HARD PINS, not floors. auto-circuit declares
+# `transformer-lens>=1.13.0` with no upper bound, and transformer-lens 3.0.0
+# REMOVED `transformer_lens.past_key_value_caching`, which auto-circuit 1.0.1
+# imports at data.py line 14. pip therefore resolves a combination that fails on
+# import. VERIFIED 2026-08-03 by inspecting wheels: the module is present through
+# 2.18.0 and absent from 3.0.0.
+#
+# P1 must pin harder than the instrument does. Do not relax these to ranges.
+torch>=2.6                    # required by transformer-lens 2.18.0 on py>=3.9
+transformer-lens==2.18.0      # LAST version compatible with auto-circuit 1.0.1
 einops>=0.6.1
 
 # --- analysis (no GPU needed, runs anywhere) ---

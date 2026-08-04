@@ -772,3 +772,331 @@ combinations in total. These are discovery objectives, distinct from the
 evaluation metric axis already in the grid. Whether any of them enter the
 confirmatory grid, are fixed at a pre-registered default, or form a separate
 robustness arm is **not yet decided** and must be settled before Gate 3.
+
+---
+
+## 2026-08-03 (Phase 2 cont.) — Manifest, prompt generator, smoke runner
+
+**Built.** `src/p1/manifest.py`, `src/p1/prompts.py`, `scripts/smoke.py`,
+rewritten `configs/smoke.yaml`, and their tests. **147 tests total, all
+passing**: 35 multiverse, 24 spec, 20 claim map, 24 features, 22 manifest,
+22 prompts.
+
+### Three findings from the auto-circuit source, all VERIFIED
+
+**1. The wheel ships no datasets.** `find . -name "*.json"` over the installed
+package returns zero files. `Task._dataset_name` resolves through
+`repo_path_to_abs_path`, which computes
+`Path(__file__).parent.parent.parent / "datasets/..."`; on a pip install that
+points inside `site-packages`, where no `datasets/` exists. **The bundled
+`IOI_COMPONENT_CIRCUIT_TASK` and friends cannot load without cloning the GitHub
+repo.**
+
+Not a blocker, and arguably a clarification. Prompt variant is a **grid
+dimension**, so P1 must control and seed-reproduce its own prompt sets whatever
+happens. `src/p1/prompts.py` generates them and writes auto-circuit's own JSON
+schema, so the instrument is still consumed verbatim through its documented
+public entry point `load_datasets_from_json`.
+
+**2. A documentation discrepancy in `load_datasets_from_json`.** The docstring
+prose says the file holds dictionaries with keys `"clean_prompt"` and
+`"corrupt_prompt"`. The JSON schema block in the same docstring says `"clean"`
+and `"corrupt"`, nested under a top-level `"prompts"` list. The schema block is
+what the loader parses. A test pins the correct form so this cannot be
+reintroduced.
+
+The schema also has `seq_labels`, which is the natural source of the segment
+labels `phi_affected` reads. Generating both in one place stops them drifting.
+
+**3. `PatchType` may make the D2 extension layer unnecessary.** Verbatim from
+`types.py`: `EDGE_PATCH` "Patch the edges in the circuit", `TREE_PATCH` "Patch
+the edges <u>not</u> in the circuit". So TREE_PATCH keeps the circuit and ablates
+everything else, which is **sufficiency**; EDGE_PATCH destroys the circuit, which
+is **comprehensiveness**. If that mapping holds under test, the ERASER metrics
+come from the instrument verbatim rather than from an additive extension, which
+is strictly better for the verbatim-instrument claim. **INFERRED from the
+docstrings, not yet verified by running.** Revisit D2 once measured.
+
+### Gate 2 is now a script
+
+`scripts/smoke.py` produces two numbers and deliberately nothing else:
+`discovery_s`, the cost of one prune-score ranking, and
+`evaluation_per_cut_s`, the marginal cost of evaluating that ranking at one more
+`(m, tau)` cut. **Report them separately, never their sum.** The ratio is what
+decides whether the sweep needs one ranking per
+`(ablation, corruption, prompt, seed)` cell, roughly 315 discoveries, or 3,780
+independent ones.
+
+It writes a `Manifest` whether or not the run succeeds, because a failed run is a
+fact about the environment and losing it is worse than recording it. Imports of
+torch and auto-circuit are late so `--help` works on a machine without them,
+which was verified in the sandbox.
+
+**Two traps handled explicitly in the runner.** `ru_maxrss` is kilobytes on Linux
+and **bytes** on macOS, so an unguarded read reports a 1000x error in the memory
+figure on Ajay's machine. And TREE_PATCH versus EDGE_PATCH being the wrong way
+round would silently invert every faithfulness number rather than raising.
+
+**Status of `scripts/smoke.py` and `src/p1/features.py`: written against source
+read from the wheel, NOT YET EXECUTED.** Torch could not be installed in the
+sandbox; the 155MB aarch64 CPU wheel stalled mid-download. Treat the first run as
+a debugging session and only trust the second.
+
+### Provenance note on the prompt templates
+
+The templates in `src/p1/prompts.py` are **P1's own**, written to the structure
+described in 2407.08734 section 4: fifteen templates involving two people, the
+token to predict being the indirect object, ABBA or BABA order, ABC corrupt
+distribution. They are **not** transcribed from Wang et al. and must not be
+presented as such. If exact replication of the published IOI set is wanted, take
+the templates from that work's own release and record it in the ledger.
+
+---
+
+## 2026-08-04 — Gate 2 attempt 1: FAILED on a dependency break. Diagnosed.
+
+**Ran** `scripts/smoke.py` on Ajay's Mac. `status: failed`, `import_s 54.388`,
+`peak_rss_mb 309.2`. The manifest captured the failure with the full environment,
+which is what it was built for.
+
+**Environment as recorded:** macOS-26.5.2, arm64, Python 3.11.9, torch 2.13.0,
+transformer-lens **3.6.0**, auto-circuit 1.0.1.
+
+**Root cause, from the captured traceback:**
+
+    File ".../auto_circuit/data.py", line 14, in <module>
+      from transformer_lens.past_key_value_caching import HookedTransformerKeyValueCache
+    ModuleNotFoundError: No module named 'transformer_lens.past_key_value_caching'
+
+**auto-circuit 1.0.1 declares `transformer-lens>=1.13.0` with no upper bound.**
+transformer-lens 3.x removed that module. pip resolved 3.6.0 and the instrument
+cannot import.
+
+**Boundary established by inspecting wheels, VERIFIED 2026-08-04:**
+
+| transformer-lens | `past_key_value_caching` present |
+|---|---|
+| 1.17.0, 2.11.0, 2.15.4, 2.17.0, **2.18.0** | yes |
+| **3.0.0**, 3.6.0 | **no** |
+
+So **2.18.0 is the last compatible version**. `requirements.txt` now hard-pins
+it, with the reasoning inline so nobody relaxes it back to a range.
+
+TL 2.18.0 on Python >= 3.9 requires `torch>=2.6` (satisfied, 2.13.0) and
+`transformers>=4.57`. The installed transformers is **5.14.0**, which satisfies
+the floor but is a major version ahead of what TL 2.18.0 was released against.
+**Residual risk, not yet tested.** If TL 2.18.0 fails against transformers 5.x,
+transformers must be pinned too.
+
+**What this vindicates.** The same unbounded-range problem was flagged on
+2026-08-03 when pip resolved `pandas>=2.0` to pandas 3.0.5. It has now caused a
+real failure. Every dependency that can change a number or an import path gets a
+hard pin, and the lock file is the record.
+
+**What worked.** The manifest wrote on failure, recorded the exact environment,
+and preserved the traceback. Diagnosis took one file read rather than a
+re-run. That design decision paid for itself on the first failure.
+
+**Still unmeasured: `discovery_s` and `evaluation_per_cut_s`.** Gate 2 remains
+open. The run got as far as importing and no further.
+
+---
+
+## 2026-08-04 — Gate 2 attempt 2: dependency fixed, failed later. Two findings.
+
+`transformer-lens==2.18.0` resolved the import break. The run reached much
+further before failing.
+
+**Timings from attempt 2:** `import_s 15.254` (cached, down from 54.4),
+`model_load_s 3.743`, `data_build_s 0.026`, `patchable_model_s 0.0`,
+`peak_rss_mb 1084.8`. **GPT-2 loaded, P1's generated prompts were accepted by
+`load_datasets_from_json`, and the dataset built in 26ms.** The prompt generator
+and the schema conformance tests were correct.
+
+**Failure, from the captured traceback:**
+
+    File ".../auto_circuit/utils/graph_utils.py", line 163, in graph_edges
+      assert separate_qkv is not None, "separate_qkv must be specified for LLM"
+
+**Finding 1, the trivial one.** `patchable_model` requires `separate_qkv` for any
+`HookedTransformer`; it has no usable default. Set to `True`, which pairs with
+`use_split_qkv_input=True`; `transformer_lens_utils.py` line 76 asserts exactly
+that pairing.
+
+**Finding 2, the one that matters.** auto-circuit exports its own model
+preparation, `load_tl_model` in `auto_circuit/experiment_utils.py`. Verbatim, it
+does:
+
+    from_pretrained(name, device=device, fold_ln=True,
+                    center_writing_weights=True, center_unembed=True)
+    cfg.use_attn_result = True
+    cfg.use_attn_in = True
+    cfg.use_split_qkv_input = True
+    cfg.use_hook_mlp_in = True
+    model.eval()
+    for param in model.parameters(): param.requires_grad = False
+
+`tasks.py` lines 173 to 176 do the same. **The smoke script had been hand-rolling
+this and was missing `fold_ln`, `center_writing_weights`, `center_unembed`,
+`use_attn_in`, `eval()`, and `requires_grad=False`.**
+
+The first three are not cosmetic. They rewrite the weights into an equivalent
+but numerically different parameterisation. A hand-rolled preparation missing
+them produces a different model and therefore **different circuits**, and nothing
+raises. That is the exact failure mode the "reproduce the instrument verbatim"
+rule exists to prevent, and it nearly entered through the door marked model
+loading rather than the one marked algorithm.
+
+**Rule sharpened, applies to the whole sweep harness: reproducing the instrument
+verbatim includes reproducing how it prepares its input.** Call `load_tl_model`,
+never a copy of it.
+
+**Environment note.** Pinning transformer-lens 2.18.0 pulled numpy down to
+1.26.4 and pandas to 2.0.3, and pip warned that jax and jaxlib want numpy>=2.0.
+jax arrives via `tracr-pypi`, an auto-circuit dependency used only for its tracr
+models, which P1 does not use. Harmless for now; record it so the warning is not
+rediscovered. The sweep environment and the analysis environment now genuinely
+differ in numpy major version, which is precisely why two requirement files
+exist.
+
+**Gate 2 still open.** `discovery_s` and `evaluation_per_cut_s` remain
+unmeasured. Attempt 3 pending.
+
+---
+
+## 2026-08-04 — Gate 2 attempt 3: patchable_model works. D15 resolved.
+
+`separate_qkv=True` and `load_tl_model` fixed the previous failure.
+**`patchable_model` succeeded in 0.066s.** Timings: `import_s 6.324` (warm),
+`model_load_s 3.483`, `data_build_s 0.017`, `patchable_model_s 0.066`,
+`peak_rss_mb 1063.4`. Device correctly detected as cpu, and the manifest carried
+the standing warning that a CPU figure is an upper bound.
+
+**New failure, from the captured traceback:**
+
+    File ".../auto_circuit/prune_algos/mask_gradient.py", line 62
+      assert (mask_val is not None) ^ (integrated_grad_samples is not None)
+    AssertionError
+
+Exactly one of `mask_val` and `integrated_grad_samples` must be set. Passing
+neither raises a bare AssertionError with no message. Both now flow from the
+config, and `configs/smoke.yaml` sets `mask_val: 0.0`.
+
+**D15 resolved, and much better than the open question implied.** auto-circuit
+ships **eight named `PruneAlgo` constants** built on `mask_gradient_prune_scores`.
+Full table in `docs/DESIGN-DELTAS.md`. The smoke config now reproduces
+`LOGIT_DIFF_GRAD_PRUNE_ALGO`, short name **"EAP"**, exactly:
+`grad_function=logit`, `answer_function=avg_diff`, `mask_val=0.0`.
+
+**The discovery-objective axis should be those eight, not a synthetic 4 x 3
+crossing.** They are named, shipped, and used by the instrument's authors, so the
+"cite a published implementation for each level" criterion holds by construction,
+whereas a synthetic crossing would include combinations nobody has run. It is the
+same principle that forced `load_tl_model` over a hand-rolled copy, now applied
+to the discovery axis.
+
+It also catches a degree of freedom a synthetic grid would miss entirely. EAP
+versus IEG is not a `grad_function` value; it is the mask_val / IG XOR. And IEG
+appears at **50 and 1000 samples**, the same algorithm at two costs.
+arXiv:2510.00845, the second-closest prior work, is a variance analysis of
+EAP-IG, so this axis is already live in the literature.
+
+**Cost warning for Gate 2.** IEG at 1000 samples is roughly 1000
+forward/backward passes against 1 for EAP. If all eight levels enter the grid the
+two IEG levels will dominate the budget. Measure EAP and IEG separately before
+the pre-registration fixes the level set.
+
+**Pattern across three attempts.** Every failure so far has been a missing
+required argument that auto-circuit asserts on rather than defaults, and each
+assertion has pointed at a real design decision P1 had left implicit:
+`separate_qkv` at the edge/node question, model preparation at the verbatim rule,
+and now the mask_val XOR at the EAP/IEG axis. The instrument is forcing the
+specification space to be stated explicitly, which is what the paper is about.
+
+**Gate 2 still open.** `discovery_s` and `evaluation_per_cut_s` unmeasured.
+Attempt 4 pending.
+
+---
+
+## 2026-08-04 — GATE 2 PASSED. First measured numbers. One inference corrected.
+
+`scripts/smoke.py` completed with `status: ok` on attempt 4. The feasibility
+claim is no longer an assertion.
+
+### Measured, CPU, gpt2, 32 prompts, 32,491 edges
+
+| Quantity | Value |
+|---|---|
+| `discovery_s`, one prune-score ranking (EAP) | **9.301** |
+| `evaluation_per_cut_s`, one extra `(m, tau)` cut | **1.581** |
+| `evaluation_s`, 5 cuts | 7.907 |
+| `discovery_to_eval_ratio` | **5.88** |
+| `peak_rss_mb` | 2,433.8 |
+| `import_s` warm / `model_load_s` / `patchable_model_s` | 6.47 / 3.462 / 0.069 |
+
+Environment hash `555feab0909e71c0`, commit recorded in the manifest. macOS,
+arm64, Python 3.11.9, torch 2.13.0, transformer-lens 2.18.0, auto-circuit 1.0.1.
+
+### The reuse architecture is confirmed, and the saving is 4.62x, not 12x
+
+Discovery costs 5.88 evaluation cuts, so reusing one ranking across the
+`(metric, tau)` cuts is clearly worth doing. But **the 12x figure inferred on
+2026-08-03 was wrong** and is corrected here.
+
+    grid                       3,780 specifications
+    discovery cells            315   (ablation x corruption x prompt x seed)
+    (metric x tau) cuts reused 12    per ranking
+
+    REUSE  315 x 9.301 + 3,780 x 1.581 =  8,906 s =  2.47 h
+    NAIVE  3,780 x (9.301 + 1.581)     = 41,134 s = 11.43 h
+    SAVING 4.62x
+
+**The earlier inference implicitly treated evaluation as near-free. It is not.**
+At 12 cuts per ranking, evaluation is **67% of total cost** and discovery only
+33%. The bottleneck is the opposite of what was assumed. Any future optimisation
+effort belongs on `run_circuits`, not on discovery.
+
+Recorded as a correction rather than an edit: the 2026-08-03 entry stands as
+written and this supersedes it.
+
+### The real budget risk is IEG, not the grid size
+
+If the discovery-objective axis adopts auto-circuit's eight named algorithms
+(D15), two of them are integrated gradients:
+
+| Level | One discovery | All 315 cells |
+|---|---|---|
+| EAP (`mask_val=0.0`) | 9.3 s | 0.8 h |
+| IEG-50 | ~7.8 min | ~41 h |
+| IEG-1000 | ~2.6 h | **~814 h** |
+
+IEG-1000 is roughly 1,000 forward/backward passes against 1 for EAP. **On CPU it
+is not merely expensive, it is infeasible: 814 hours is 34 days for a single
+axis level.** Even a 20x GPU speedup leaves ~40 hours for that level alone.
+
+**This is a pre-registration decision, not an optimisation.** Either IEG enters
+as a reduced arm on a subset of cells, with the reduction rule pre-registered, or
+it is excluded and the exclusion is stated and justified. Do not discover this
+mid-sweep.
+
+### Caveats on the numbers, stated so they are not over-read
+
+1. **CPU, not GPU.** auto-circuit has no MPS support, so this is an upper bound.
+   The GPU figure is unmeasured and the ratio, not the absolute time, is the
+   transferable quantity.
+2. **32 prompts only**, 16 train and 16 test. Cost scales roughly with prompt
+   count for both stages. A realistic sweep at 256 prompts is plausibly 8x these
+   numbers, so ~20 h CPU for the EAP-only grid.
+3. **One `(grad, answer)` configuration.** Only EAP was timed. IEG is projected
+   by multiplying sample count, which is an estimate and not a measurement.
+4. **peak RSS 2.4 GB** at 32 prompts with 32,491 edges. Memory scales with
+   prompts and edges, so the 24GB GPU headroom needs its own check before the
+   real prompt count is fixed.
+
+### Verdict
+
+**Gate 2 passes for the EAP-only grid.** 2.47 h CPU, and materially less on GPU,
+fits the 16 to 28 August window with room. **Gate 2 does not pass for a grid
+containing IEG-1000** and that level needs an explicit pre-registered decision.
+
+D3 is closed on the arithmetic and reopened as a scoping question about IEG.

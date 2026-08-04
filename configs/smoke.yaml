@@ -1,34 +1,56 @@
-# Smoke config. Purpose is timing, not science.
+# Gate 2 smoke config. Purpose is measurement, not science.
 #
-# The brief asserts that 2,160 runs are feasible on a single 24GB GPU in the
-# 10 to 24 August window. Nothing supports that claim. This config exists to
-# replace the assertion with a measured per-run cost, which is the first number
-# the harness must produce. Until it exists, the schedule is unfounded.
+# The brief claims the sweep fits on one 24GB GPU in the 10 to 24 August window.
+# Nothing supports that. This config exists to produce two numbers:
+#   discovery_s          cost of ONE prune-score ranking
+#   evaluation_per_cut_s cost of evaluating that ranking at one more (m, tau) cut
 #
-# Deliberately tiny. Not part of any confirmatory analysis, and its outputs must
-# never enter the pre-registered grid.
+# Metric-relative tau means the sweep needs one ranking per
+# (ablation, corruption, prompt, seed) cell, with the metric and threshold axes
+# applied afterwards on the same ranking. If that holds, the sweep is roughly 12x
+# cheaper than 3,780 independent discoveries. It is currently an INFERENCE from
+# the auto-circuit API and this config is what tests it.
+#
+# Deliberately tiny. Outputs must never enter the pre-registered grid.
 
 name: smoke
-purpose: measure per-run wall clock and peak memory, nothing else
+purpose: measure discovery cost and marginal evaluation cost, nothing else
 
 model:
-  name: gpt2                 # 124M anchor. See docs/P1-MEMORY.md for why small.
-  device: auto               # cuda | mps | cpu | auto
+  name: gpt2                 # 124M anchor. Small is correct here and justified.
+  device: auto               # cuda | cpu | auto. No mps: auto-circuit has none.
 
 task:
   name: ioi
-  n_prompts: 16              # small on purpose
+  n_prompts: 32              # split half train, half test
+  batch_size: 8
+  order: ABBA
 
-# Single point in the space. The real grid is defined only after D1 and D2 in
-# docs/DESIGN-DELTAS.md are resolved, and only inside the pre-registration.
 specification:
-  ablation: RESAMPLE         # verbatim auto_circuit.types.AblationType member
-  corruption: abc            # placeholder, pending D1
-  metric: logit_diff         # maps to auto-circuit LOGIT_DIFF_METRIC
-  threshold: 0.05
-  prompt_variant: base
+  # mask_gradient is primary. It is one of only two algorithms that accept
+  # ablation_type, so the ablation axis acts on discovery rather than only on
+  # evaluation. See DESIGN-DELTAS D14.
+  algorithm: mask_gradient
+
+  # Verbatim member of auto_circuit.types.AblationType. One of seven.
+  ablation: RESAMPLE
+
+  # These three together reproduce auto-circuit's own LOGIT_DIFF_GRAD_PRUNE_ALGO,
+  # short name "EAP", the canonical edge attribution patching configuration.
+  # mask_gradient_prune_scores asserts (mask_val is None) XOR
+  # (integrated_grad_samples is None), so exactly one must be set. mask_val=0.0
+  # is gradient at the clean point (EAP); integrated_grad_samples instead gives
+  # integrated gradients (IEG). See DESIGN-DELTAS D15.
+  grad_function: logit       # logit | prob | logprob | logit_exp
+  answer_function: avg_diff  # avg_diff | avg_val | mse
+  mask_val: 0.0              # EAP. Set integrated_grad_samples instead for IEG.
+
+  # Cut points on the ranking. In the real sweep these are chosen by the
+  # metric-relative tau rule; here they are fixed so the marginal cost of one
+  # extra cut can be measured.
+  test_edge_counts: [10, 50, 100, 200, 500]
+
   seed: 0
 
 output:
   dir: results/smoke
-  write_manifest: true       # config hash, seed, env hash, wall clock, peak mem

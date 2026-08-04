@@ -375,3 +375,50 @@ contribution in its own right and it costs nothing extra to report.
 for Ajay. Note that MIB (2504.13151, VERIFIED) reports attribution and mask
 optimisation methods performing best on circuit localisation, which is
 independent support for the mask-gradient family.
+
+---
+
+## D15 resolved. Use auto-circuit's eight named algorithms, not a synthetic grid
+
+**VERIFIED 2026-08-04** by parsing `auto_circuit/prune_algos/prune_algos.py`.
+auto-circuit ships **eight named `PruneAlgo` constants** built on
+`mask_gradient_prune_scores`:
+
+| Constant | Short name | grad | answer | mode |
+|---|---|---|---|---|
+| `LOGIT_DIFF_GRAD_PRUNE_ALGO` | EAP | logit | avg_diff | mask_val=0.0 |
+| `PROB_GRAD_PRUNE_ALGO` | EAP (Prob) | prob | avg_val | mask_val=0.0 |
+| `LOGIT_EXP_GRAD_PRUNE_ALGO` | EAP (Answer Logit) | logit_exp | avg_val | mask_val=0.0 |
+| `LOGPROB_GRAD_PRUNE_ALGO` | EAP (Answer Logprob) | logprob | avg_val | mask_val=0.0 |
+| `LOGPROB_DIFF_GRAD_PRUNE_ALGO` | EAP (Logprob Diff) | logprob | avg_diff | mask_val=0.0 |
+| `LOGIT_MSE_GRAD_PRUNE_ALGO` | EAP (MSE) | logit | mse | mask_val=0.0 |
+| `INTEGRATED_EDGE_GRADS_PRUNE_ALGO` | IEG (Answer Logit) | logit | avg_val | IG samples=50 |
+| `INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO` | IEG | logit | avg_diff | IG samples=1000 |
+
+**Recommendation: the discovery-objective axis is these eight, not a synthetic
+4 x 3 = 12 crossing of `grad_function` and `answer_function`.**
+
+Three reasons.
+
+1. **The inclusion criterion is satisfied by construction.** The brief requires
+   citing a published implementation for every level of every axis. These eight
+   *are* the published implementation: named, shipped, and used by the
+   instrument's own authors. A synthetic crossing would include combinations
+   nobody has ever run, which a reviewer would rightly call arbitrary.
+2. **It is the verbatim-instrument rule applied to the discovery axis.** Same
+   principle that forced `load_tl_model` over a hand-rolled copy.
+3. **It captures a degree of freedom the synthetic grid would miss.** The EAP
+   versus IEG split is not a `grad_function` value at all: it is the
+   `mask_val` / `integrated_grad_samples` XOR, and IEG appears at **50 and 1000
+   samples**, the same algorithm at two costs. arXiv:2510.00845, the
+   second-closest prior work, is a variance analysis of EAP-IG specifically, so
+   this axis is live in the literature.
+
+**Cost note.** IEG at 1000 samples is roughly 1000 forward/backward passes
+against 1 for EAP. If all eight enter the grid, the two IEG levels will dominate
+the sweep budget. Gate 2 should measure EAP and IEG separately before the
+pre-registration fixes the level set.
+
+**Also VERIFIED:** `mask_gradient.py` line 62 asserts
+`(mask_val is not None) XOR (integrated_grad_samples is not None)`. Exactly one
+must be set; passing neither raises a bare `AssertionError` with no message.
