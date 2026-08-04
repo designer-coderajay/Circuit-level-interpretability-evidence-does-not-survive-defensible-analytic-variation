@@ -1603,3 +1603,52 @@ the absent one, satisfying the library's XOR assertion.
 - H4 threshold, `tau` levels, and the `phi` constants (`DEFAULT_SIZE_BINS`,
   `DEFAULT_BAND_NAMES`, segment labels), all still PROVISIONAL in code.
 - The IEG-50 measurement above.
+
+### 2026-08-05, later. IEG-50 discovery cost measured, n = 2
+
+    run 1   discovery_s 241.396   tqdm 4.70 s/it   battery 20%, on battery
+    run 2   discovery_s 237.751   tqdm 4.64 s/it   battery 22%, charging
+    mean    239.574               spread 1.5%
+
+The two runs are genuinely independent processes: `import_s` fell from 13.191 to
+6.635 on a warm filesystem cache, which is the expected signature and rules out
+the paste duplication that made an earlier n=1 look like n=2.
+
+**The low-battery throttling hypothesis is not supported.** Run 2 was on mains
+and was 1.5% faster, which is within run-to-run noise for a CPU job of this
+length. The measurement is not an artifact of power state.
+
+Decomposition, with `f` the one-off setup and `f + kp` the k-sample discovery:
+
+    p = (239.574 - 9.301) / 50 = 4.6055 s per integrated-gradient sample
+    f = 9.301 - 4.6055          = 4.6955 s
+
+Independently cross-checked against tqdm's own reported rate, mean 4.67 s/it
+against a predicted 4.606, agreeing to 1.4%. Two unrelated instruments.
+
+**IEG-50 is 25.8x EAP, not the 51x inferred on 08-04.** The inference treated
+every pass as equal and ignored that `batch_src_ablations` runs once; `f` and `p`
+happen to be nearly equal at 32 prompts, so EAP's single measured time is roughly
+half setup. Third correction of an inference by measurement on this project.
+
+Sweep budget for the confirmed 1,190-cell grid, at 32 prompts, CPU:
+
+    EAP discovery        1,020 cells x   9.301 s =  2.64 h
+    IEG-50 discovery       170 cells x 239.574 s = 11.31 h
+    evaluation, 10 cuts  1,190 cells x  15.81 s  =  5.23 h
+    IEG-1000 slice           5 cells x 4,614.8 s =  6.41 h
+                                                  --------
+                                                    25.6 h
+
+`evaluation_per_cut_s` is held at the conservative 1.581 from the EAP run;
+the two IEG runs returned 1.309 and 1.166.
+
+**Remaining weak link: EAP discovery is still n = 1.** It is 2.64 h of 25.6, so
+its uncertainty is not budget-critical, but it should be repeated before the lock
+for consistency with the multi-seed rule.
+
+**`n_prompts` is the dominant unfixed variable and was never on the CONFIRM
+list.** Every figure above is at 32, a smoke-test size. The per-sample cost is a
+pass over the dataloader, so cost scales roughly linearly: at 128 prompts this is
+100 h and D5's rented-GPU decision comes back into play. Added as a blocking
+pre-registration item.
