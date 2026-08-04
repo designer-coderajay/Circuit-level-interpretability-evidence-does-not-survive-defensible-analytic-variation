@@ -275,3 +275,100 @@ technical measure available to a human overseer for correctly interpreting an
 output. The three granularities (coarse, medium, fine) should be granularities
 of *that* statement, not of an arbitrary structural tuple. Drafting the actual
 sentence templates is the next design task and it is now unblocked.
+
+---
+
+# Article 86 and the closed loop, 2026-08-03
+
+**Article 86(1), verbatim:**
+
+> "Any affected person subject to a decision which is taken by **the deployer**
+> on the basis of the output from a high-risk AI system listed in Annex III,
+> with the exception of systems listed under point 2 thereof, and which produces
+> legal effects or similarly significantly affects that person in a way that they
+> consider to have an adverse impact on their health, safety or fundamental
+> rights **shall have the right to obtain from the deployer clear and meaningful
+> explanations of the role of the AI system in the decision-making procedure and
+> the main elements of the decision taken**."
+
+## Why this is the strongest hook, and why it changes the paper
+
+**The duty falls on the deployer. The deployer only has what the provider gave
+them.** Article 13 requires the provider to supply instructions for use, and
+13(3)(d) requires those to include "the technical measures put in place to
+facilitate the interpretation of the outputs". The deployer cannot manufacture
+an explanation the provider did not enable.
+
+The loop is therefore closed, and every link is verified:
+
+1. The **provider** picks one interpretation method, that is, one specification
+   `s` from `S`, at some point before market placement (Article 14(3)).
+2. The provider files the resulting claim in the technical documentation
+   (Annex IV 2(e) and 3) and supplies it to the deployer (Article 13(3)(d)).
+3. The **deployer** must enable overseers to "correctly interpret" the output
+   (Article 14(4)(c)) using what they were given.
+4. An **affected person** has a right to "clear and meaningful explanations"
+   from that deployer (Article 86(1)).
+
+**So an arbitrary analytic choice, made once by one analyst inside the provider,
+propagates to an individual's right to an explanation of a decision about them.**
+If `phi(C(s))` moves across `S`, the explanation an affected person receives
+depends on a researcher degree of freedom they will never see, were never told
+about, and cannot contest.
+
+That is a far stronger claim than "the evidence is unstable", it is squarely a
+FAccT argument, and it is available only to someone who has connected the
+interpretability literature to the regulatory text.
+
+**Two qualitative standards, not availability standards.** Article 14(4)(c) says
+"correctly interpret". Article 86(1) says "clear and meaningful". Neither is
+satisfied by merely producing an artefact. The filability criterion speaks to
+exactly this gap.
+
+## Scope limits, which must be stated honestly in the paper
+
+Do not overclaim Article 86. Four limits, all in the text:
+
+1. **Annex III systems only**, and expressly "with the exception of systems
+   listed under point 2 thereof". What Annex III point 2 covers is **not yet
+   verified** and must be checked.
+2. Only decisions producing **legal effects or similarly significantly
+   affecting** the person, and only where they consider there to be an adverse
+   impact on health, safety, or fundamental rights.
+3. **86(2):** disapplied where Union or national law provides exceptions or
+   restrictions.
+4. **86(3):** applies "only to the extent that the right referred to in
+   paragraph 1 is **not otherwise provided for under Union law**." Article 86 is
+   subsidiary. A reviewer with legal training will immediately think of GDPR
+   Article 22 and the automated-decision-making provisions. **Address this
+   explicitly**; do not let it be raised first.
+
+## Why the applied arm now matters more
+
+The brief's applied arm is a BFSI credit underwriting prototype. Creditworthiness
+assessment is **believed** to fall under Annex III, which would place it squarely
+inside Article 86, and a credit decision plainly produces legal effects.
+
+**RECALLED, not verified:** the specific Annex III point covering creditworthiness
+assessment. Verify the point number against Annex III before the applied arm is
+described in the paper, and verify simultaneously that it is not the excluded
+point 2.
+
+If it holds, the applied arm stops being an illustration and becomes the case
+where all four links bind at once.
+
+## Consequence for phi
+
+`phi` now has two candidate addressees, and they are different documents with
+different standards:
+
+- **Annex IV 2(e) and 3, read with Article 14(4)(c).** Addressee is a human
+  overseer at the deployer. Standard: "correctly interpret ... taking into
+  account the interpretation tools and methods available".
+- **Article 86(1).** Addressee is the affected person. Standard: "clear and
+  meaningful explanations of the role of the AI system in the decision-making
+  procedure and the main elements of the decision taken".
+
+These are not the same sentence and they will not have the same flip rate.
+Whether `phi` targets one, or both as separate claim maps, is the next design
+decision.

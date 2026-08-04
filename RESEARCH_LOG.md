@@ -549,3 +549,51 @@ drafting. **Article 11 still unread**, two attempts, one timeout.
 phi is unblocked for design: the three granularities should be granularities of
 the regulation's own statement form, not of an arbitrary structural tuple.
 Drafting the sentence templates is the next design task.
+
+---
+
+## 2026-08-03 (Phase 1 cont.) — Article 86 read. The loop closes.
+
+Retrieved in full, same Commission source and same caveat. Analysis appended to
+`docs/ANNEX-IV.md`.
+
+**Article 86(1) puts the explanation duty on the deployer**, who can only pass on
+what the provider supplied under Article 13(3)(d). That closes a four-link loop,
+every link now verified:
+
+provider picks one specification s before market placement (Art 14(3)) -> files
+the claim in the technical documentation (Annex IV 2(e), 3) and supplies it to
+the deployer (Art 13(3)(d)) -> deployer must enable overseers to "correctly
+interpret" (Art 14(4)(c)) -> affected person has a right to "clear and meaningful
+explanations" from that deployer (Art 86(1)).
+
+**An arbitrary analytic choice made once inside the provider propagates to an
+individual's right to an explanation of a decision about them.** If phi(C(s))
+moves across S, the explanation an affected person receives depends on a
+researcher degree of freedom they never see and cannot contest. That is a much
+stronger claim than instability, and it is a FAccT-shaped argument.
+
+**Two qualitative standards now in hand**, neither satisfied by merely producing
+an artefact: "correctly interpret" (14(4)(c)) and "clear and meaningful"
+(86(1)). The filability criterion speaks to exactly that gap.
+
+**Scope limits that must be stated, not buried.** Annex III systems only and
+expressly not point 2 of Annex III, which is **unverified**; only decisions with
+legal effects or similarly significant effect; disapplied by Union or national
+law exceptions under 86(2); and **subsidiary under 86(3)**, applying only where
+the right is not otherwise provided under Union law. A legally trained reviewer
+will raise GDPR Article 22 immediately. Address it first.
+
+**The applied arm gains weight.** Creditworthiness assessment is **RECALLED, not
+verified** to fall under Annex III. Verify the point number, and verify it is not
+the excluded point 2, before describing the applied arm. If it holds, the BFSI
+prototype becomes the case where all four links bind at once.
+
+**New design question for phi.** There are now two candidate addressees with
+different standards: a human overseer at the deployer under 14(4)(c), and an
+affected person under 86(1). They are different documents and will not share a
+flip rate. Whether phi targets one or both as separate claim maps is the next
+decision.
+
+**D10 status.** Articles 13, 14, 86 read. **Article 11 still unread**, three
+attempts, one timeout. Annex III unread and now needed.
