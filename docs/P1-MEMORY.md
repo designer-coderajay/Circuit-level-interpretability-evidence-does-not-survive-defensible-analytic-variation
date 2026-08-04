@@ -61,9 +61,11 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **D4** Functional-equivalence arm: the interchange protocol is still unread.
   Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
-- **D10** Articles 11, 13(3)(d) and 14 unread. 13(3)(d) and 14 define "facilitate
-  the interpretation of the outputs", the phrase phi is now built on. Read before
-  phi is implemented.
+- **D10** Partially closed. Articles 13 and 14 **read**; phi is unblocked and is
+  built on Article 14(4)(c), "to correctly interpret the high-risk AI system's
+  output, taking into account, for example, the interpretation tools and methods
+  available". **Article 11 and Article 86 still unread.** Article 86 is a right to
+  explanation of individual decision-making and may be a stronger hook.
 - **D11** All Annex IV strings came from a Commission rendering, not the Official
   Journal. Cross-check against the OJ before any of them enters the manuscript.
 

@@ -491,3 +491,61 @@ configuration, with the metric and threshold applied afterwards. This is a large
 saving and the smoke config must measure the ranking cost, not the full-grid
 cost. INFERRED from the auto-circuit API structure, **not yet verified by
 running it.** Verify before relying on it for the schedule.
+
+---
+
+## 2026-08-03 (Phase 1 cont.) — Articles 13 and 14 read. phi is unblocked.
+
+Both retrieved in full from the AI Act Service Desk, same official Commission
+source and same caveat: a Commission rendering, not the OJ text. Full analysis
+appended to `docs/ANNEX-IV.md`.
+
+**The chain is complete and it is a four-link chain, all verified:**
+
+Article 13(1), the system must be "sufficiently transparent to enable deployers
+to interpret a system's output" -> Article 13(3)(d), instructions for use must
+contain "the technical measures put in place to facilitate the interpretation of
+the outputs" -> Article 14(4)(c), overseers must be enabled "to correctly
+interpret the high-risk AI system's output, taking into account, for example,
+the interpretation tools and methods available" -> Annex IV 2(e) and 3, the same
+object entering the technical documentation in two tenses.
+
+The identical phrase appears in three operative places. It is not incidental.
+
+**Article 14(4)(c) is the sentence phi should be built on.** Three reasons. The
+standard is "correctly interpret", correctness rather than availability. It
+explicitly names "the interpretation tools and methods available", which is
+where circuit discovery sits, and unlike Annex IV 2(b) it is not framed as a
+design specification. And the beneficiary is a natural person assigned human
+oversight, not an auditor.
+
+**Restate the filability criterion in this vocabulary.** `pi_star >= 1 - alpha`
+becomes a criterion for when an interpretation method supports *correct*
+interpretation rather than merely *available* interpretation. That is the
+regulation's own distinction and it is much stronger than inventing one.
+
+**New argument, not in the brief.** Article 14(4)(b) names **automation bias**
+explicitly, as something oversight must guard against, "in particular for
+high-risk AI systems used to provide information or recommendations for
+decisions to be taken by natural persons". An unstable explanation carrying the
+authority of a mechanistic circuit could increase over-reliance rather than
+reduce it. This connects P1 to the programme thesis that confidence does not
+track faithfulness. Worth a discussion paragraph, but do not overclaim: P1
+measures claim instability, not deployer behaviour.
+
+**Article 14(3)** requires the oversight measures to be identified before the
+system is placed on the market. The analytic choices P1 varies are therefore
+made once, in advance, by one analyst, and then filed. That is exactly the
+situation in which specification instability matters and is invisible in the
+filing.
+
+**Newly surfaced and unread: Article 86, "Right to explanation of individual
+decision-making."** Seen in the table of contents only. If it creates an
+individual right to an explanation of a specific decision, it is a fourth and
+possibly stronger hook and it changes who the explanation is for. Read before
+drafting. **Article 11 still unread**, two attempts, one timeout.
+
+**D10 is now partially closed.** Articles 13 and 14 read; 11 and 86 outstanding.
+phi is unblocked for design: the three granularities should be granularities of
+the regulation's own statement form, not of an arbitrary structural tuple.
+Drafting the sentence templates is the next design task.
