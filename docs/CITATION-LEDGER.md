@@ -42,6 +42,46 @@ Verified 2026-08-03 by fetching `https://arxiv.org/abs/<ID>`.
 | 2607.19317 | CircuitKIT: Circuit Discovery, Evaluation, and Application Toolkit for Mechanistic Interpretability | Candidate second instrument if implementation choice becomes a grid dimension. | RECALLED, seen only as a search hit. Fetch. |
 | 2604.09628 | Assessing Model-Agnostic XAI Methods against EU AI Act Explainability Requirements | Nearest work on the regulatory side. Model-agnostic XAI rather than circuits, and not about instability, so it is related work rather than a threat. | RECALLED, seen only as a search hit. Fetch. |
 
+## Resolved from the instrument's own source, 2026-08-04
+
+Extracted by grepping arXiv links out of auto-circuit 1.0.1's docstrings. This is
+strong provenance: these are the identifiers the instrument's own authors attach
+to the algorithms P1 runs.
+
+| ID | Title | Authors | Date | State | Notes |
+|---|---|---|---|---|---|
+| 2211.00593 | Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small | Kevin Wang, Alexandre Variengien, Arthur Conmy, Buck Shlegeris, Jacob Steinhardt | Submitted **1 Nov 2022**, v1 only | VERIFIED, abs page fetched | Resolves the brief's name-only "Wang et al., IOI circuit". **Year discrepancy: arXiv is 2022; auto-circuit cites "(2022)"; 2407.08734 prose cites "(2023)", presumably the ICLR version.** Pick one convention and state it. **Contains a published 7-class head-role taxonomy over 26 attention heads**, see below. |
+| 2304.14997 | Towards Automated Circuit Discovery for Mechanistic Interpretability | Conmy et al., full list not yet fetched | 2023 | VERIFIED (ID and title from auto-circuit `ACDC.py` docstring) | Resolves "Conmy et al., ACDC". Fetch the abs page to complete authors before citing. |
+| 2305.00586 | not yet fetched | Hanna et al. | 2023 | RECALLED (ID from auto-circuit docstring) | The greater-than task. Relevant if a second task is added. |
+| 1703.01365 | not yet fetched | Sundararajan et al. | 2017 | RECALLED (ID from `mask_gradient.py` docstring) | Integrated Gradients. **Cite this for the IEG levels of the discovery-objective axis.** |
+| 1712.01312 | not yet fetched | Louizos et al. | 2017 | RECALLED (ID from auto-circuit docstring) | L0 regularisation, underlies subnetwork probing. |
+| 2104.03514 | not yet fetched | Cao et al. | 2021 | RECALLED (ID from auto-circuit docstring) | Not yet placed. |
+| 2310.10348 | not yet identified | unknown | unknown | NOT FOUND in this session | Bare URL in auto-circuit source with no citation text. Identify before use. |
+
+### A finding for phi
+
+Wang et al. 2211.00593 abstract, verbatim: "Our explanation encompasses **26
+attention heads grouped into 7 main classes**". That is a **published head-role
+taxonomy for IOI**, which is exactly what `phi`'s role categorisation needed and
+which was previously flagged as requiring a published source rather than
+invention. Extract the 7 class names from the paper and use them as the
+pre-registered role mapping, cited to Wang et al.
+
+Also verbatim: they evaluate using "three quantitative criteria -- **faithfulness,
+completeness and minimality**". P1 uses faithfulness only. If a reviewer asks why
+not the other two, the answer is that they are properties of a single circuit
+against a ground truth, whereas P1 measures agreement *between* circuits. Worth
+one sentence.
+
+### Still name-only after this pass
+
+`Nanda et al.` attribution patching, `Steegen et al.` multiverse analysis,
+`Simmons et al.` researcher degrees of freedom, `Simonsohn et al.` specification
+curve analysis. **None may be cited until resolved to identifiers and fetched.**
+The last three are the method provenance for the entire design, so they are not
+optional.
+
+
 ## Still name-only, must be resolved to identifiers before citing
 
 All **RECALLED**, none verified.

@@ -1372,3 +1372,48 @@ so every subsequent commit fails until it is removed by hand.
 Added `scripts/commit.sh`, which checks for a real running git process, clears
 any stale lock, then stages and commits. Chasing the root cause further is not a
 good use of research time. Recorded so the next person does not rediscover it.
+
+---
+
+## 2026-08-04 — Citation ledger: two of six name-only references resolved
+
+Grepped arXiv links out of auto-circuit 1.0.1's own docstrings. **This is the
+strongest available provenance**: these are the identifiers the instrument's
+authors attach to the algorithms P1 runs.
+
+**Resolved:**
+
+- `Wang et al., IOI` = **2211.00593**, *Interpretability in the Wild: a Circuit
+  for Indirect Object Identification in GPT-2 small*, Kevin Wang, Alexandre
+  Variengien, Arthur Conmy, Buck Shlegeris, Jacob Steinhardt. Abs page fetched,
+  fully VERIFIED.
+- `Conmy et al., ACDC` = **2304.14997**, *Towards Automated Circuit Discovery for
+  Mechanistic Interpretability*, from the `ACDC.py` docstring. ID and title
+  verified; authors still to fetch.
+
+Also captured, all RECALLED from docstrings and needing fetch: Hanna et al. 2023
+= 2305.00586 (greater-than task), Sundararajan et al. 2017 = 1703.01365
+(Integrated Gradients, **cite for the IEG axis levels**), Louizos et al. 2017 =
+1712.01312, Cao et al. 2021 = 2104.03514, and a bare 2310.10348 with no citation
+text that could not be identified.
+
+**A year discrepancy to settle.** Wang et al. is **2022** on arXiv. auto-circuit
+cites "(2022)"; 2407.08734's prose cites "(2023)", presumably the ICLR version.
+Same class of problem as D6. Pick a convention and apply it consistently.
+
+**A finding for phi.** Wang et al.'s abstract, verbatim: "Our explanation
+encompasses **26 attention heads grouped into 7 main classes**." That is a
+**published head-role taxonomy for IOI**. `phi`'s role categorisation was
+previously flagged as needing a published source rather than an invented one, and
+this supplies it. Extract the seven class names and use them as the
+pre-registered role mapping, cited to Wang et al.
+
+Also from the same abstract: they evaluate with "faithfulness, completeness and
+minimality". P1 uses faithfulness only. The answer to a reviewer is that
+completeness and minimality assess a single circuit against a ground truth,
+whereas P1 measures agreement *between* circuits. One sentence in the paper.
+
+**Still name-only and blocking the manuscript:** Nanda (attribution patching),
+Steegen (multiverse), Simmons (researcher degrees of freedom), Simonsohn
+(specification curve). The last three are the method provenance for the entire
+design, so they are not optional.
