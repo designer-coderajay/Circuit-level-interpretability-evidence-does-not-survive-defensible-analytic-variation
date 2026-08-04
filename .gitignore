@@ -17,3 +17,7 @@ results/**
 *.pt
 *.safetensors
 hf_cache/
+
+# Cloned upstream repos read for protocol reproduction. Never committed:
+# they have their own licences and histories. Recorded in RESEARCH_LOG instead.
+.external/

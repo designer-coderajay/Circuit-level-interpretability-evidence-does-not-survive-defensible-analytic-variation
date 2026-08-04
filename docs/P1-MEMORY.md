@@ -62,8 +62,12 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
 - **D17** The CPU to GPU speedup is **unmeasured**. Every GPU figure quoted so
   far assumes 20x, which is a guess. Run one smoke config on the rented box
   before committing to the sweep window.
-- **D4** Functional-equivalence arm: the interchange protocol is still unread.
-  Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
+- **D4** Functional-equivalence arm. README read and VERIFIED; **they use
+  auto-circuit too**, so the protocol is expressible in primitives P1 already
+  uses. The interchange code itself is not locatable remotely (GitHub tree
+  returns empty to a plain fetch). **Clone the repo** and grep for "interchange";
+  it is likely in `03_Phase_Representational/` or `05_Phase_Targeted/`. Do not
+  reimplement from prose. Last non-writing blocker before Gate 3.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
 - **D16** `PatchType.TREE_PATCH` may give ERASER sufficiency and `EDGE_PATCH`
   comprehensiveness directly, which would remove the need for the D2 extension

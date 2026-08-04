@@ -1140,3 +1140,76 @@ for the full-IEG option, which is no longer being taken.
 **PASSED.** Feasibility is now measured rather than asserted, the grid is scoped,
 and the reuse architecture is confirmed with a corrected 4.62x saving. D3 is
 closed on both arithmetic and scope.
+
+---
+
+## 2026-08-04 — D4 progress: UKPLab repo README read. Three findings.
+
+`github.com/UKPLab/arxiv2026-phantom-specialization` README fetched and
+**VERIFIED**. The abstract matches the arXiv version already in the citation
+ledger word for word, which independently confirms the quotes recorded on
+2026-08-03.
+
+### Finding 1: they use the same instrument
+
+Verbatim from their Third-party resources section:
+
+> "**Circuit discovery.** `auto-circuit` provides the ACDC / EAP implementations
+> and patching utilities used throughout."
+
+**P1 and 2606.06267 run on the same library.** That is a strong comparability
+claim and should be stated in the paper: the structural-versus-functional gap P1
+measures is measured with the same instrument that established the phantom
+specialization result P1 builds on. It also means their interchange protocol is
+expressible in auto-circuit primitives P1 already uses.
+
+### Finding 2: a compute calibration that retroactively validates D14
+
+Verbatim: "End-to-end reproduction takes on the order of **700 GPU-hours on
+A100-class GPUs** (around 290 hours for the Pareto sweep and 450 hours for
+circuit discovery)."
+
+They produce **75 circuits for 450 GPU-hours of discovery**, roughly 6 GPU-hours
+per circuit, using **ACDC** across five Pythia models from 70M to 1.4B.
+
+P1's measured EAP discovery is **9.3 seconds** on CPU for GPT-2 small. The gap is
+explained by three compounding choices: ACDC iteratively prunes with many forward
+passes where EAP needs one backward pass; their models run up to 1.4B against
+GPT-2 small's 124M; and they sweep thresholds by Pareto analysis where P1's `tau`
+is metric-relative and computed post-hoc on an existing ranking.
+
+**This is independent evidence that the D14 choice of `mask_gradient` over ACDC
+as primary was load-bearing for feasibility, not merely a correctness argument
+about `ablation_type`.** Had P1 taken ACDC, the sweep would plausibly be in their
+cost regime rather than in tens of CPU-hours. Record this comparison in the paper:
+it is a concrete, cited number showing why the design is runnable.
+
+### Finding 3: they also run a random baseline
+
+`LSC_circuits/lsc_random_baseline.py` sits alongside `lsc_acdc_circuit.py`. P1's
+H3 random-circuit null multiverse is therefore methodologically aligned with the
+paper it answers, which is worth one sentence in related work.
+
+### What is still not obtained
+
+**The interchange-intervention protocol itself.** The README places the analysis
+in a five-phase pipeline; interchange interventions are section 5.3.2 of the
+paper and most plausibly live in `03_Phase_Representational/` or
+`05_Phase_Targeted/`, described as "Targeted experiments (cross-band transfer,
+ablations, etc.)". The GitHub tree API and HTML listing both returned empty to a
+plain fetch, so the file cannot be located remotely.
+
+**Resolution: clone the repo.** It is Apache 2.0 and this is the right move
+regardless, because reproducing the protocol verbatim requires their code rather
+than a description of it.
+
+    git clone https://github.com/UKPLab/arxiv2026-phantom-specialization.git \
+      /tmp/phantom-spec
+    grep -rl "interchange" /tmp/phantom-spec --include=*.py --include=*.ipynb
+
+Do **not** reimplement from the paper prose. The instrument-verbatim rule applies
+to a protocol P1 is reproducing exactly as much as it applies to auto-circuit,
+and the `load_tl_model` incident on 2026-08-04 showed how a plausible hand-rolled
+version silently diverges.
+
+**D4 remains open.** It is the last non-writing blocker before Gate 3.
