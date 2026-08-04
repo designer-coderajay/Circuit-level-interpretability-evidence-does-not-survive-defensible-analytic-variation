@@ -223,3 +223,102 @@ def test_claims_end_as_sentences():
         for g in Granularity:
             assert phi_overseer(f, g).endswith(".")
             assert phi_affected(f, g).endswith(".")
+
+
+# --------------------------------------------------------------------------
+# Published head-role taxonomy
+# --------------------------------------------------------------------------
+
+
+def test_taxonomy_matches_wang_et_al_counts():
+    """Cross-check against the published paper, not just against the code.
+
+    Wang et al. arXiv:2211.00593 abstract: "26 attention heads grouped into 7
+    main classes". The taxonomy transcribed from auto-circuit's IOI_CIRCUIT must
+    reproduce both counts. If a future edit drops or adds a head, this fails
+    loudly rather than silently changing every role-bearing claim.
+    """
+    from p1.claim_map import IOI_HEAD_ROLES
+
+    assert len(IOI_HEAD_ROLES) == 7
+    assert sum(len(v) for v in IOI_HEAD_ROLES.values()) == 26
+
+
+def test_no_head_appears_in_two_roles():
+    from p1.claim_map import IOI_HEAD_ROLES
+
+    seen = [h for v in IOI_HEAD_ROLES.values() for h in v]
+    assert len(seen) == len(set(seen)), "a head is classified twice"
+
+
+def test_all_taxonomy_heads_are_inside_gpt2_small():
+    from p1.claim_map import IOI_HEAD_ROLES
+
+    for role, heads in IOI_HEAD_ROLES.items():
+        for layer, head in heads:
+            assert 0 <= layer < 12, f"{role} head at layer {layer} outside GPT-2 small"
+            assert 0 <= head < 12, f"{role} head index {head} outside GPT-2 small"
+
+
+def test_role_of_known_heads():
+    from p1.claim_map import role_of
+
+    assert role_of(Component(9, 9)) == "name mover"
+    assert role_of(Component(5, 5)) == "induction"
+    assert role_of(Component(2, 2)) == "previous token"
+
+
+def test_unknown_head_is_unclassified_not_dropped():
+    """Discovery returns heads outside the 26. They must be counted, not hidden."""
+    from p1.claim_map import UNCLASSIFIED_ROLE, role_of
+
+    assert role_of(Component(6, 0)) == UNCLASSIFIED_ROLE
+
+
+def test_mlp_is_unclassified():
+    from p1.claim_map import UNCLASSIFIED_ROLE, role_of
+
+    assert role_of(Component(9, 0, kind="mlp")) == UNCLASSIFIED_ROLE
+
+
+def test_dominant_role_picks_the_majority():
+    from p1.claim_map import dominant_role
+
+    f = CircuitFeatures(
+        frozenset({Component(9, 9), Component(10, 0), Component(9, 6), Component(5, 5)}),
+        12, 144,
+    )
+    assert dominant_role(f) == "name mover"
+
+
+def test_dominant_role_reports_unclassified_majority_honestly():
+    """A circuit mostly outside the taxonomy must say so, not borrow a label."""
+    from p1.claim_map import UNCLASSIFIED_ROLE, dominant_role
+
+    f = CircuitFeatures(
+        frozenset({Component(6, 0), Component(6, 1), Component(6, 2), Component(9, 9)}),
+        12, 144,
+    )
+    assert dominant_role(f) == UNCLASSIFIED_ROLE
+
+
+def test_dominant_role_tie_breaks_toward_the_named_role():
+    from p1.claim_map import dominant_role
+
+    f = CircuitFeatures(frozenset({Component(9, 9), Component(6, 0)}), 12, 144)
+    assert dominant_role(f) == "name mover"
+
+
+def test_dominant_role_is_deterministic_and_order_independent():
+    comps = [Component(9, 9), Component(5, 5), Component(5, 8), Component(10, 0)]
+    from p1.claim_map import dominant_role
+
+    a = CircuitFeatures(frozenset(comps), 12, 144)
+    b = CircuitFeatures(frozenset(reversed(comps)), 12, 144)
+    assert dominant_role(a) == dominant_role(b)
+
+
+def test_dominant_role_of_empty_circuit():
+    from p1.claim_map import UNCLASSIFIED_ROLE, dominant_role
+
+    assert dominant_role(CircuitFeatures(frozenset(), 12, 144)) == UNCLASSIFIED_ROLE

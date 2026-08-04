@@ -56,7 +56,7 @@ to the algorithms P1 runs.
 | 1703.01365 | not yet fetched | Sundararajan et al. | 2017 | RECALLED (ID from `mask_gradient.py` docstring) | Integrated Gradients. **Cite this for the IEG levels of the discovery-objective axis.** |
 | 1712.01312 | not yet fetched | Louizos et al. | 2017 | RECALLED (ID from auto-circuit docstring) | L0 regularisation, underlies subnetwork probing. |
 | 2104.03514 | not yet fetched | Cao et al. | 2021 | RECALLED (ID from auto-circuit docstring) | Not yet placed. |
-| 2310.10348 | not yet identified | unknown | unknown | NOT FOUND in this session | Bare URL in auto-circuit source with no citation text. Identify before use. |
+| 2310.10348 | not yet identified | unknown | unknown | **SUPERSEDED, see the correction table below** | Bare URL in auto-circuit source with no citation text. **Resolved later the same day**: it is *Attribution Patching Outperforms Automated Circuit Discovery*, Syed, Rager and Conmy. |
 
 ### A finding for phi
 

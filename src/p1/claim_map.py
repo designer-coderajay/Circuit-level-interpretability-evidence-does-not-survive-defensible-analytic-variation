@@ -51,6 +51,10 @@ __all__ = [
     "CircuitFeatures",
     "DEFAULT_SIZE_BINS",
     "DEFAULT_BAND_NAMES",
+    "IOI_HEAD_ROLES",
+    "IOI_ROLE_ORDER",
+    "role_of",
+    "dominant_role",
     "layer_band",
     "size_class",
     "ranked_segments",
@@ -127,6 +131,96 @@ DEFAULT_SIZE_BINS: tuple[tuple[float, str], ...] = (
 
 #: Layer bands as equal thirds of depth. PROVISIONAL, pre-register before use.
 DEFAULT_BAND_NAMES: tuple[str, ...] = ("early", "middle", "late")
+
+
+# --------------------------------------------------------------------------
+# Head-role taxonomy. Published, not invented.
+# --------------------------------------------------------------------------
+
+#: The IOI head-role taxonomy, transcribed **verbatim** from `IOI_CIRCUIT` in
+#: `auto_circuit/metrics/official_circuits/circuits/ioi_official.py` of
+#: auto-circuit 1.0.1, with commented-out heads excluded exactly as the
+#: instrument excludes them.
+#:
+#: **Provenance chain, and why it matters.** That file's own header states it is
+#: based on `acdc/ioi/utils.py` from ArthurConmy/Automatic-Circuit-Discovery,
+#: which transcribes the taxonomy from Wang et al., arXiv:2211.00593. So this is
+#: the published taxonomy, carried into the instrument P1 runs, rather than a
+#: categorisation P1 devised. The role dimension of the claim map was previously
+#: flagged as needing a published source; this is it.
+#:
+#: **Independent cross-check, VERIFIED 2026-08-04.** Wang et al.'s abstract says
+#: "26 attention heads grouped into 7 main classes". This dict contains exactly
+#: 26 heads across exactly 7 classes. A test asserts both counts, so a future
+#: edit that drops or adds a head fails loudly rather than silently changing
+#: every role-bearing claim.
+#:
+#: Coordinates are `(layer, head)` with layer as the **transformer block index**
+#: for GPT-2 small, not auto-circuit's doubled layer index. See `p1.features`.
+IOI_HEAD_ROLES: Mapping[str, tuple[tuple[int, int], ...]] = {
+    "name mover": ((9, 9), (10, 0), (9, 6)),
+    "backup name mover": ((10, 10), (10, 6), (10, 2), (10, 1), (11, 2), (9, 7), (9, 0), (11, 9)),
+    "negative": ((10, 7), (11, 10)),
+    "s2 inhibition": ((7, 3), (7, 9), (8, 6), (8, 10)),
+    "induction": ((5, 5), (5, 8), (5, 9), (6, 9)),
+    "duplicate token": ((0, 1), (0, 10), (3, 0)),
+    "previous token": ((2, 2), (4, 11)),
+}
+
+#: Canonical order, used for deterministic tie-breaking. Follows the order in
+#: the instrument's dict, which the source annotates "by importance".
+IOI_ROLE_ORDER: tuple[str, ...] = tuple(IOI_HEAD_ROLES)
+
+#: Label for a component that the published taxonomy does not name. Circuit
+#: discovery routinely returns heads outside the 26, and silently dropping them
+#: would bias every role-based claim toward the taxonomy.
+UNCLASSIFIED_ROLE = "unclassified"
+
+
+def role_of(
+    component: Component,
+    taxonomy: Mapping[str, tuple[tuple[int, int], ...]] = IOI_HEAD_ROLES,
+) -> str:
+    """Published role of a component, or `unclassified`.
+
+    MLPs are always `unclassified`: the taxonomy covers attention heads only.
+    """
+    if component.kind != "attn":
+        return UNCLASSIFIED_ROLE
+    for role in taxonomy:
+        if (component.layer, component.index) in taxonomy[role]:
+            return role
+    return UNCLASSIFIED_ROLE
+
+
+def dominant_role(
+    features: CircuitFeatures,
+    taxonomy: Mapping[str, tuple[tuple[int, int], ...]] = IOI_HEAD_ROLES,
+    order: Sequence[str] = IOI_ROLE_ORDER,
+) -> str:
+    """Most common published role among a circuit's components.
+
+    `unclassified` participates in the count rather than being discarded, so a
+    circuit consisting mostly of heads outside the published taxonomy is
+    reported as such instead of being mislabelled by its minority of named
+    heads. That is a real possible outcome and hiding it would be a defect.
+
+    Ties break by `order`, which is the instrument's own ordering, annotated
+    there as "by importance". `unclassified` loses every tie it is in, so a
+    named role is preferred when counts are equal.
+    """
+    counts: dict[str, int] = {}
+    for c in features.components:
+        r = role_of(c, taxonomy)
+        counts[r] = counts.get(r, 0) + 1
+    if not counts:
+        return UNCLASSIFIED_ROLE
+    best = max(counts.values())
+    tied = [r for r, n in counts.items() if n == best]
+    for r in order:
+        if r in tied:
+            return r
+    return UNCLASSIFIED_ROLE
 
 
 def layer_band(

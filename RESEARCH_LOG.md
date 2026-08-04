@@ -1464,3 +1464,55 @@ Nelson in 2020.
 **All six name-only references from the brief are now resolved to identifiers.**
 The bibliography has stopped being a blocker, though three DOI resolutions and
 several author-list fetches remain before submission.
+
+---
+
+## 2026-08-04 — phi's role taxonomy closed. Published, not invented.
+
+The role dimension of the claim map was flagged on 2026-08-03 as needing a
+published taxonomy rather than one P1 devised. **It is now supplied, and from
+inside the instrument.**
+
+`auto_circuit/metrics/official_circuits/circuits/ioi_official.py` ships
+`IOI_CIRCUIT`, a dict of head roles with exact `(layer, head)` coordinates. Its
+own header states it is based on `acdc/ioi/utils.py` from
+ArthurConmy/Automatic-Circuit-Discovery, which transcribes Wang et al.,
+arXiv:2211.00593.
+
+**Provenance chain: Wang et al. -> ACDC repo -> auto-circuit -> P1.** Every link
+is a published or shipped artefact. Nothing is invented.
+
+Transcribed verbatim into `p1.claim_map.IOI_HEAD_ROLES`, with commented-out heads
+excluded exactly as the instrument excludes them:
+
+| role | n |
+|---|---|
+| name mover | 3 |
+| backup name mover | 8 |
+| negative | 2 |
+| s2 inhibition | 4 |
+| induction | 4 |
+| duplicate token | 3 |
+| previous token | 2 |
+| **total** | **26 across 7 classes** |
+
+**Independent cross-check.** Wang et al.'s abstract says "26 attention heads
+grouped into 7 main classes". The transcription reproduces **both counts
+exactly**. A test asserts both, so an edit that drops or adds a head fails loudly
+rather than silently changing every role-bearing claim.
+
+**Two design choices recorded rather than left implicit.**
+
+`unclassified` is a first-class role, not a discard. Circuit discovery routinely
+returns heads outside the published 26, and dropping them would bias every
+role-based claim toward the taxonomy. A circuit that is mostly unclassified is
+**reported as unclassified**, which is a real and reportable outcome.
+
+Ties break toward the named role, using the instrument's own class ordering,
+which its source annotates "by importance". `unclassified` loses every tie.
+
+**Not wired into the claim keys.** `dominant_role` is available but the existing
+COARSE / MEDIUM / FINE keys are unchanged, so the nesting property is untouched.
+Whether the role enters a granularity is a pre-registration decision for Ajay.
+
+**165 tests, all passing.**
