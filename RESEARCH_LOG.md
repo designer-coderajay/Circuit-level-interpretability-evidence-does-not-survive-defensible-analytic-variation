@@ -338,3 +338,156 @@ quotes must come from the Official Journal text.
 - Interchange protocol still unread. Better source is the released code at
   `github.com/UKPLab/arxiv2026-phantom-specialization`, not the paper prose.
 - Feasibility still unmeasured. Gate 2 has not been approached.
+
+---
+
+## 2026-08-03 (Phase 1 cont.) — Annex IV read. Premise survives, target moves.
+
+Annex IV retrieved in full from the AI Act Service Desk,
+`ai-act-service-desk.ec.europa.eu/en/ai-act/annex-4`, an official Commission
+site run by DG CNECT which states it reproduces the official version of
+13 June 2024. EUR-Lex would not serve the text to a plain fetch and a browser
+extraction failed on a dropped connection. **This is a Commission rendering, not
+the OJ text.** Cross-check every quoted string against the OJ before it enters
+the manuscript. Full analysis in `docs/ANNEX-IV.md`.
+
+**Verdict: the regulatory premise survives.** Annex IV does require a
+description of system logic. But P1 has been aiming at the wrong paragraph.
+
+Section 2(b) contains "the general logic of the AI system and of the
+algorithms", which is the phrase the premise rested on. Read in frame, 2(b) is
+about **design specifications**: what the provider designed, their rationale,
+their assumptions, their design choices. A discovered circuit is not a design
+specification. Resting on 2(b) alone invites a correct and fatal objection.
+
+The real hooks are **2(e)** and **3**, which carry the same concept in two
+tenses: "an assessment of the technical measures **needed** to facilitate the
+interpretation of the outputs" and "the technical measures **put in place** to
+facilitate the interpretation of the outputs". That is where an interpretability
+artefact is actually filed, and it is about interpreting outputs, which is what
+a circuit purports to do.
+
+**Section 4 was missed entirely by the brief**: "A description of the
+appropriateness of the performance metrics for the specific AI system." A
+standalone requirement to justify metric appropriateness. P1's specification
+space has a metric dimension. If the filed claim moves when the metric moves,
+section 4 is load-bearing and its adequacy has never been measured. This is the
+cleanest available justification for the metric axis.
+
+**Section 7** gives the framing slot: where no harmonised standard has been
+applied, a detailed description of the solutions adopted is required. There is
+no harmonised standard for mechanistic interpretability evidence, and the
+filability criterion is exactly what such a standard would specify.
+
+**The chapeau creates one objection that must be answered in the paper**, not
+left to a reviewer: the documentation is required "as applicable to the relevant
+AI system". A provider can argue circuit-level interpretability is not
+applicable. The answer is that 2(e) and 3 are not optional for a high-risk
+system carrying an Article 14 human-oversight requirement, so something must be
+filed, and P1 is about the evidential quality of whatever is filed rather than
+about compelling a particular technique.
+
+### Required changes
+
+1. Retarget the claim map from 2(b) to **2(e) and 3**. Keep 2(b) as context.
+2. Add **section 4**, metric appropriateness, to the paper.
+3. Frame the filability criterion against **section 7**.
+4. Answer "as applicable" head-on.
+
+### Still outstanding
+
+- **Article 11 unread.** Fetch timed out. It governs the obligation to draw up
+  and maintain the documentation and is referenced by the Annex IV chapeau.
+- **Article 13(3)(d) and Article 14 unread.** Both are cross-referenced from
+  2(e) and 3, and they define "facilitate the interpretation of the outputs".
+  The claim map should use the regulation's own vocabulary, so these are needed
+  before phi is designed.
+- OJ cross-check of all quoted strings.
+
+### Repository is local only
+
+`git remote -v` returns empty. Five commits, 316K in `.git/`, branch `master`,
+nothing pushed anywhere. **A public remote is required before Gate 3 on 16 Aug**,
+because a pre-registration timestamp attested only by a local clock is not
+evidence. Decision on remote and attestation route still open.
+
+### Decisions (Ajay, 2026-08-03)
+
+**Claim map retargeted.** `phi` maps a circuit to a statement under **Annex IV
+2(e) and 3**, the technical measures to facilitate interpretation of outputs.
+Section 2(b) becomes context, not the hook, because it is a design-specification
+requirement and a discovered circuit is not a design specification. **Section 4,
+metric appropriateness, becomes a second claim target** and is the justification
+for the metric axis of the specification space. See `docs/ANNEX-IV.md`.
+
+**Remote and attestation.** Private GitHub repo now for backup and history.
+Embargoed OSF registration at Gate 3 for an independent, third-party-attested
+timestamp with a DOI and no disclosure. Both made public at arXiv on 10 Sept.
+OSF is the norm in the multiverse and specification-curve literature P1 borrows
+from, so it is idiomatic for the venue as well as sufficient for the claim.
+
+---
+
+## 2026-08-03 (Phase 1 cont.) — D1 and D2 closed, D12 opened
+
+**D1 closed (Ajay).** Confirmatory grid uses **all seven auto-circuit ablation
+operators** verbatim. Optimal ablation and Gaussian noise are dropped; neither
+is implemented by the instrument. Five of the seven are mean variants, and
+2407.08734 section 3.1.3 names the mean-dataset-size choice without crossing it,
+so P1 quantifies a degree of freedom the closest prior work flagged and left
+unmeasured.
+
+**D2 closed (Ajay).** ERASER sufficiency and comprehensiveness are implemented
+in `src/p1` as an additive extension that never edits auto-circuit, and enter
+the main grid alongside native metrics. Justification: 2407.08734 section 3.2
+declines to cross the metric dimension and calls the choice "in general free",
+and Annex IV section 4 requires "a description of the appropriateness of the
+performance metrics for the specific AI system".
+
+**Built.** `src/p1/spec.py` and `tests/test_spec.py`. 59 tests total, all
+passing, verified by running the suite in this session.
+
+`Specification.spec_id` is a truncated SHA-256 of a canonical JSON encoding,
+deliberately not Python's built-in `hash`, which is salted per process and would
+give different ids in the sweep run and the analysis run. A test spawns fresh
+interpreters under three `PYTHONHASHSEED` values and asserts the id is
+unchanged, and a second test pins one known literal so any change to the field
+set or encoding fails loudly instead of silently renaming every result on disk.
+
+**D12 opened, blocking.** Encoding the grid exposed that the metric axis
+conflates the discovery objective with the evaluation metric. Verified from
+source: ACDC takes `faithfulness_target` restricted to kl_div and mse;
+mask_gradient exposes twelve objective combinations; the `prune_metrics`
+registry is separate and post-hoc. An evaluation metric does not change `C(s)`,
+so it cannot change `phi(C(s))`, so as specified the metric axis would produce
+zero claim variation at four times the compute. Unless `tau` is defined relative
+to a metric, in which case it does. Full statement in `docs/DESIGN-DELTAS.md`
+D12. The 3,780 grid figure and `METRICS` in `src/p1/spec.py` are provisional
+until this is resolved.
+
+**D12 closed (Ajay, 2026-08-03): metric-relative tau.**
+
+`tau` is defined as **the smallest circuit recovering `(1 - tau)` of metric `m`
+measured on the full model**. Consequences:
+
+- `(m, tau)` jointly select the cut point on the prune-score ranking, so `m`
+  genuinely changes `C(s)` and the metric axis is live rather than inert.
+- All four metrics stay in the grid. The confirmatory grid remains 3,780.
+- The definition matches how a provider would actually justify a filing under
+  Annex IV section 4, because the metric is what defines when the circuit is
+  good enough to file.
+
+**This definition must be stated in the pre-registration verbatim.** It is a
+researcher degree of freedom in its own right: absolute `tau` (a fixed edge
+count) is equally defensible and appears in the literature, and choosing between
+them changes whether the metric axis carries variance at all. Report the choice
+and its rationale in the paper rather than letting a reviewer discover it.
+
+**Consequence for the harness.** Circuit discovery must produce a prune-score
+ranking once per `(algorithm, a, d, P, r)`, after which the `(m, tau)` cut is
+cheap post-hoc selection on that ranking. The sweep therefore does **not** need
+3,780 independent discovery runs. It needs one ranking per discovery
+configuration, with the metric and threshold applied afterwards. This is a large
+saving and the smoke config must measure the ranking cost, not the full-grid
+cost. INFERRED from the auto-circuit API structure, **not yet verified by
+running it.** Verify before relying on it for the schedule.

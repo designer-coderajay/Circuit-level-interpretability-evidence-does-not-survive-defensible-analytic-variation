@@ -273,3 +273,55 @@ entries remain readable. P0 and H4 are new labels.
 section 7, that structural multiplicity is already established, and that the
 contribution is what that multiplicity does to a regulatory filing. Reviewers
 forgive an owned limitation and punish a hidden one.
+
+---
+
+## D12. The metric axis conflates discovery objective with evaluation metric
+
+**Status: OPEN and blocking. Found 2026-08-03 while encoding the grid.**
+
+**VERIFIED** from auto-circuit 1.0.1 source signatures:
+
+| Function | Objective parameters | Levels |
+|---|---|---|
+| `acdc_prune_scores` | `faithfulness_target: Literal["kl_div", "mse"]` | 2 |
+| `mask_gradient_prune_scores` | `grad_function: Literal["logit","prob","logprob","logit_exp"]` x `answer_function: Literal["avg_diff","avg_val","mse"]` | 12 |
+| `edge_attribution_patching_prune_scores` | `answer_diff: bool` | 2 |
+| `subnetwork_probing_prune_scores` | none in signature head | - |
+| `activation_magnitude_prune_scores` | none | - |
+| `random_prune_scores` | none | - (H3 baseline) |
+
+Separately, `auto_circuit/metrics/prune_metrics/prune_metrics.py` holds an
+**evaluation** registry: Clean KL Div, Corrupt KL Div, Answer Logit, Wrong
+Answer Logit, Answer Prob, Answer Logprob, Logit Diff.
+
+**The problem.** The brief's `m in {sufficiency, comprehensiveness, F1,
+logit-difference recovery}` treats these as one axis. They are two.
+
+- A **discovery objective** selects edges. It changes `C(s)`.
+- An **evaluation metric** is applied to an already-ranked circuit. It does not
+  change `C(s)`.
+
+`phi` maps circuits to claims. Therefore an evaluation metric cannot change
+`phi(C(s))`. As currently specified the metric axis would contribute **exactly
+zero claim variation** while multiplying the sweep by four. The defect would
+have been invisible until after 3,780 runs.
+
+**The exception, and the real decision.** If `tau` is defined **relative to a
+metric**, for example "the smallest circuit recovering 90 percent of metric m",
+then `(m, tau)` jointly choose the cut point on the prune-score ranking, and `m`
+does change `C`. If `tau` is **absolute**, for example "top 200 edges", it does
+not. Both conventions appear in the published literature, so this is a genuine
+researcher degree of freedom and it must be chosen and pre-registered, not left
+implicit.
+
+**Note the upside.** The discovery-objective space is larger and less documented
+than the ablation space. `mask_gradient` alone exposes twelve objective
+combinations, and MIB (2504.13151, VERIFIED) reports attribution and mask
+optimisation methods performing best on circuit localisation, so it is a
+mainstream and defensible choice rather than an exotic one. Nobody has crossed
+this space. It is a stronger axis than the one the brief specified.
+
+**Decision required before the grid is fixed.** Options are set out for Ajay.
+Until this is resolved, `METRICS` in `src/p1/spec.py` and the 3,780 figure are
+provisional.

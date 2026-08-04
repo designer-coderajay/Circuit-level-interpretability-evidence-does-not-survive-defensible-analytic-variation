@@ -43,21 +43,29 @@ Target arXiv 10 September 2026, FAccT 2027 in October.
 | 2026-08-03 | **H1 demoted to premise; lead with the claim-level result** | 2606.06267 establishes that discovery samples from an equivalence class of valid subgraphs. Circuit multiplicity is no longer a contribution. The contribution is what that multiplicity does to an Annex IV filing. See DESIGN-DELTAS D9. |
 | 2026-08-03 | **Edge-level is the confirmatory grid**, node-level a contrast | Their section 6.2: source-level evaluation inflates apparent faithfulness. The granularity choice is itself a documented researcher degree of freedom. See DESIGN-DELTAS D8. |
 | 2026-08-03 | Gate 1 **passed**, P1 proceeds | Zero regulatory, conformity, audit, or technical-documentation content in either 2407.08734 or 2606.06267. The propagation and the filability criterion are unclaimed. |
+| 2026-08-03 | **Claim map retargets to Annex IV 2(e) and 3; section 4 added as a second target** | 2(b) is a design-specification requirement and a discovered circuit is not a design specification. 2(e) and 3 carry "technical measures to facilitate the interpretation of the outputs", which is where an interpretability artefact is actually filed. Section 4 requires justifying metric appropriateness and is the cleanest justification for the metric axis. See docs/ANNEX-IV.md. |
+| 2026-08-03 | **Private GitHub now, embargoed OSF registration at Gate 3**, both public at arXiv | The repo had no backup and no remote. A pre-registration timestamp attested only by a local clock is not evidence. OSF gives a DOI and a third-party timestamp under embargo, and is idiomatic for the methods literature P1 borrows from. |
+| 2026-08-03 | **D1 closed: all seven auto-circuit ablation operators** | Optimal ablation and Gaussian noise are not in the instrument. Five of seven are mean variants, and 2407.08734 flags the mean-dataset-size choice without crossing it. |
+| 2026-08-03 | **D2 closed: ERASER sufficiency and comprehensiveness enter the main grid** as an additive extension in `src/p1` | 2407.08734 declines to cross the metric dimension and calls the choice "in general free". Annex IV section 4 requires a description of metric appropriateness. |
+| 2026-08-03 | **D12 closed: tau is metric-relative** | tau is the smallest circuit recovering (1 - tau) of metric m on the full model. Without this the evaluation metric never changes C and the metric axis would carry zero claim variance at four times the cost. Must be stated verbatim in the pre-registration; absolute tau is equally defensible. |
 
 ## Open decisions blocking pre-registration
 
 See `docs/DESIGN-DELTAS.md` for the full statement of each.
 
-- **D1** Ablation dimension: auto-circuit ships seven operators, not the brief's
-  four, and optimal ablation is not among them.
-- **D2** Metrics: sufficiency and comprehensiveness are not in auto-circuit's
-  registry and would need an additive extension layer.
-- **D3** Grid size: 2,160 under the brief, 3,780 under D1(a). Feasibility in the
-  10 to 24 August window is **unmeasured**. Do not repeat the brief's
-  feasibility claim until the smoke config produces a timing number.
+- **D3** Grid is **3,780** (7 x 3 x 4 x 3 x 3 x 5, edge-level). Feasibility
+  **unmeasured**. Metric-relative tau means the sweep needs one prune-score
+  ranking per discovery configuration, not 3,780 independent discoveries, which
+  is a large saving. That is INFERRED from the API and not yet verified by
+  running it.
 - **D4** Functional-equivalence arm: the interchange protocol is still unread.
   Granularity is now resolved (D8). Pull the protocol from the UKPLab repo.
 - **D7** The brief's positioning sentence is unsupported and must not be used.
+- **D10** Articles 11, 13(3)(d) and 14 unread. 13(3)(d) and 14 define "facilitate
+  the interpretation of the outputs", the phrase phi is now built on. Read before
+  phi is implemented.
+- **D11** All Annex IV strings came from a Commission rendering, not the Official
+  Journal. Cross-check against the OJ before any of them enters the manuscript.
 
 ## What is built
 
@@ -68,6 +76,10 @@ See `docs/DESIGN-DELTAS.md` for the full statement of each.
   load-bearing one asserts the closed-form flip rate equals the brute-force
   pairwise definition across 2,000 randomised cases, and a second cross-checks
   it against the Gini-Simpson form quoted in the paper.
+- `src/p1/spec.py` and `tests/test_spec.py`: the specification space, grid
+  enumeration, and a machine-independent `spec_id` (truncated SHA-256 of a
+  canonical encoding, pinned by regression test, verified stable across
+  PYTHONHASHSEED values). **59 tests total, all passing 2026-08-03.**
 - Not built: the sweep harness, the claim map `phi`, the interchange-intervention
   arm, the specification curve, the variance decomposition.
 
