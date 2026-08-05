@@ -138,6 +138,16 @@ decisions. It is now 54.0% of that on both counts: the corruption nesting remove
 420 discovery cells that were exact duplicates, and dropping the unsourced third
 prompt variant removes a third of the remainder.
 
+**`n_prompts` is not yet fixed and is chosen by measurement, not judgement.**
+It was absent from every earlier draft of this plan, which was an omission: it is
+the largest single lever on both the sweep budget and the validity of the
+headline seed-variance ratio. VERIFIED 2026-08-05, `auto_circuit.data`
+defaults to `train_test_size = (128, 128)`, so the instrument's own default is
+128 discovery prompts against the 16 used in the smoke configs. The selection
+rule is fixed in `preregistration/CALIBRATION.md`, committed before the pilot
+runs. Whatever that rule returns is what goes here, including if it returns a
+value the schedule cannot afford.
+
 **Cost is not yet stated here, deliberately.** Gate 2 measured EAP discovery at
 9.301 s and marginal evaluation at 1.581 s per cut on CPU. It did **not** measure
 IEG-50, whose discovery loop runs `integrated_grad_samples + 1` full passes over
@@ -282,11 +292,18 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 - [x] Prompt-variant levels fixed — ABBA, BABA, 2026-08-05
 - [x] Private GitHub remote exists and history is pushed — `origin/main` at
       `751573f`, 2026-08-05
+- [x] IEG-50 discovery cost measured, n = 2, mean 239.574 s, spread 1.5%,
+      2026-08-05. 25.8x EAP, not the 51x inferred
+- [x] `CALIBRATION.md` rule committed before either pilot runs
 - [ ] Remaining **[CONFIRM]**: H4 threshold; the three corruption **levels**
       themselves, each needing a published implementation to cite; `tau` levels;
       `phi` size bins, band names, and segment labels
-- [ ] IEG-50 discovery cost measured, so the sweep budget is evidence not
-      inference (`configs/smoke-ieg.yaml`)
+- [ ] `n_prompts` selected by the calibration rule, curve reported
+- [ ] GPU speedup measured, D17's 20x guess replaced
+- [ ] `src/p1/spec.py` implements the nesting and carries a
+      `discovery_objective` field; pinned `spec_id` regression value updated
+- [ ] Section 4's IEG-1000 wording corrected: the slice compares two shipped
+      configurations, it does **not** isolate IG sample count
 - [ ] Environment pinned and hash recorded (`requirements-sweep.lock.txt`)
 - [ ] No pooled confirmatory result seen by anyone
 - [x] Both abstracts drafted — section 8

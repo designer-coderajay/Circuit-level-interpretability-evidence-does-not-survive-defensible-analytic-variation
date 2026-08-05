@@ -1652,3 +1652,55 @@ list.** Every figure above is at 32, a smoke-test size. The per-sample cost is a
 pass over the dataloader, so cost scales roughly linearly: at 128 prompts this is
 100 h and D5's rented-GPU decision comes back into play. Added as a blocking
 pre-registration item.
+
+### 2026-08-05. `n_prompts` found missing; calibration rule fixed before measurement
+
+**VERIFIED** from `auto_circuit/data.py`: `load_datasets_from_json` defaults to
+`train_test_size = (128, 128)`, `batch_size = 32`. The instrument's default is
+**128 discovery prompts**. `configs/smoke.yaml` uses 16, a value chosen to make a
+timing run fast and carrying no scientific standing.
+
+`n_prompts` had never appeared on the CONFIRM list. That was an omission and it
+was the largest lever in the design, for a reason that is not about cost.
+
+Seed variance has two sources the design cannot separate after the fact: sampling
+noise, and genuine instability of discovery under a fixed specification. Only the
+second is of interest. The first shrinks with `n`. The plan's headline is the
+ratio of seed variance to analytic-choice variance, so at small `n` that headline
+is inflated by a quantity unrelated to the paper's claim, and the correct reviewer
+response is that the reported instability is small-sample noise. **`n_prompts` is
+a validity constraint, not a budget knob.**
+
+Cost consequence, scaling measured `f` and `p` by 8:
+
+    16 discovery prompts   ~  25.6 h CPU
+    128 (library default)  ~ 204   h CPU
+
+204 CPU-hours does not fit before 16 August, so at the default the sweep needs a
+GPU, and D17's 20x speedup is an unmeasured guess. That guess is now a schedule
+dependency rather than a nicety.
+
+**Decisions (Ajay, 2026-08-05): calibrate `n_prompts` rather than pick it, and
+measure the GPU factor before committing to it.**
+
+`preregistration/CALIBRATION.md` written and committed **before either pilot
+runs**, which is the only property that makes this a calibration rather than
+tuning. It fixes:
+
+- the design: EAP only, RESAMPLE, ABBA, edge-level, 8 seeds, `n` in {16,32,64,128}
+- the statistic: mean pairwise Jaccard over 28 seed pairs at an absolute top-500
+  cut, stated openly as a calibration-only convention distinct from the
+  confirmatory metric-relative `tau`
+- the rule: smallest `n` with `J_seed(2n) - J_seed(n) < 0.05`, defaulting to 128
+  if the curve has not flattened
+- the prohibition: `n` may not be lowered because the resulting budget is
+  inconvenient. If the rule returns 128 and 128 does not fit, the schedule or the
+  compute changes, not the rule.
+- the GPU protocol: both existing smoke configs run **unchanged** on a rented
+  CUDA device, so the ratio is a device comparison and not a setup comparison
+
+Estimated cost of calibration 1: about 19 minutes CPU.
+
+**Why measure the GPU factor at all.** Two inferences on this project have now
+been corrected by measurement: 12x reuse measured at 4.62x, and 51x IEG measured
+at 25.8x. Two for two. There is no basis for treating the third as different.
