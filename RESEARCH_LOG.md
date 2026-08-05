@@ -1786,3 +1786,69 @@ asserted environment hash on a rented box, not weaker.
 host resident set size. The 2.8 GB reported on the T4 says nothing about the 15 GB
 card. `peak_vram_mb` added to `Manifest` and instrumented in `scripts/smoke.py`;
 `configs/smoke-ieg-128.yaml` added to measure it at the selected dataset size.
+
+### 2026-08-05. VRAM measured; sweep host resolved; two design gaps closed
+
+`configs/smoke-ieg-128.yaml` on a Tesla T4, 128 discovery prompts:
+
+    discovery_s            229.142
+    evaluation_per_cut_s     1.756
+    peak_rss_mb           2,763.0     (host, uninformative for this question)
+    peak_vram_mb          3,651.4     of 15,360 available
+
+**24% of the card. The T4 is not the constraint.** The ablation cache is keyed by
+batch and holds source outputs for the whole dataset, so it scales with total
+prompts rather than with batch size; raising `batch_size` from 8 to auto-circuit's
+default of 32 adds transient activation memory only. `batch_size` therefore stays
+a free parameter rather than one pinned by hardware.
+
+**D5 and D17 both resolved. Sweep host is Colab Pro, no rental.**
+
+Scaling verified rather than assumed: IEG-50 discovery was 28.638 s at 16
+discovery prompts and 229.142 s at 128, a ratio of 8.00 for an 8x data increase.
+Linear.
+
+Budget on measured numbers, 25.7 h. Higher than the 20 h quoted an hour earlier,
+which had applied 16-prompt device factors to CPU-at-128 figures. Measuring the
+thing directly moved it up by a third, in the direction that matters.
+
+### Two gaps the budget arithmetic surfaced
+
+**1. `tau` named a criterion but never a search.** The plan defined `C(s)` as the
+smallest circuit recovering `(1 - tau)` of metric `m`, and never said how that
+circuit is located on the ranking. A coarse ladder and a bisection return
+different circuits for the same `tau`, and a different circuit is a different
+claim. An undeclared researcher degree of freedom inside the definition of the
+paper's central object, in a paper about undeclared researcher degrees of freedom.
+
+**Decision (Ajay): fixed logarithmic ladder**, `[10, 20, 50, 100, 200, 500, 1000,
+2000, 5000, 10000]`, `C(s)` = smallest rung meeting the criterion on an upward
+scan.
+
+Bisection was rejected on soundness, not cost: metric recovery is not guaranteed
+monotone in edge count, and bisection assumes a monotonicity it cannot rely on.
+An upward ladder scan is well defined either way. Bisection would also have cost
+about 15 evaluations against the ladder's 10.
+
+The top rung sits deliberately below the 32,491-edge full model. A specification
+needing more than 10,000 edges to recover `(1 - tau)` is **discarded** under
+section 7 rather than handed a degenerate whole-model circuit. Including the full
+model as a rung would make the criterion trivially satisfiable and convert a
+failure into a meaningless claim.
+
+The ladder quantises, so the located circuit overshoots the true minimum. The
+metric value at the rung below is computed in the same sweep and retained, so the
+overshoot is recoverable at analysis time at zero additional compute. Noted as an
+option rather than a commitment.
+
+**2. 25.7 h exceeds a Colab session.** Resume is mandatory, not good practice.
+
+**Decision (Ajay): per-cell manifest, skip if `status: ok`.** The results
+directory is the checkpoint; no separate state file to corrupt mid-write. Every
+cell manifest records `torch.cuda.get_device_name`, cells that ran on a
+non-modal device are discarded and rerun, and the device distribution is
+reported.
+
+That last condition is what makes running a confirmatory sweep on ephemeral
+infrastructure defensible. Per-cell recorded and verified device homogeneity is
+more evidence than a single asserted environment hash on a rented box, not less.

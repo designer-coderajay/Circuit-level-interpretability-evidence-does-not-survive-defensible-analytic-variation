@@ -138,7 +138,19 @@ decisions. It is now 54.0% of that on both counts: the corruption nesting remove
 420 discovery cells that were exact duplicates, and dropping the unsourced third
 prompt variant removes a third of the remainder.
 
-**`n_prompts` is not yet fixed and is chosen by measurement, not judgement.**
+**`n_prompts` = 256 total, 128 discovery. Selected 2026-08-05 by the committed
+calibration rule, not chosen.** The seed-agreement curve was
+`J_seed` = 0.5678, 0.6386, 0.7428, 0.8089 at `n` = 16, 32, 64, 128, with deltas
++0.0709, +0.1042, +0.0660. No delta fell below the pre-committed 0.05, so the
+curve had not flattened and the rule fell back to the largest size tested, which
+is also auto-circuit's own default. **The paper states in the abstract that
+sampling stability was not reached at the instrument's default dataset size.**
+Two runs of the identical specification differing only in prompt sample agree on
+81% of a 500-edge circuit, so seed is a comparison arm in this design, not a
+nuisance term. Full protocol and the non-monotonicity of the deltas:
+`preregistration/CALIBRATION.md`.
+
+**Original statement of the problem, retained:**
 It was absent from every earlier draft of this plan, which was an omission: it is
 the largest single lever on both the sweep budget and the validity of the
 headline seed-variance ratio. VERIFIED 2026-08-05, `auto_circuit.data`
@@ -148,18 +160,73 @@ rule is fixed in `preregistration/CALIBRATION.md`, committed before the pilot
 runs. Whatever that rule returns is what goes here, including if it returns a
 value the schedule cannot afford.
 
-**Cost is not yet stated here, deliberately.** Gate 2 measured EAP discovery at
-9.301 s and marginal evaluation at 1.581 s per cut on CPU. It did **not** measure
-IEG-50, whose discovery loop runs `integrated_grad_samples + 1` full passes over
-the dataloader and therefore dominates the budget. Any total-hours figure before
-that measurement is an inference. It is measured by `configs/smoke-ieg.yaml`
-before this plan is locked.
+**Compute, measured.** All figures below are from runs of the committed configs,
+not from scaling arguments. Sweep host is **Colab Pro on a Tesla T4**, resolving
+DESIGN-DELTAS D5 and D17.
+
+At 128 discovery prompts on a T4, `configs/smoke-ieg-128.yaml` measured IEG-50
+discovery at **229.142 s**, evaluation at **1.756 s per cut**, and peak VRAM at
+**3,651 MB against the card's 15,360 MB**, so memory is not the binding
+constraint and `batch_size` remains free rather than pinned by the hardware.
+
+| | cells | each | total |
+|---|---|---|---|
+| EAP discovery | 1,020 | ~10.7 s *(inferred)* | 3.0 h |
+| IEG-50 discovery | 170 | 229.1 s *(measured)* | 10.8 h |
+| evaluation, 10 rungs | 1,190 | 17.6 s *(measured)* | 5.8 h |
+| IEG-1000 slice | 5 | ~4,380 s *(inferred)* | 6.1 h |
+| **total** | | | **≈ 25.7 h** |
+
+Discovery cost is linear in dataset size, verified: 8× the prompts gave 8.00× the
+time. The measured device factor is about **7×**, not the 20× D17 guessed.
+
+**Resume, because 25.7 h exceeds a Colab session.** Each discovery cell writes
+its own manifest and prune-score file keyed by `spec_id`; the runner skips any
+cell whose manifest exists with `status: ok`. The results directory is the
+checkpoint, so there is no separate state file to corrupt mid-write. Every cell
+manifest records `torch.cuda.get_device_name`. **Cells that ran on a device other
+than the modal one are discarded and rerun**, and the device distribution is
+reported. Per-cell recorded and verified homogeneity is stronger evidence than a
+single asserted environment hash, not weaker, and it is the condition on which
+running a confirmatory sweep on ephemeral infrastructure is defensible at all.
 
 **`tau` is metric-relative**, defined verbatim as: *the smallest circuit
 recovering `(1 − tau)` of metric `m` measured on the full model.* Absolute `tau`
 (a fixed edge count) is equally defensible and appears in the literature. The
 choice is recorded because it is load-bearing: under absolute `tau` with ACDC,
 both the ablation and metric axes would carry zero claim variance.
+
+**How the circuit is located, fixed 2026-08-05.** The definition above was
+incomplete in every earlier draft: it named the criterion but not the search.
+Different search procedures return different circuits for the same `tau`, and a
+different circuit is a different claim, so the procedure is part of the
+specification and is fixed here.
+
+`C(s)` is **the smallest rung of the following fixed ladder** at which the
+criterion is met, scanning upward:
+
+    EDGE_COUNT_LADDER = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000]
+
+Ten rungs, roughly logarithmic, against a full graph of 32,491 edges on GPT-2
+small at the confirmatory `patchable_model` settings.
+
+Three properties of this choice, stated so they are not discovered later.
+
+- **It is quantised, and it overshoots.** The located circuit is the smallest
+  *rung* meeting the criterion, not the smallest circuit. The metric value at the
+  rung below is computed as part of the same sweep and is retained, so the size
+  of the overshoot is recoverable at analysis time at zero additional compute.
+- **It is sound under non-monotonicity.** Metric recovery is not guaranteed
+  monotone in edge count. An upward scan of a fixed ladder takes the first rung
+  that meets the criterion regardless, which is well defined either way. Bisection
+  was considered and rejected for exactly this reason: it assumes monotonicity it
+  cannot rely on, and it costs more evaluations than ten rungs, not fewer.
+- **The top rung is deliberately below the full model.** If a specification needs
+  more than 10,000 edges, about 31% of the graph, to recover `(1 − tau)` of the
+  metric, that is not an explanation, and the run is **discarded** under section 7
+  rather than being handed a degenerate whole-model circuit. Including 32,491 as a
+  rung would make the criterion trivially satisfiable and would silently convert
+  a failure into a meaningless claim. The discard rate is reported per axis level.
 
 **Reduced arm, pre-registered here and not later.** IEG-1000 runs on a seed-only
 slice: one ablation operator, one corruption, one prompt variant, five seeds,
@@ -298,8 +365,14 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 - [ ] Remaining **[CONFIRM]**: H4 threshold; the three corruption **levels**
       themselves, each needing a published implementation to cite; `tau` levels;
       `phi` size bins, band names, and segment labels
-- [ ] `n_prompts` selected by the calibration rule, curve reported
-- [ ] GPU speedup measured, D17's 20x guess replaced
+- [x] `n_prompts` selected by the calibration rule: 256 total, 128 discovery,
+      curve reported, 2026-08-05
+- [x] GPU factor measured on Tesla T4, ~7x not 20x; D17's guess replaced
+- [x] VRAM measured at the selected size, 3,651 of 15,360 MB; T4 is sufficient
+      and D5's rented-box decision is withdrawn
+- [x] `tau` search procedure fixed: smallest rung of a 10-step edge-count ladder
+- [x] Resume design fixed: per-cell manifest, skip if `status: ok`, device
+      recorded per cell and homogeneity enforced
 - [ ] `src/p1/spec.py` implements the nesting and carries a
       `discovery_objective` field; pinned `spec_id` regression value updated
 - [ ] Section 4's IEG-1000 wording corrected: the slice compares two shipped
