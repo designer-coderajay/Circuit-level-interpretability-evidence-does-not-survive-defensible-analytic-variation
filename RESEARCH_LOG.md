@@ -1899,3 +1899,45 @@ under the old ids except smoke and calibration output, all of which is
 non-confirmatory. **After the lock this literal must not move again.**
 
 Test count 165 to 182.
+
+### 2026-08-05, late. Card comparison: the workload does not scale with GPU class
+
+Both smoke configs run unchanged on T4 and on L4.
+
+    component                       T4        L4      gain
+    EAP discovery, 16 prompts      1.339     1.195    1.12x
+    IEG-50 discovery, 128 prompts  229.142   172.307  1.33x
+    evaluation per cut, 128        1.756     1.333    1.32x
+    peak VRAM, 128 prompts         3651.4    3651.4   identical
+
+**L4 is 1.33x the T4 on the heavy path, not the 2 to 3x predicted. Fifth
+inference corrected by measurement today.**
+
+The explanation matters more than the number. GPT-2 small is 124M parameters and
+`patchable_model` runs many small hooked operations per forward pass, so the
+workload is bound by kernel launch and Python overhead rather than by arithmetic
+throughput. **It does not scale with GPU class.** INFERRED consequence: A100 and
+H100 would also deliver roughly 1.3 to 1.5x while consuming compute units several
+times faster. Not measured. Three minutes would settle it if the question is ever
+load-bearing; it currently is not.
+
+Peak VRAM is byte-identical across the two cards, which says allocation is
+deterministic and 3,651 MB is a property of the workload, not of the device.
+Useful: it means the memory headroom conclusion transfers to any card.
+
+Budget: **19.4 h on L4 against 25.7 h on T4.** One fewer session, not a
+transformation. Either card is defensible; the choice turns on compute-unit
+balance, which is Ajay's to check. Both need identical checkpointing.
+
+Also recorded: installing auto-circuit downgrades Colab's numpy from 2.x to
+1.26.4 and emits a wall of dependency conflicts against unrelated preinstalled
+packages. None touch anything P1 imports. The environment fingerprint in each
+manifest records what actually loaded, so this is noise rather than a
+reproducibility problem, but it is written down so nobody investigates it twice.
+
+**Two failed runs preceded these**, both `status: failed` with `peak_vram_mb 0.0`
+and `import_s` under 5 s. Cause in both cases: changing Colab runtime type
+rebuilds the VM, and the `pip install` cell was not re-run. The failure signature
+is distinctive and worth recognising: a fast import failure with zero VRAM.
+Mitigation adopted: one self-contained cell that installs, extracts, verifies
+CUDA, and runs, starting from `%cd /content` so it is idempotent.

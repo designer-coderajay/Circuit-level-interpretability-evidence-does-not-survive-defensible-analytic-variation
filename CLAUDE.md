@@ -4,6 +4,8 @@ Repository instructions. Read before doing anything in this repo.
 
 ## Read first, every session
 
+0. `docs/NEXT-SESSION.md` — if present, the ordered plan for this session,
+   written at the end of the previous one. Rewrite or delete it before finishing.
 1. `docs/P1-MEMORY.md` — decisions taken, open decisions, standing hazards.
 2. `RESEARCH_LOG.md` — dated, append-only record of what was run and learned.
 3. `docs/DESIGN-DELTAS.md` — where the brief and verified reality diverge.
