@@ -25,10 +25,14 @@ __all__ = [
     "CORRUPTION_DEPENDENT_ABLATIONS",
     "CORRUPTION_NOT_APPLICABLE",
     "DISCOVERY_OBJECTIVES",
+    "EDGE_COUNT_LADDER",
+    "FIELDS",
     "IEG_1000_OBJECTIVE",
     "METRICS",
     "GRANULARITIES",
     "Specification",
+    "ablation_corruption_cells",
+    "discovery_cells",
     "enumerate_grid",
     "grid_size",
 ]
@@ -156,6 +160,28 @@ METRICS: tuple[str, ...] = (
 #: second grid. See docs/DESIGN-DELTAS.md D8.
 GRANULARITIES: tuple[str, ...] = ("edge", "node")
 
+#: Where `C(s)` is located on the prune-score ranking. Fixed 2026-08-05.
+#:
+#: `tau` is metric-relative, so the criterion is "recovers `(1 - tau)` of metric
+#: `m` on the full model". The criterion alone does not determine a circuit: a
+#: coarse ladder and a bisection return different circuits for the same `tau`,
+#: and a different circuit is a different claim. `C(s)` is therefore defined as
+#: **the smallest rung of this ladder meeting the criterion, scanning upward**.
+#:
+#: Bisection was rejected on soundness rather than cost. Metric recovery is not
+#: guaranteed monotone in edge count; an upward ladder scan is well defined
+#: either way, and bisection is not. It would also cost about 15 evaluations
+#: against this ladder's 10.
+#:
+#: The top rung is deliberately below the 32,491-edge full model. A specification
+#: needing more than 10,000 edges, roughly 31% of the graph, to recover
+#: `(1 - tau)` is DISCARDED rather than handed a degenerate whole-model circuit.
+#: Adding 32,491 as a rung would make the criterion trivially satisfiable and
+#: silently convert a failure into a meaningless claim.
+EDGE_COUNT_LADDER: tuple[int, ...] = (
+    10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000,
+)
+
 
 # --------------------------------------------------------------------------
 # Specification
@@ -171,6 +197,7 @@ class Specification:
     ``spec_id``. Do not reorder fields after a pre-registration is locked.
     """
 
+    discovery_objective: str
     ablation: str
     corruption: str
     metric: str
@@ -180,13 +207,48 @@ class Specification:
     granularity: str = "edge"
 
     def __post_init__(self) -> None:
+        allowed_objectives = DISCOVERY_OBJECTIVES + (IEG_1000_OBJECTIVE,)
+        if self.discovery_objective not in allowed_objectives:
+            raise ValueError(
+                f"unknown discovery objective {self.discovery_objective!r}; "
+                f"expected a named auto-circuit PruneAlgo constant from "
+                f"{allowed_objectives}"
+            )
         if self.ablation not in AUTO_CIRCUIT_ABLATIONS:
             raise ValueError(
                 f"unknown ablation {self.ablation!r}; auto-circuit 1.0.1 ships "
                 f"{AUTO_CIRCUIT_ABLATIONS}"
             )
+
+        # The nesting invariant, enforced on the object rather than only in the
+        # enumerator. Two of the seven operators ignore the corrupt distribution
+        # entirely, so a specification that pairs one of them with a real
+        # corruption level is not a distinct specification, it is a duplicate
+        # wearing a label. Making that unconstructible is what guarantees the
+        # multiverse contains no duplicates, regardless of how it was built.
+        # See DESIGN-DELTAS D18.
+        depends = self.ablation in CORRUPTION_DEPENDENT_ABLATIONS
+        if depends and self.corruption == CORRUPTION_NOT_APPLICABLE:
+            raise ValueError(
+                f"ablation {self.ablation!r} reads the corrupt distribution, so "
+                f"corruption must be a real level, not {CORRUPTION_NOT_APPLICABLE!r}"
+            )
+        if not depends and self.corruption != CORRUPTION_NOT_APPLICABLE:
+            raise ValueError(
+                f"ablation {self.ablation!r} ignores the corrupt distribution, so "
+                f"corruption must be {CORRUPTION_NOT_APPLICABLE!r}, got "
+                f"{self.corruption!r}. Crossing them would create duplicate "
+                f"specifications; corruption is nested within ablation."
+            )
+
         if self.metric not in METRICS:
             raise ValueError(f"unknown metric {self.metric!r}; expected one of {METRICS}")
+        if not 0.0 < self.threshold < 1.0:
+            raise ValueError(
+                f"threshold is metric-relative and must lie in (0, 1), got "
+                f"{self.threshold}. An absolute edge count is a different "
+                f"convention and is not what this grid pre-registered."
+            )
         if self.granularity not in GRANULARITIES:
             raise ValueError(
                 f"unknown granularity {self.granularity!r}; expected one of {GRANULARITIES}"
@@ -218,44 +280,130 @@ class Specification:
 # --------------------------------------------------------------------------
 
 
-def enumerate_grid(axes: Mapping[str, Sequence]) -> Iterator[Specification]:
-    """Enumerate the fully crossed grid in deterministic order.
+FIELDS: tuple[str, ...] = (
+    "discovery_objective",
+    "ablation",
+    "corruption",
+    "metric",
+    "threshold",
+    "prompt_variant",
+    "seed",
+    "granularity",
+)
 
-    ``axes`` maps each ``Specification`` field name to its levels. Order of
-    iteration follows the canonical field order, so the enumeration is stable
-    across runs and machines and can be resumed by index.
 
-    The grid is fully crossed by design. If pruning becomes necessary on
-    feasibility grounds, it must be a documented fractional factorial fixed in
-    the pre-registration, not a filter applied here. Arbitrary pruning is itself
-    a researcher degree of freedom.
-    """
-    fields = [
-        "ablation",
-        "corruption",
-        "metric",
-        "threshold",
-        "prompt_variant",
-        "seed",
-        "granularity",
-    ]
-    missing = [f for f in fields if f not in axes]
+def _validate_axes(axes: Mapping[str, Sequence]) -> None:
+    missing = [f for f in FIELDS if f not in axes]
     if missing:
         raise ValueError(f"axes missing required fields: {missing}")
-    unknown = [k for k in axes if k not in fields]
+    unknown = [k for k in axes if k not in FIELDS]
     if unknown:
         raise ValueError(f"axes has unknown fields: {unknown}")
-    for f in fields:
+    for f in FIELDS:
         if len(axes[f]) == 0:
             raise ValueError(f"axis {f!r} has no levels")
+    if CORRUPTION_NOT_APPLICABLE in axes["corruption"]:
+        raise ValueError(
+            f"{CORRUPTION_NOT_APPLICABLE!r} is a sentinel inserted by the "
+            f"enumerator for corruption-independent ablations. It is not a level "
+            f"and must not appear in the corruption axis."
+        )
 
-    for combo in product(*(axes[f] for f in fields)):
-        yield Specification(**dict(zip(fields, combo)))
+
+def enumerate_grid(axes: Mapping[str, Sequence]) -> Iterator[Specification]:
+    """Enumerate the grid in deterministic canonical-field order.
+
+    ``axes`` maps each ``Specification`` field name to its levels.
+
+    **Crossed on every axis except corruption, which is nested within ablation.**
+    The five operators that read the corrupt distribution get every corruption
+    level; the two that ignore it get the ``CORRUPTION_NOT_APPLICABLE`` sentinel
+    exactly once. Crossing them instead would emit three identical
+    specifications, 19% of the previous grid, which misrepresents the multiverse
+    and would plot three coincident points on the specification curve. See
+    DESIGN-DELTAS D18.
+
+    The sentinel is used rather than silently reusing the first corruption level,
+    so that a non-applicable cell is distinguishable from a real one in
+    ``spec_id`` and in every figure.
+
+    Iteration follows the canonical field order, so the enumeration is stable
+    across runs and machines and can be resumed by index. Ablation precedes
+    corruption in that order, which is what makes the nesting expressible without
+    breaking stability.
+
+    Beyond the nesting, the grid is fully crossed by design. If pruning becomes
+    necessary on feasibility grounds, it must be the documented fractional
+    factorial fixed in the pre-registration, not a filter applied here. Arbitrary
+    pruning is itself a researcher degree of freedom.
+    """
+    _validate_axes(axes)
+    for objective in axes["discovery_objective"]:
+        for ablation in axes["ablation"]:
+            corruptions = (
+                tuple(axes["corruption"])
+                if ablation in CORRUPTION_DEPENDENT_ABLATIONS
+                else (CORRUPTION_NOT_APPLICABLE,)
+            )
+            for corruption in corruptions:
+                for combo in product(
+                    axes["metric"],
+                    axes["threshold"],
+                    axes["prompt_variant"],
+                    axes["seed"],
+                    axes["granularity"],
+                ):
+                    metric, threshold, prompt_variant, seed, granularity = combo
+                    yield Specification(
+                        discovery_objective=objective,
+                        ablation=ablation,
+                        corruption=corruption,
+                        metric=metric,
+                        threshold=threshold,
+                        prompt_variant=prompt_variant,
+                        seed=seed,
+                        granularity=granularity,
+                    )
+
+
+def ablation_corruption_cells(axes: Mapping[str, Sequence]) -> int:
+    """Number of distinct (ablation, corruption) pairs under the nesting."""
+    _validate_axes(axes)
+    dependent = sum(1 for a in axes["ablation"] if a in CORRUPTION_DEPENDENT_ABLATIONS)
+    independent = len(axes["ablation"]) - dependent
+    return dependent * len(axes["corruption"]) + independent
+
+
+def discovery_cells(axes: Mapping[str, Sequence]) -> int:
+    """Number of prune-score rankings the grid requires.
+
+    This, not ``grid_size``, is what the sweep budget scales with. ``tau`` is
+    metric-relative, so the ``(metric, tau)`` cut is applied post-hoc to an
+    existing ranking and costs an evaluation, not a discovery.
+    """
+    _validate_axes(axes)
+    return (
+        len(axes["discovery_objective"])
+        * ablation_corruption_cells(axes)
+        * len(axes["prompt_variant"])
+        * len(axes["seed"])
+        * len(axes["granularity"])
+    )
 
 
 def grid_size(axes: Mapping[str, Sequence]) -> int:
-    """Size of the fully crossed grid, without materialising it."""
-    n = 1
-    for levels in axes.values():
-        n *= len(levels)
-    return n
+    """Size of the nested grid, without materialising it.
+
+    Computed analytically and asserted equal to ``len(list(enumerate_grid(...)))``
+    in the tests, so the closed form and the enumerator cannot drift apart.
+    """
+    _validate_axes(axes)
+    return (
+        len(axes["discovery_objective"])
+        * ablation_corruption_cells(axes)
+        * len(axes["metric"])
+        * len(axes["threshold"])
+        * len(axes["prompt_variant"])
+        * len(axes["seed"])
+        * len(axes["granularity"])
+    )

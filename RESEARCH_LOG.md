@@ -1852,3 +1852,50 @@ reported.
 That last condition is what makes running a confirmatory sweep on ephemeral
 infrastructure defensible. Per-cell recorded and verified device homogeneity is
 more evidence than a single asserted environment hash on a rented box, not less.
+
+### 2026-08-05. spec.py drift closed; duplicates are now unconstructible
+
+`src/p1/spec.py` had fallen behind four decisions. It enumerated a fully crossed
+grid, had no discovery-objective axis, no edge-count ladder, and a docstring
+claiming P1 crosses the mean-ablation dataset size, which had been withdrawn
+that morning. Closed.
+
+**Changes.**
+
+- `Specification` gains `discovery_objective` as the first canonical field.
+- `EDGE_COUNT_LADDER` added: `(10, 20, 50, 100, 200, 500, 1000, 2000, 5000,
+  10000)`. Top rung deliberately below the 32,491-edge full model.
+- `threshold` is validated to lie strictly in (0, 1). An absolute edge count now
+  raises, so the metric-relative convention cannot be silently violated.
+- `enumerate_grid` nests corruption within ablation, inserting
+  `CORRUPTION_NOT_APPLICABLE` for the two independent operators.
+- `ablation_corruption_cells` and `discovery_cells` added. The latter is the
+  number the sweep budget scales with and was previously computed by hand in
+  prose, which is how it drifted.
+- `grid_size` is now a closed form asserted equal to the materialised
+  enumeration, so the two cannot diverge.
+
+**The design decision worth recording.** The nesting invariant is enforced in
+`Specification.__post_init__`, not only in the enumerator. Pairing `ZERO` or
+`TOKENWISE_MEAN_CLEAN` with a real corruption level raises, and pairing a
+corruption-dependent operator with the sentinel raises. A duplicate specification
+is therefore **unconstructible**, not merely unemitted. If a future script builds
+specifications some other way, D18 cannot silently return.
+
+**Verified by running, this session:**
+
+    ablation x corruption cells   17
+    discovery cells            1,190
+    specifications            14,280
+    unique spec_ids           14,280      duplicates 0
+
+All three match `preregistration/PLAN.md` exactly.
+
+**The pin moved, deliberately.** `spec_id` for the canonical specification was
+`e1fead883f6cdea2` on the old seven-field object and is now
+`1831d8ce1a1673a0`. Adding a field changes every id on disk, which is exactly
+what the pinned regression test exists to make loud. Nothing had been written
+under the old ids except smoke and calibration output, all of which is
+non-confirmatory. **After the lock this literal must not move again.**
+
+Test count 165 to 182.
