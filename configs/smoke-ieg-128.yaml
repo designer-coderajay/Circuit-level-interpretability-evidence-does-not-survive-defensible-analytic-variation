@@ -1,0 +1,48 @@
+# Calibration 2b: does a sweep cell fit in VRAM at the selected dataset size?
+#
+# The T4 run on 2026-08-05 reported peak_rss_mb around 2.8 GB and told us
+# nothing, because that is HOST resident set size. GPU memory was not measured.
+# The sweep-host decision turns on VRAM, not on speed: a 15 GB T4 that OOMs at
+# 128 discovery prompts is worth less than a slower card that fits.
+#
+# This is configs/smoke-ieg.yaml with ONE parameter changed, `n_prompts`, from
+# 32 to 256. IEG rather than EAP because IEG holds the ablation cache across 51
+# passes and is the heavier of the two; if IEG fits, EAP fits.
+#
+# 256 total is 128 discovery prompts, which is what the committed calibration
+# rule selected on 2026-08-05: J_seed rose 0.5678 -> 0.6386 -> 0.7428 -> 0.8089
+# across n in {16,32,64,128}, no delta fell below 0.05, so the curve had not
+# flattened and the rule fell back to the largest size tested.
+#
+# `batch_size` is held at 8 to match the other smoke configs, so exactly one
+# variable moves. Note that batch size is itself an undeclared researcher degree
+# of freedom and a larger batch uses more VRAM: auto-circuit's own default is 32.
+# This measurement is therefore the OPTIMISTIC case for memory. If it is close to
+# the card limit at batch_size 8, it will not fit at 32.
+#
+# Outputs must never enter the pre-registered grid.
+
+name: smoke-ieg-128
+purpose: measure peak VRAM and discovery cost at the selected n_prompts
+
+model:
+  name: gpt2
+  device: auto
+
+task:
+  name: ioi
+  n_prompts: 256             # 128 discovery, 128 test. The selected size.
+  batch_size: 8              # matches the other smokes; see note above
+  order: ABBA
+
+specification:
+  algorithm: mask_gradient
+  ablation: RESAMPLE
+  grad_function: logit
+  answer_function: avg_diff
+  integrated_grad_samples: 50   # mask_val deliberately absent: the XOR
+  test_edge_counts: [10, 50, 100, 200, 500]
+  seed: 0
+
+output:
+  dir: results/smoke-ieg-128

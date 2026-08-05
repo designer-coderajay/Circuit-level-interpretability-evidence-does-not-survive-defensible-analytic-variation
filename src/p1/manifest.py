@@ -126,6 +126,12 @@ class Manifest:
     seeds: Mapping[str, int]
     timings_s: Mapping[str, float] = field(default_factory=dict)
     peak_rss_mb: float | None = None
+    #: Peak CUDA memory in MB, `None` on CPU. Distinct from `peak_rss_mb`, which
+    #: is HOST resident set size and says nothing about whether a run fits in
+    #: VRAM. Conflating the two is how a sweep gets sized for a GPU it will OOM
+    #: on: the T4 measurement on 2026-08-05 reported 2.8 GB RSS on a 15 GB card
+    #: while the actual device usage was unmeasured.
+    peak_vram_mb: float | None = None
     notes: str = ""
     status: str = "ok"
     environment: Mapping[str, str] = field(default_factory=environment_fingerprint)

@@ -1704,3 +1704,85 @@ Estimated cost of calibration 1: about 19 minutes CPU.
 **Why measure the GPU factor at all.** Two inferences on this project have now
 been corrected by measurement: 12x reuse measured at 4.62x, and 51x IEG measured
 at 25.8x. Two for two. There is no basis for treating the third as different.
+
+### 2026-08-05. Calibration 1 result, and the GPU factor measured
+
+**Calibration 1: `n_prompts` = 128 discovery prompts, 256 total.**
+
+    n     J_seed    delta to next
+    16    0.5678    +0.0709
+    32    0.6386    +0.1042
+    64    0.7428    +0.0660
+    128   0.8089    -
+
+No delta fell below the committed 0.05, so the curve had not flattened and the
+rule fell back to the largest size tested. Selection applied by the script, not
+by a human reading the table.
+
+Three observations beyond the selection.
+
+**The deltas are non-monotone.** J_seed rises smoothly but its increments do not:
++0.0709, +0.1042, +0.0660. With 28 pairs per point that puts the sampling error
+on each delta at roughly plus or minus 0.03, which is the same order as the 0.05
+threshold. The decision is not close, every delta clears the threshold and the
+smallest margin is 0.016, so the conclusion is robust to noise of that size. But
+the paper reports the deltas, not only the selection, so a reader can see this.
+
+**J_seed at 128 is 0.8089.** Two runs of the identical analytic specification,
+differing only in the prompt sample, agree on 81% of a 500-edge circuit. Seed is
+not a nuisance term in this design, it is a comparison arm, and analytic-choice
+instability must be read against that floor.
+
+**The curve is still climbing at auto-circuit's own default.** That is a
+reportable fact about the instrument, not only about P1's design.
+
+Caveat recorded: the calibration statistic is circuit-level Jaccard, not
+claim-level flip rate. Claim-level would be the quantity that actually matters,
+but it requires the phi constants, which are still PROVISIONAL. Circuit-level is
+the conservative proxy and is stated as such.
+
+**Calibration 2: GPU factor measured on Tesla T4.**
+
+    component            Mac CPU     T4        factor
+    EAP discovery          9.301     1.339     6.95x
+    IEG-50 discovery     239.574    28.638     8.37x
+    evaluation per cut     1.581     0.227     6.97x
+
+**D17's 20x guess is wrong. The measured factor is about 7x.** IEG benefits more
+than EAP, which is consistent with 51 passes keeping the device busier than 1.
+
+**Fourth inference corrected by measurement on this project**, after 12x reuse to
+4.62x, 51x IEG to 25.8x, and `n_prompts` being absent from the design entirely.
+The base rate is now high enough that any unmeasured factor in this project
+should be treated as unreliable by default.
+
+Environment delta for the comparison: instrument versions identical on both
+sides, transformer-lens 2.18.0 and auto-circuit 1.0.1. Only torch differs,
+2.13.0 on the Mac against 2.11.0+cu128 on Colab. The ratio is therefore close to
+a clean device comparison, with a two-minor-version torch delta as the residual
+confound.
+
+Sweep budget at 128 discovery prompts, applying the measured factors:
+
+    EAP discovery      14.8 h / 6.95 =  2.1 h
+    IEG-50 discovery   63.5 h / 8.37 =  7.6 h
+    evaluation         40.7 h / 6.97 =  5.8 h
+    IEG-1000 slice     35.9 h / 8.37 =  4.3 h
+                                       ------
+                                       ~20 h on a T4
+
+Conservative in the right direction: the factors were measured at 16 discovery
+prompts and GPU utilisation improves with batch size, so the real total should be
+lower.
+
+**Consequence for D5.** Twenty hours makes Colab Pro viable, which was not
+expected. Two conditions if that route is taken: the sweep checkpoints per cell
+so a dropped session resumes rather than restarts, and every cell manifest
+records `torch.cuda.get_device_name`, with any cell on a different device
+discarded and rerun. Done that way the audit trail is stronger than a single
+asserted environment hash on a rented box, not weaker.
+
+**Open, and it can still force a rental: VRAM is unmeasured.** `peak_rss_mb` is
+host resident set size. The 2.8 GB reported on the T4 says nothing about the 15 GB
+card. `peak_vram_mb` added to `Manifest` and instrumented in `scripts/smoke.py`;
+`configs/smoke-ieg-128.yaml` added to measure it at the selected dataset size.

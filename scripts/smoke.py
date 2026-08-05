@@ -47,6 +47,22 @@ from p1.manifest import Manifest  # noqa: E402
 from p1.prompts import generate_ioi_dataset, write_dataset_json  # noqa: E402
 
 
+def peak_vram_mb() -> float | None:
+    """Peak CUDA allocation in MB, or None if this run was not on a GPU.
+
+    Imported lazily and guarded, because this script must still run `--help` and
+    the CPU path on a machine with no torch build at all.
+    """
+    try:
+        import torch as _t
+
+        if not _t.cuda.is_available():
+            return None
+        return round(_t.cuda.max_memory_allocated() / (1024 * 1024), 1)
+    except Exception:  # noqa: BLE001
+        return None
+
+
 def peak_rss_mb() -> float:
     """Peak resident set size in MB.
 
@@ -105,6 +121,13 @@ def main() -> int:
             )
 
         t.manual_seed(cfg["specification"]["seed"])
+
+        # VRAM is the constraint that decides which card the sweep can run on,
+        # and `peak_rss_mb` does not measure it. Reset here so the figure covers
+        # model load, patching and discovery, which is the whole allocation
+        # profile a sweep cell would see.
+        if dev == "cuda":
+            t.cuda.reset_peak_memory_stats()
 
         # Use auto-circuit's OWN model preparation, never a hand-rolled copy.
         # `load_tl_model` sets fold_ln, center_writing_weights, center_unembed,
@@ -211,6 +234,7 @@ def main() -> int:
         seeds={"specification": cfg["specification"]["seed"]},
         timings_s=timings,
         peak_rss_mb=round(peak_rss_mb(), 1),
+        peak_vram_mb=peak_vram_mb(),
         notes=" | ".join(notes),
         status=status,
     )
@@ -220,6 +244,7 @@ def main() -> int:
     for k, v in sorted(timings.items()):
         print(f"  {k:28s} {v}")
     print(f"  {'peak_rss_mb':28s} {man.peak_rss_mb}")
+    print(f"  {'peak_vram_mb':28s} {man.peak_vram_mb}")
     print(f"manifest: {path}")
     if status == "ok":
         print(
