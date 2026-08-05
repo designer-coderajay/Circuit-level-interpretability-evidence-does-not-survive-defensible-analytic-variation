@@ -1,0 +1,62 @@
+# Calibration 1: select n_prompts.
+#
+# The rule this config feeds is fixed in preregistration/CALIBRATION.md, which
+# was committed at ecf44717e594f18b856ead1df11fd774f436199c,
+# 2026-08-05T18:12:12Z, before this pilot was run. If any manifest under
+# results/calib-nprompts/ predates that commit, the calibration is void.
+#
+# Everything except seed and dataset size is held at the cheapest defensible
+# setting, because the quantity being measured is seed-driven variation and
+# nothing else.
+#
+# Outputs are NOT confirmatory and must never be pooled with the grid.
+
+name: calib-nprompts
+purpose: select n_prompts by the committed rule; measure nothing else
+confirmatory: false
+
+model:
+  name: gpt2
+  device: auto
+
+task:
+  name: ioi
+  order: ABBA          # first level of the confirmed prompt-variant pair
+  batch_size: 8        # matches configs/smoke.yaml so timings stay comparable
+
+calibration:
+  # DISCOVERY prompts, not total. The dataset built is twice this, split evenly
+  # into train and test; discovery runs on train. configs/smoke.yaml's
+  # `n_prompts: 32` is 16 discovery prompts, which is the first rung here.
+  discovery_prompts: [16, 32, 64, 128]
+
+  # Eight, not the grid's five. Pairs grow quadratically: 28 comparisons rather
+  # than 10, for a few extra minutes at EAP prices. Seeds 0 to 4 coincide with
+  # the confirmatory grid's seeds; no circuit here is retained and no number here
+  # enters a claim, so the overlap is harmless, but it is recorded not hidden.
+  seeds: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  # Absolute cut, applied via auto-circuit's own `prune_scores_threshold`.
+  # CALIBRATION-ONLY convention, deliberately not the confirmatory
+  # metric-relative tau: the metric axis is not varied in this pilot, so a
+  # relative cut would introduce a dependence the pilot cannot resolve. 500 is
+  # the largest rung of configs/smoke.yaml's ladder, not a new number.
+  top_k_edges: 500
+
+  # The committed rule: choose the smallest n with
+  #   J_seed(2n) - J_seed(n) < flatten_threshold
+  # falling back to the largest n if the curve has not flattened.
+  # This value may not be changed after the pilot has been run.
+  flatten_threshold: 0.05
+
+specification:
+  # Canonical EAP: the library's LOGIT_DIFF_GRAD_PRUNE_ALGO, and the cheapest of
+  # the seven confirmatory discovery objectives.
+  algorithm: mask_gradient
+  ablation: RESAMPLE
+  grad_function: logit
+  answer_function: avg_diff
+  mask_val: 0.0
+
+output:
+  dir: results/calib-nprompts
