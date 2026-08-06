@@ -487,6 +487,86 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 
 `preregistration/DEVIATIONS.md` is append-only from the moment of locking.
 
+## 11b. Disclosure: what was seen before the lock
+
+**This section exists because the honest answer to "has anyone seen a
+confirmatory result" is not a clean no.** It is written before the lock, not
+after, and it is deliberately specific enough that a reader can judge for
+themselves whether the pre-registration was compromised.
+
+### What was run
+
+On 2026-08-06, before locking, `scripts/sweep.py` was validated on a **six-cell
+slice** of the confirmatory config on an L4. Two cells, then four more, the
+second run existing solely to prove that the per-cell resume skipped the first
+two. It did. That validation could not have been done without executing
+confirmatory cells, and executing them without inspecting the output would have
+defeated the point.
+
+All six cells share `discovery_objective = PROB_GRAD_PRUNE_ALGO`, the first
+level in enumeration order. No other objective was touched.
+
+### What was inspected
+
+Four recovery curves from one cell, and a per-`(metric, tau)` count of how many
+of the six cells admitted a qualifying rung. Nothing else. No claim, no flip
+rate, no modal share, no overlap, no variance decomposition.
+
+The curves, recorded verbatim so this disclosure is checkable:
+
+    comprehensiveness  0.84 at rung 10, 0.98 by rung 100
+    kl_div             near zero to rung 500, 0.95 at rung 5000
+    logit_diff         near zero to rung 1000, 0.86 at rung 10000
+    sufficiency        near zero to rung 1000, 0.85 at rung 10000
+
+Discards, six cells: `comprehensiveness` and `kl_div` qualified at every `tau`.
+`logit_diff` discarded 5/6 at `tau`=0.05 and 4/6 at 0.10. `sufficiency` discarded
+6/6 at both. Overall discard rate 29%.
+
+### What was NOT changed as a result
+
+**Nothing.** The edge-count ladder, the `tau` levels, the metric set, the
+recovery convention, the discard rule and the `phi` constants are exactly as
+they were before the slice ran. That is the only property that matters here, and
+it is stated so a reviewer can hold the repository history to it: every one of
+those parameters was committed before 2026-08-06 17:16 UTC, and the slice ran
+after.
+
+### Three observations, stated now so they cannot be presented as discoveries
+
+Each is visible in the numbers above. Recording them here converts them from
+things we might later claim to have predicted into things we admit we saw early.
+
+1. **`sufficiency` contributes no specifications at `tau` = 0.05 or 0.10.** Two
+   of every twelve specification slots per cell are structurally empty. `F` is
+   therefore computed over surviving specifications, and the design is unbalanced
+   in a way the REML variance model must absorb.
+2. **`comprehensiveness` saturates at the first rung.** Its circuits will be
+   near-constant across specifications and will carry little claim variance.
+3. **`logit_diff` and `sufficiency` track each other closely.** The metric axis
+   has four levels and possibly three effective dimensions. The correlation
+   between them is reported.
+
+None of these is repaired. All three are reported.
+
+### The finding this slice suggests, flagged as suggested rather than found
+
+Ablating the top ten edges destroys 84% of the effect, while reconstructing the
+behaviour from a retained circuit does not reach 90% within 10,000 edges. The
+same circuit is simultaneously necessary and not sufficient depending on which
+metric is filed. If the full grid bears this out it is the paper's thesis in
+miniature. **It is not yet a result**, and the manuscript will not describe it as
+one until it survives 1,540 cells across all seven objectives.
+
+### Consequence for the confirmatory run
+
+`results/sweep/` from the slice is **deleted before the lock**, and all 1,540
+cells are rerun after the tag, so that every confirmatory number in the paper
+comes from a post-lock execution. The slice cost five minutes and buys the
+statement that no reported figure predates the pre-registration.
+
+---
+
 ## 12. Before locking, checklist
 
 - [x] H2 decision rule fixed — `F > 0.20`, CI lower bound above it, 2026-08-05
@@ -518,9 +598,12 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 - [x] Section 4's IEG-1000 wording corrected: the slice compares two shipped
       configurations, it does **not** isolate IG sample count, 2026-08-06
 - [x] Both abstracts drafted — section 8
-- [x] No pooled confirmatory result seen by anyone. The only executions to date
-      are the smoke timings and the `n_prompts` calibration, both marked
-      non-confirmatory, neither producing a claim, flip rate or overlap figure
+- [~] **Partially violated, and disclosed rather than claimed.** A six-cell
+      slice of the confirmatory config was run and its recovery curves and
+      discard counts inspected, to validate the runner and its resume path. No
+      claim, flip rate, modal share or overlap was computed. **No parameter was
+      changed afterwards.** Full disclosure in section 11b; slice results deleted
+      before the lock and all 1,540 cells rerun after it
 - [ ] **Environment pinned and hash recorded.** `pip freeze` on the sweep
       runtime, committed as `requirements-sweep.lock.txt`. This is the last
       blocking item and it requires the Colab session that will run the sweep,

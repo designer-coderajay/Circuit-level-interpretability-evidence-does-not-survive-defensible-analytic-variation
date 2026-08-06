@@ -2529,3 +2529,78 @@ substring of the only place, so the collision fires on the first prompt whicheve
 pair is drawn. A flaky test for a silent failure mode is worse than no test.
 
 Test count 263 to 266. `sweep.py` now has every dependency it needs.
+
+---
+
+## 2026-08-06. Sweep validated. Slice inspected. Disclosure written.
+
+### The runner works
+
+`scripts/sweep.py` validated on an L4. Two cells, then four more; the second run
+reported `already complete 2` and skipped them. **Resume is proven on real
+output**, which was the whole point of the exercise: a dropped Colab session now
+costs the cell in flight, not the sweep.
+
+Correction to my own instruction: I told Ajay `--limit 4` should "run only two
+more". Wrong. `--limit` means run N cells, not reach N total. With 2 done it
+correctly took the next 4, and 48 specifications = 4 cells x 12 confirms it. The
+code was right and my description of it was not.
+
+Timing: 45 s per EAP cell. Extrapolated, 1,320 EAP at 45 s plus 220 IEG at
+~200 s is **about 29 h**, against the plan's 29.5. The budget holds.
+
+### The discard rate is 29% and it is not a bug
+
+    comprehensiveness  0.84 at rung 10, 0.98 by rung 100
+    kl_div             ~0 to rung 500, 0.95 at rung 5000
+    logit_diff         ~0 to rung 1000, 0.86 at rung 10000, never 0.90
+    sufficiency        ~0 to rung 1000, 0.85 at rung 10000, never 0.90
+
+Ablating the top ten edges destroys 84% of the effect, because those edges are
+the name movers writing to the output. Reconstructing the behaviour from a
+retained circuit needs thousands. **Necessity is cheap, sufficiency is
+expensive**, which is well documented in this literature. The numbers are
+behaving correctly and the pre-registered discard rule is doing exactly what it
+was written to do.
+
+Discards fall entirely on `logit_diff` and `sufficiency` at strict `tau`.
+`sufficiency` discards 6/6 at both 0.05 and 0.10.
+
+### The part that mattered more than the numbers
+
+The checklist line "no pooled confirmatory result seen by anyone" is now
+**consumed**. Validating the runner required executing confirmatory cells, and
+executing them without looking at the output would have defeated the purpose.
+
+That is defensible. What would not be defensible is quietly adjusting the ladder,
+the `tau` levels or the metric set now that the discard structure is visible.
+Three things are plainly suboptimal in the current design and every one of them
+must stand:
+
+- `sufficiency` contributes nothing at two of three `tau` levels, so 2 of every
+  12 specification slots are structurally empty;
+- `comprehensiveness` saturates at the first rung and will carry little claim
+  variance;
+- `logit_diff` and `sufficiency` track each other closely, so the metric axis may
+  have three effective dimensions rather than four.
+
+**Nothing was changed.** All three are recorded in `PLAN.md` section 11b as
+observations made before the lock, which converts them from things we might later
+claim to have anticipated into things we admit we saw early.
+
+`PLAN.md` section 11b written as a full disclosure: what ran, what was inspected,
+the curves verbatim, what was not changed, and the timestamp ordering that lets a
+reviewer check the claim against the repository history. `DEVIATIONS.md`
+populated with the same disclosure so a reader who opens only that file still
+finds it.
+
+`results/sweep/` is deleted before the tag and all 1,540 cells rerun after it.
+The slice cost five minutes and buys the statement that no reported figure
+predates the pre-registration.
+
+### On the suggested finding
+
+The necessity/sufficiency asymmetry, if it survives 1,540 cells across all seven
+objectives, is the paper's thesis in miniature: the same circuit is necessary and
+not sufficient depending on which metric a provider files. **It is not a result
+yet** and the manuscript will not call it one until the full grid has run.
