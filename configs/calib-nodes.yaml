@@ -1,0 +1,60 @@
+# Calibration 3: the domain of size_class.
+#
+# The rule this config feeds is fixed in preregistration/CALIBRATION.md section 3
+# and implemented as p1.claim_map.select_size_bins. Both were committed before
+# this pilot was run. If any manifest under results/calib-nodes/ predates those
+# commits, the calibration is void.
+#
+# Why this exists. C(s) is always a rung of EDGE_COUNT_LADDER, so size_class is
+# in effect a function of which rung was selected. But phi bins on the fraction
+# of the 156 MODEL COMPONENTS a circuit touches, not on edges, and the map from a
+# rung to the node count its edges touch is empirical. The bins cannot be
+# reasoned out; they have to be measured.
+#
+# Everything except seed is held at the confirmatory settings, using the cheapest
+# of the seven discovery objectives.
+#
+# Outputs are NOT confirmatory and must never be pooled with the grid.
+
+name: calib-nodes
+purpose: measure the rung-to-node-count curve so size_class bins can be selected
+confirmatory: false
+
+model:
+  name: gpt2
+  device: auto
+
+task:
+  name: ioi
+  n_prompts: 256           # 128 discovery, the selected size
+  batch_size: 8
+  order: ABBA
+  corruption: ABC
+
+calibration:
+  # The grid's five seeds, so the curve carries variance rather than being one
+  # draw. These circuits are used for one statistic and then discarded.
+  seeds: [0, 1, 2, 3, 4]
+
+  # How many top edges to print in the sanity table. Two mapping bugs were found
+  # in the auto-circuit seam on 2026-08-06, both of which passed their unit tests
+  # because the tests were written from the same derivation as the code. This
+  # table is the check against real nodes rather than against stubs.
+  sanity_rows: 20
+
+model_shape:
+  # GPT-2 small. n_components_full_model = n_blocks * n_heads + n_blocks = 156.
+  # Numerator and denominator must count the same population; see
+  # features_from_circuit.
+  n_blocks: 12
+  n_heads_per_block: 12
+
+specification:
+  algorithm: mask_gradient
+  ablation: RESAMPLE
+  grad_function: logit
+  answer_function: avg_diff
+  mask_val: 0.0            # EAP. LOGIT_DIFF_GRAD_PRUNE_ALGO.
+
+output:
+  dir: results/calib-nodes
