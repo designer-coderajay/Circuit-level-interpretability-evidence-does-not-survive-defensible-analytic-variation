@@ -2425,3 +2425,66 @@ on the first run. Worth recording only because the failure mode was the good one
 the test disagreed with the implementation and the implementation was right.
 
 Test count 224 to 238.
+
+### 2026-08-06. Fifth gap: the segment labels never aligned with tokens
+
+Found while writing `sweep.py`. `generate_ioi_dataset` emits seven `seq_labels`
+as if they were token positions. They are not, and cannot be, in three
+independent ways:
+
+- prompts tokenise to roughly 15 to 20 tokens, not 7, so `segment_mass` would
+  have raised on its own length check on the first cell;
+- the three templates have different token counts, so no single positional map
+  covers them;
+- names tokenise to different numbers of tokens, so positions shift per prompt
+  even within one template.
+
+**This one is mine twice over.** I wrote `attribution.py` against a label
+contract the dataset never satisfied, and I did it hours after writing the
+docstring that claimed `seq_labels` was "the natural source of the segment labels
+that `phi_affected` reads".
+
+Two pieces of evidence pointed the same way. auto-circuit stores its own IOI
+datasets **per template**, `ioi_{template}_template_{idx}_prompts.json`, because
+position-sensitive analysis needs fixed structure. And arXiv:2211.00593 Figure
+10, the precedent already cited for this whole method, aggregates attention over
+**IO, S and S2**, which are roles, not positions.
+
+**Decision (Ajay, 2026-08-06): aggregate by role, not position.**
+
+`token_role_labels` added: labels each token by **character-span overlap** with
+the role's substring in the prompt. Roles are resolved in occurrence order, which
+is what separates S1 from S2 when both are the same name. It asserts that the
+tokens reconstruct the prompt exactly, because a normalising tokeniser would
+misalign every span silently.
+
+`mean_segment_mass` added: role labels vary per prompt, so the mass is computed
+per prompt and averaged, rather than computed once against a shared label list.
+A prompt contributing an empty mass still counts in the denominator; dropping it
+would reweight toward prompts where the circuit happened to attend somewhere
+nameable.
+
+Zero-mass roles are **retained**. "Attended nowhere" and "segment absent" must
+stay distinguishable, and collapsing them would let a claim silently change
+meaning.
+
+Still outstanding for the runner: `generate_ioi_dataset` must record the role
+substrings per prompt, and the seven-entry `seq_labels` must go.
+
+Test count 252 to 263.
+
+### The pattern in today's five gaps
+
+`position_mass` had no producer. `block_index` was off by one. Residual
+terminals were mapped as MLPs. The metric layer did not exist. Segment labels
+never aligned with tokens.
+
+Every one sat in the seam between P1's code and the instrument, or between two
+P1 modules written on different days. None was in the statistics, the claim map's
+logic, or the specification space, which are the parts with dense unit tests
+written against properties rather than against implementations.
+
+**The seams were the untested surface, and writing the runner is what walked
+them.** That is worth stating in the paper's limitations: the analysis pipeline
+for a multiverse study is itself a specification space, and its own defects are
+not visible to the tests that check its components.

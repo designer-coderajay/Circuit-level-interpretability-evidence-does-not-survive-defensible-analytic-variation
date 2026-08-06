@@ -143,3 +143,108 @@ def test_mass_flows_into_a_distinguishing_affected_claim():
     assert phi_affected(a, Granularity.COARSE) != phi_affected(b, Granularity.COARSE)
     assert "income" in phi_affected(a, Granularity.COARSE)
     assert "employment" in phi_affected(b, Granularity.COARSE)
+
+
+# --------------------------------------------------------------------------
+# Role labels: segments by character span, not by token position
+# --------------------------------------------------------------------------
+#
+# An earlier version of this module assumed a single positional seq_labels list
+# could describe every prompt. It cannot: the three templates have different
+# token counts, names tokenise to different numbers of tokens, and the repeated
+# name occupies two spans. Aggregating by role follows arXiv:2211.00593 Fig 10.
+
+from p1.attribution import OTHER_ROLE, mean_segment_mass, token_role_labels
+
+PROMPT = "When Mary and John went to the store, John gave the apple to"
+# Deliberately uneven, as a real tokeniser is: some words split, some do not.
+TOKENS = ["When", " Mary", " and", " John", " went", " to", " the", " st", "ore",
+          ",", " John", " gave", " the", " app", "le", " to"]
+ROLES = {"IO": "Mary", "S1": "John", "S2": "John", "place": "store", "object": "apple"}
+
+
+def test_labels_align_with_roles_not_positions():
+    labels = token_role_labels(TOKENS, PROMPT, ROLES)
+    assert len(labels) == len(TOKENS)
+    assert labels[TOKENS.index(" Mary")] == "IO"
+    assert labels[3] == "S1"      # first " John"
+    assert labels[10] == "S2"     # second " John"
+
+
+def test_a_multi_token_role_gets_every_one_of_its_tokens():
+    """'store' splits into ' st' + 'ore'; both must carry the role."""
+    labels = token_role_labels(TOKENS, PROMPT, ROLES)
+    assert labels[7] == "place" and labels[8] == "place"
+    assert labels[13] == "object" and labels[14] == "object"
+
+
+def test_the_repeated_name_resolves_to_two_distinct_roles():
+    """S1 and S2 are the same string. Occurrence order is what separates them."""
+    labels = token_role_labels(TOKENS, PROMPT, ROLES)
+    assert labels.count("S1") == 1
+    assert labels.count("S2") == 1
+
+
+def test_template_scaffolding_is_labelled_rather_than_dropped():
+    labels = token_role_labels(TOKENS, PROMPT, ROLES)
+    assert labels[0] == OTHER_ROLE
+    assert OTHER_ROLE in labels
+
+
+def test_tokens_that_do_not_reconstruct_the_prompt_are_rejected():
+    """A normalising tokeniser would misalign every span silently."""
+    with pytest.raises(ValueError, match="reconstruct"):
+        token_role_labels(["When", " Mary"], PROMPT, ROLES)
+
+
+def test_a_role_absent_from_the_prompt_is_rejected():
+    with pytest.raises(ValueError, match="not found"):
+        token_role_labels(TOKENS, PROMPT, {**ROLES, "IO": "Zebediah"})
+
+
+def test_labels_work_on_a_second_template_of_different_length():
+    """The whole point: no shared positional map is needed."""
+    p2 = "After Bob and Sue arrived at the park, Sue passed the ball to"
+    toks = ["After", " Bob", " and", " Sue", " arrived", " at", " the", " park",
+            ",", " Sue", " passed", " the", " ball", " to"]
+    roles = {"IO": "Bob", "S1": "Sue", "S2": "Sue", "place": "park", "object": "ball"}
+    labels = token_role_labels(toks, p2, roles)
+    assert labels[1] == "IO" and labels[3] == "S1" and labels[9] == "S2"
+    assert len(labels) != len(TOKENS)
+
+
+# --------------------------------------------------------------------------
+# Averaging across prompts
+# --------------------------------------------------------------------------
+
+
+def test_mean_of_one_mass_is_itself():
+    m = {"IO": 0.6, "S2": 0.4}
+    assert mean_segment_mass([m]) == pytest.approx(m)
+
+
+def test_mean_across_prompts_is_normalised():
+    out = mean_segment_mass([{"IO": 1.0}, {"S2": 1.0}])
+    assert out == pytest.approx({"IO": 0.5, "S2": 0.5})
+
+
+def test_a_prompt_with_empty_mass_still_counts_in_the_denominator():
+    """Dropping it would reweight toward prompts that happened to attend somewhere."""
+    out = mean_segment_mass([{"IO": 1.0}, {}])
+    assert out == pytest.approx({"IO": 1.0})
+    assert mean_segment_mass([]) == {}
+
+
+def test_role_labels_feed_segment_mass_end_to_end():
+    labels = token_role_labels(TOKENS, PROMPT, ROLES)
+    rows = [[0.0] * len(TOKENS) for _ in range(2)]
+    rows[0][1] = 1.0            # head 0 attends entirely to the IO name
+    rows[1][10] = 1.0           # head 1 attends entirely to S2
+    mass = segment_mass(rows, labels)
+    # Zero-mass roles are retained deliberately: "attended nowhere" and "segment
+    # absent" must stay distinguishable, so the mass covers every role present
+    # in the sequence rather than only the ones that scored.
+    assert mass["IO"] == pytest.approx(0.5)
+    assert mass["S2"] == pytest.approx(0.5)
+    assert set(mass) == {"IO", "S1", "S2", "place", "object", OTHER_ROLE}
+    assert all(mass[r] == 0.0 for r in ("S1", "place", "object", OTHER_ROLE))

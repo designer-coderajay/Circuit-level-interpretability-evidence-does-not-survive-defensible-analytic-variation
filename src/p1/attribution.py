@@ -31,7 +31,109 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Mapping, Sequence
 
-__all__ = ["segment_mass", "MASS_TOLERANCE"]
+__all__ = [
+    "segment_mass",
+    "mean_segment_mass",
+    "token_role_labels",
+    "OTHER_ROLE",
+    "MASS_TOLERANCE",
+]
+
+#: Label for tokens belonging to no named role: the template's connective words,
+#: punctuation, and the leading token. Kept as a real label rather than dropped,
+#: so the mass sums over the whole sequence and a circuit that attends mostly to
+#: template scaffolding is visible rather than silently renormalised away.
+OTHER_ROLE: str = "other"
+
+
+def token_role_labels(
+    str_tokens: Sequence[str],
+    prompt: str,
+    roles: Mapping[str, str],
+) -> list[str]:
+    """One role label per token, by character span rather than by position.
+
+    Positional labels cannot work on this task and an earlier version of this
+    module assumed they could. The three templates have different token counts,
+    names tokenise to different numbers of tokens, and the repeated name occupies
+    two separate spans. A single positional label list is wrong three ways over.
+
+    Roles are matched by **occurrence order in the prompt string**, which is what
+    makes S1 and S2 separable: `S` appears twice and the first occurrence is S1.
+    `roles` maps a role name to the literal substring, and the same substring may
+    appear under two role names, as `S1` and `S2` both do.
+
+    Aggregating by role rather than position follows arXiv:2211.00593 Figure 10,
+    which plots attention over IO, S and S2. It is the same precedent already
+    cited for the attribution method itself.
+
+    Args:
+        str_tokens: The tokenised prompt as strings, in order. Their
+            concatenation must equal `prompt`; that is asserted, because a
+            tokeniser that strips or normalises would silently misalign every
+            span.
+        prompt: The clean prompt text.
+        roles: Role name to literal substring. Roles are resolved in sorted order
+            of their first occurrence, so `S1` before `S2` regardless of dict
+            order.
+
+    Returns:
+        One label per token. Tokens overlapping no role get `OTHER_ROLE`.
+    """
+    joined = "".join(str_tokens)
+    if joined != prompt:
+        raise ValueError(
+            "tokens do not reconstruct the prompt, so character spans cannot be "
+            f"aligned; got {joined!r} against {prompt!r}"
+        )
+
+    # Character span per role, consuming occurrences left to right so a repeated
+    # substring resolves to distinct spans.
+    spans: list[tuple[int, int, str]] = []
+    cursor: dict[str, int] = {}
+    for role in sorted(roles):
+        needle = roles[role]
+        if not needle:
+            raise ValueError(f"role {role!r} has an empty substring")
+        start = prompt.find(needle, cursor.get(needle, 0))
+        if start < 0:
+            raise ValueError(f"role {role!r} substring {needle!r} not found in prompt")
+        cursor[needle] = start + len(needle)
+        spans.append((start, start + len(needle), role))
+
+    labels: list[str] = []
+    pos = 0
+    for tok in str_tokens:
+        lo, hi = pos, pos + len(tok)
+        pos = hi
+        hit = OTHER_ROLE
+        for s, e, role in spans:
+            if lo < e and hi > s:  # any character overlap
+                hit = role
+                break
+        labels.append(hit)
+    return labels
+
+
+def mean_segment_mass(masses: Sequence[Mapping[str, float]]) -> dict[str, float]:
+    """Average several per-prompt masses into one.
+
+    Role labels vary per prompt, because token spans do, so the mass is computed
+    per prompt and averaged here rather than being computed once over a shared
+    label list. A prompt contributing an empty mass still counts in the
+    denominator: dropping it would silently reweight toward prompts where the
+    circuit happened to attend somewhere nameable.
+    """
+    if not masses:
+        return {}
+    acc: dict[str, float] = defaultdict(float)
+    for m in masses:
+        for label, v in m.items():
+            acc[label] += v / len(masses)
+    total = sum(acc.values())
+    if total <= 0:
+        return {}
+    return {label: acc[label] / total for label in sorted(acc)}
 
 #: Attention rows are softmax outputs and should sum to 1. Floating point and
 #: any upstream slicing make exact equality wrong to demand, so rows are checked
