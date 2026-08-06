@@ -129,10 +129,31 @@ class CircuitFeatures:
 #: Upper bounds, exclusive, on |C| / n_components_full_model. The final class
 #: catches everything above the last bound.
 #:
-#: **PLACEHOLDER, pending calibration 3. Not yet frozen.** These values are
-#: whatever `select_size_bins` returns from the measured node-count curve, and
-#: they are written here by hand only once that pilot has run. Until then they
-#: exist so the module imports and the unit tests have something to exercise.
+#: **FROZEN 2026-08-06 from calibration 3. Do not change again.**
+#:
+#: Not chosen: returned by `select_size_bins` from the measured rung-to-node-count
+#: curve, using the rule committed before the pilot ran. Measured on an L4 over
+#: the grid's five seeds at 128 discovery prompts, `results/calib-nodes/`:
+#:
+#:     rung     nodes    sd     frac        class
+#:       10       6.8   0.40   0.0436       sparse
+#:       20      13.2   0.40   0.0846       sparse
+#:       50      25.0   0.63   0.1603       moderate
+#:      100      35.2   0.98   0.2256       moderate
+#:      200      54.0   0.63   0.3462       moderate
+#:      500      90.0   1.79   0.5769       distributed
+#:     1000     121.2   2.79   0.7769       distributed
+#:     2000     145.4   1.62   0.9321       distributed
+#:     5000     155.2   0.40   0.9949       distributed
+#:    10000     156.0   0.00   1.0000       distributed
+#:
+#: Three bins, split 2 / 3 / 5, minimum margin 0.111 dex against a required 0.08.
+#: The cascade to two bins was not needed. Seed variance is at most 2.8 nodes, so
+#: the curve is stable and the selection is not a coin flip.
+#:
+#: **A reportable fact in its own right:** a 500-edge circuit, 1.5% of the graph,
+#: already touches 58% of the model's components, and by 10,000 edges it touches
+#: every one. Sparsity in edges is not sparsity in components.
 #:
 #: **Two superseded justifications, recorded rather than deleted**, because the
 #: second is the only error on this project so far that reached both the
@@ -154,8 +175,8 @@ class CircuitFeatures:
 #: The correct bounds are therefore measured, not reasoned, by the rule in
 #: `select_size_bins`. See `preregistration/CALIBRATION.md` section 3.
 DEFAULT_SIZE_BINS: tuple[tuple[float, str], ...] = (
-    (0.01, "sparse"),
-    (0.08, "moderate"),
+    (0.112202, "sparse"),
+    (0.446684, "moderate"),
     (1.01, "distributed"),
 )
 
@@ -207,15 +228,19 @@ def _best_bounds(
     n_bounds: int,
     min_margin_dex: float,
     min_per_bin: int,
-) -> tuple[float, ...] | None:
-    """Best `n_bounds` bounds in log space, or None if the constraints fail.
+) -> tuple[int, ...] | None:
+    """Indices of the best `n_bounds` bounds, or None if the constraints fail.
+
+    Returns indices rather than values so the caller can hand back the declared
+    candidate exactly. `10 ** log10(c)` does not round-trip to `c`, and a bound
+    that is 0.11220199999999998 rather than 0.112202 is a bound nobody declared.
 
     Exhaustive over the declared candidate grid. `n_bounds` is at most 2 here, so
     the search is at most 45 choose 2 and needs no cleverness.
     """
     from itertools import combinations
 
-    best: tuple[float, tuple[float, ...]] | None = None
+    best: tuple[float, tuple[int, ...]] | None = None
     for combo in combinations(range(len(log_candidates)), n_bounds):
         bounds = tuple(log_candidates[i] for i in combo)
         counts = [0] * (n_bounds + 1)
@@ -227,8 +252,8 @@ def _best_bounds(
         margin = min(abs(f - b) for f in log_fracs for b in bounds)
         if margin <= min_margin_dex:
             continue
-        if best is None or margin > best[0] or (margin == best[0] and bounds < best[1]):
-            best = (margin, bounds)
+        if best is None or margin > best[0] or (margin == best[0] and combo < best[1]):
+            best = (margin, combo)
     return None if best is None else best[1]
 
 
@@ -279,12 +304,12 @@ def select_size_bins(
 
     for n_bins in cascade:
         names = SIZE_BIN_NAMES[n_bins]
-        bounds = _best_bounds(
+        idxs = _best_bounds(
             log_fracs, log_candidates, n_bins - 1, min_margin_dex, min_per_bin
         )
-        if bounds is None:
+        if idxs is None:
             continue
-        out = [(10.0**b, names[i]) for i, b in enumerate(bounds)]
+        out = [(candidates[j], names[i]) for i, j in enumerate(idxs)]
         out.append((1.01, names[-1]))
         return tuple(out)
 

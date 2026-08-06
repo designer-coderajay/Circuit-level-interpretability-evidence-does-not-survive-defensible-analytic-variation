@@ -2303,3 +2303,69 @@ Test count 219 to 221.
 holds for GPT-2 and for the confirmatory grid. Under `parallel_attn_mlp` the MLP
 shares the attention layer and the mapping would need revisiting. Recorded in the
 docstring so a future model change surfaces it.
+
+### 2026-08-06. Calibration 3 run. Size bins measured and frozen.
+
+`configs/calib-nodes.yaml` on an L4, five seeds, 128 discovery prompts, EAP.
+
+    rung     nodes    sd     frac      selected class
+      10       6.8   0.40   0.0436     sparse
+      20      13.2   0.40   0.0846     sparse
+      50      25.0   0.63   0.1603     moderate
+     100      35.2   0.98   0.2256     moderate
+     200      54.0   0.63   0.3462     moderate
+     500      90.0   1.79   0.5769     distributed
+    1000     121.2   2.79   0.7769     distributed
+    2000     145.4   1.62   0.9321     distributed
+    5000     155.2   0.40   0.9949     distributed
+   10000     156.0   0.00   1.0000     distributed
+
+`select_size_bins` returned **three bins**, split 2 / 3 / 5, bounds 0.112202 and
+0.446684, minimum margin 0.111 dex against a required 0.08. The cascade to two
+bins was not needed. Seed variance is at most 2.8 nodes, so the curve is stable
+and the selection is not a coin flip.
+
+`DEFAULT_SIZE_BINS` frozen at those values. A test feeds the measured curve back
+through the committed rule and asserts it reproduces the frozen constant exactly,
+so a later hand-nudge of a bound fails loudly.
+
+### The sanity table did its job, and validated more than the seam
+
+The table prints the top edges with their raw auto-circuit nodes beside the
+`Component`s the seam maps them to. auto-circuit names nodes `A{block}.{head}`
+and `MLP {block}`, so the names are an **independent check on the mapping**:
+
+    A9.9    layer 19  ->  a9.9      correct
+    A10.7   layer 21  ->  a10.7     correct
+    MLP 0   layer 2   ->  m0.0      correct; the old // 2 gave block 1
+    MLP 4   layer 10  ->  m4.0      correct; the old // 2 gave block 5
+    A11.10  layer 23  ->  a11.10    correct
+
+Resid Start and Resid End appear as edge endpoints and never in the components
+column. The terminal filter works.
+
+**The top edges are Wang et al.'s IOI circuit.** A9.9, A9.6, A10.0 are name
+movers; A10.7 and A11.10 the negative heads; A10.6, A10.10, A11.2 backup name
+movers; A8.10 S2-inhibition; A3.0 duplicate-token; A5.9 induction. Nineteen of
+the top twenty edges touch heads in the published taxonomy. EAP is recovering the
+known circuit, which is end-to-end evidence that prompts, corruption, discovery
+and ranking are all doing what they should. This belongs in the paper as a
+validation figure.
+
+### A finding that is not about the bins
+
+**A 500-edge circuit, 1.5% of the graph, already touches 58% of the model's
+components, and by 10,000 edges it touches all 156.** Sparsity in edges is not
+sparsity in components. Circuit sizes in this literature are almost always
+reported as edge counts, and that framing makes circuits look far more localised
+than they are at the component level. Worth a paragraph.
+
+### One bug in my own rule, caught by its own test
+
+`select_size_bins` returned `10 ** log10(candidate)`, which does not round-trip:
+0.112202 came back as 0.11220199999999998. A bound nobody declared. Fixed by
+returning the declared candidate by index rather than reconstructing it. Found
+because the test asserted equality with the frozen constant rather than
+approximate equality, which is the right strictness for a pre-registered number.
+
+Test count 221 to 224.

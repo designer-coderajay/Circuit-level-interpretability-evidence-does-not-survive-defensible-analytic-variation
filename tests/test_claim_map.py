@@ -424,3 +424,48 @@ def test_non_positive_fractions_are_rejected():
 
     with pytest.raises(ValueError, match="positive"):
         select_size_bins([0.0, 0.5, 0.9])
+
+
+# --------------------------------------------------------------------------
+# The frozen bins, and that they came from the rule rather than from a person
+# --------------------------------------------------------------------------
+
+MEASURED_NODE_FRACS = [
+    0.0436, 0.0846, 0.1603, 0.2256, 0.3462, 0.5769, 0.7769, 0.9321, 0.9949, 1.0
+]
+
+
+def test_frozen_bins_are_exactly_what_the_rule_returns():
+    """The strongest available check that the bins were not hand-picked.
+
+    Feeding the measured curve from results/calib-nodes/ back through the
+    committed selection rule must reproduce DEFAULT_SIZE_BINS exactly. If someone
+    later nudges a bound "just a little", this fails.
+    """
+    from p1.claim_map import select_size_bins
+
+    assert select_size_bins(MEASURED_NODE_FRACS) == DEFAULT_SIZE_BINS
+
+
+def test_frozen_bins_split_the_measured_curve_two_three_five():
+    counts: dict[str, int] = {}
+    for f in MEASURED_NODE_FRACS:
+        for upper, name in DEFAULT_SIZE_BINS:
+            if f < upper:
+                counts[name] = counts.get(name, 0) + 1
+                break
+    assert counts == {"sparse": 2, "moderate": 3, "distributed": 5}
+
+
+def test_size_class_is_not_degenerate_on_the_measured_curve():
+    """MEDIUM granularity must actually add information over COARSE."""
+    classes = set()
+    for f in MEASURED_NODE_FRACS:
+        n_comp = 156
+        comps = frozenset(
+            Component(layer=i // 13, index=i % 13 if i % 13 < 12 else 0,
+                      kind="attn" if i % 13 < 12 else "mlp")
+            for i in range(round(f * n_comp))
+        )
+        classes.add(size_class(CircuitFeatures(comps, 12, n_comp)))
+    assert len(classes) == 3, classes
