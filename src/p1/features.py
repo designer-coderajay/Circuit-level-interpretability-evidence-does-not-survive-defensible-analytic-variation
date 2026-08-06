@@ -66,13 +66,52 @@ class NodeLike(Protocol):
     head_idx: int | None
 
 
+#: Node names that are graph terminals rather than model components. They carry
+#: no information about which parts of the model mattered, they appear in
+#: essentially every circuit, and their layer indices fall outside the block
+#: range by construction. **Excluded, not mapped.**
+RESID_TERMINAL_PREFIX = "Resid"
+
+
 def block_index(ac_layer: int, layers_per_block: int = AC_LAYERS_PER_BLOCK) -> int:
-    """Convert an auto-circuit layer index to a transformer block index."""
-    if ac_layer < 0:
-        raise ValueError(f"auto-circuit layer must be non-negative, got {ac_layer}")
+    """Convert an auto-circuit layer index to a transformer block index.
+
+    **Corrected 2026-08-06. The previous `ac_layer // layers_per_block` was wrong
+    for MLPs and for both residual terminals.**
+
+    VERIFIED from `auto_circuit/model_utils/transformer_lens_utils.py`,
+    `factorized_src_nodes` and `factorized_dest_nodes`. The layer counter is a
+    plain `count()` that begins on the residual terminal, not on block 0:
+
+        Resid Start          layer 0
+        block b attention    layer 2b + 1
+        block b MLP          layer 2b + 2
+        Resid End            layer 2 * n_blocks + 1
+
+    So for GPT-2 small: attention layers 1, 3, ..., 23; MLP layers 2, 4, ..., 24;
+    Resid End at 25. Under the old formula the MLP of block b landed in block
+    b + 1, silently shifting `layer_band` for every claim containing an MLP, and
+    the MLP of the last block plus Resid End both mapped to block 12, outside
+    `[0, 12)`, which `CircuitFeatures` would have rejected.
+
+    `(ac_layer - 1) // layers_per_block` is correct for both component kinds:
+    attention `2b+1` gives `b`, MLP `2b+2` gives `b`.
+
+    Terminals are not passed here at all; see `components_from_nodes`.
+
+    Assumes `parallel_attn_mlp` is False, which is the case for GPT-2 and is what
+    the confirmatory grid uses. Under `parallel_attn_mlp` the MLP shares the
+    attention layer and this mapping would need revisiting.
+    """
+    if ac_layer < 1:
+        raise ValueError(
+            f"auto-circuit layer must be at least 1 for a model component; got "
+            f"{ac_layer}. Layer 0 is the Resid Start terminal, which is not a "
+            f"component and must be filtered before conversion."
+        )
     if layers_per_block < 1:
         raise ValueError(f"layers_per_block must be at least 1, got {layers_per_block}")
-    return ac_layer // layers_per_block
+    return (ac_layer - 1) // layers_per_block
 
 
 def components_from_nodes(
@@ -81,12 +120,25 @@ def components_from_nodes(
 ) -> frozenset[Component]:
     """Map auto-circuit nodes to `Component`s indexed by transformer block.
 
-    A node with `head_idx is None` is treated as an MLP block and given
-    `kind="mlp"` with `index=0`, so attention head 0 and the MLP of the same
-    block never collide.
+    A node with `head_idx is None` is an MLP and is given `kind="mlp"` with
+    `index=0`, so attention head 0 and the MLP of the same block never collide.
+
+    **Residual terminals are dropped.** `Resid Start` and `Resid End` also carry
+    `head_idx is None`, so before 2026-08-06 they were being mapped as if they
+    were MLPs. They are not model components: they are the graph's input and
+    output, they appear in essentially every circuit, and they say nothing about
+    which parts of the model mattered. Including them would have added a constant
+    to every claim and, for `Resid End` at layer `2 * n_blocks + 1`, produced a
+    block index outside the valid range.
+
+    Terminals are identified by name rather than by layer arithmetic, so a change
+    in the instrument's numbering surfaces as an unmapped node rather than as a
+    plausible wrong answer.
     """
     out: set[Component] = set()
     for n in nodes:
+        if getattr(n, "name", "").startswith(RESID_TERMINAL_PREFIX):
+            continue
         blk = block_index(n.layer, layers_per_block)
         head = getattr(n, "head_idx", None)
         if head is None:

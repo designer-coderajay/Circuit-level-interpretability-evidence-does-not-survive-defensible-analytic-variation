@@ -2246,3 +2246,60 @@ a denominator counting attention heads only could yield a fraction above 1 and
 the same population. 156 for GPT-2 small.
 
 Test count 214 to 219.
+
+### 2026-08-06. An off-by-one in the node mapping that would have corrupted every claim
+
+Found while writing the node-count pilot, by reading how auto-circuit actually
+numbers layers rather than trusting the docstring I had summarised from.
+
+**VERIFIED** from `auto_circuit/model_utils/transformer_lens_utils.py`,
+`factorized_src_nodes` and `factorized_dest_nodes`. The layer counter is a plain
+`count()` that **begins on the residual terminal, not on block 0**:
+
+    Resid Start          layer 0
+    block b attention    layer 2b + 1
+    block b MLP          layer 2b + 2
+    Resid End            layer 2 * n_blocks + 1
+
+For GPT-2 small: attention at 1, 3, ..., 23; MLPs at 2, 4, ..., 24; Resid End 25.
+
+`block_index` used `ac_layer // 2`. Consequences:
+
+- **Attention was correct.** Layer 2b+1 // 2 = b.
+- **Every MLP landed one block too late.** Layer 2b+2 // 2 = b+1. Silent, and it
+  would have shifted `layer_band` for every claim containing an MLP.
+- **The final MLP and Resid End both mapped to block 12**, outside `[0, 12)`.
+  `CircuitFeatures` would have raised, so the sweep would have died rather than
+  lied, but only after the first circuit.
+
+Corrected to `(ac_layer - 1) // 2`, which is right for both kinds: attention
+`2b+1` gives `b`, MLP `2b+2` gives `b`.
+
+**Separately, the residual terminals were being mapped as MLPs.** They carry
+`head_idx is None`, so `components_from_nodes` treated them as MLP blocks. They
+are not model components: they are the graph's input and output, they appear in
+essentially every circuit, and including them would have added a constant to
+every claim. Now dropped by name, so a change in the instrument's numbering
+surfaces as an unmapped node rather than as a plausible wrong answer.
+
+**The existing tests encoded the bug.** `test_block_index_conversion`
+parametrised `(0,0), (2,1), (22,11)` and passed. All three are wrong under the
+verified layout. This is the second time today a test has been found asserting my
+reasoning rather than the instrument's behaviour, and the pattern is now clear
+enough to state: **a test written from the same derivation as the code tests
+nothing.** The fix in both cases was to derive the expectation from the source
+rather than from the implementation.
+
+Also removed: two tests exercising `include_mlps_in_full_count=False`, a branch
+that is now forced True for consistency between numerator and denominator.
+
+Added: a rung-by-rung pin that attention and MLP of every block b map to b, an
+explicit rejection of layer 0 as a terminal, and two tests that terminals are
+dropped rather than mapped.
+
+Test count 219 to 221.
+
+**Note on `parallel_attn_mlp`.** The corrected mapping assumes it is False, which
+holds for GPT-2 and for the confirmatory grid. Under `parallel_attn_mlp` the MLP
+shares the attention layer and the mapping would need revisiting. Recorded in the
+docstring so a future model change surfaces it.

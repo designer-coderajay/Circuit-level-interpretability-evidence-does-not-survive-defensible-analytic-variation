@@ -53,10 +53,30 @@ def test_auto_circuit_counts_two_layers_per_block():
 
 @pytest.mark.parametrize(
     "ac_layer,expected_block",
-    [(0, 0), (1, 0), (2, 1), (3, 1), (22, 11), (23, 11)],
+    # VERIFIED from factorized_src_nodes / factorized_dest_nodes: the layer
+    # counter starts on Resid Start at 0, so block b has attention at 2b+1 and
+    # its MLP at 2b+2. Layer 0 is a terminal and is not a component.
+    [(1, 0), (2, 0), (3, 1), (4, 1), (23, 11), (24, 11)],
 )
 def test_block_index_conversion(ac_layer, expected_block):
     assert block_index(ac_layer) == expected_block
+
+
+def test_mlp_is_not_pushed_into_the_next_block():
+    """The off-by-one found on 2026-08-06, pinned.
+
+    Under the previous `ac_layer // 2` the MLP of block b landed in block b + 1,
+    silently shifting layer_band for every claim containing an MLP, and the MLP
+    of the final block landed outside the valid range entirely.
+    """
+    for b in range(12):
+        assert block_index(2 * b + 1) == b, f"attention of block {b}"
+        assert block_index(2 * b + 2) == b, f"MLP of block {b}"
+
+
+def test_layer_zero_is_rejected_as_a_terminal():
+    with pytest.raises(ValueError, match="Resid Start"):
+        block_index(0)
 
 
 def test_last_block_lands_in_the_late_band():
@@ -67,7 +87,7 @@ def test_last_block_lands_in_the_late_band():
     future edit drops the conversion, this fails loudly instead of the sweep
     quietly reporting that every circuit is early-layer.
     """
-    for ac_layer in (22, 23):
+    for ac_layer in (23, 24):
         f = features_from_circuit(
             [StubNode(layer=ac_layer, head_idx=3)],
             n_blocks=GPT2_SMALL_BLOCKS,
@@ -79,7 +99,7 @@ def test_last_block_lands_in_the_late_band():
 
 def test_first_block_lands_in_the_early_band():
     f = features_from_circuit(
-        [StubNode(layer=0, head_idx=0), StubNode(layer=1, head_idx=None)],
+        [StubNode(layer=1, head_idx=0), StubNode(layer=2, head_idx=None)],
         n_blocks=GPT2_SMALL_BLOCKS,
         n_heads_per_block=GPT2_SMALL_HEADS,
     )
@@ -95,7 +115,7 @@ def test_mixing_conventions_raises_rather_than_miscomputing():
     """
     with pytest.raises(ValueError, match="outside"):
         CircuitFeatures(
-            components=frozenset({Component(layer=22, index=3)}),
+            components=frozenset({Component(layer=23, index=3)}),
             n_layers=GPT2_SMALL_BLOCKS,
             n_components_full_model=144,
         )
@@ -104,6 +124,31 @@ def test_mixing_conventions_raises_rather_than_miscomputing():
 def test_block_index_rejects_negative_layer():
     with pytest.raises(ValueError):
         block_index(-1)
+
+
+def test_residual_terminals_are_dropped_not_mapped():
+    """Resid Start and Resid End carry head_idx None but are not MLPs.
+
+    They appear in essentially every circuit and say nothing about which parts
+    of the model mattered. Before 2026-08-06 they were mapped as MLPs, and
+    Resid End at layer 2*n_blocks+1 produced a block index outside the valid
+    range, which CircuitFeatures would have rejected mid-sweep.
+    """
+    nodes = [
+        StubNode(layer=0, head_idx=None, name="Resid Start"),
+        StubNode(layer=25, head_idx=None, name="Resid End"),
+        StubNode(layer=1, head_idx=3, name="A0.3"),
+    ]
+    comps = components_from_nodes(nodes)
+    assert comps == frozenset({Component(layer=0, index=3, kind="attn")})
+
+
+def test_a_circuit_of_terminals_only_is_empty_not_an_error():
+    nodes = [
+        StubNode(layer=0, head_idx=None, name="Resid Start"),
+        StubNode(layer=25, head_idx=None, name="Resid End"),
+    ]
+    assert components_from_nodes(nodes) == frozenset()
 
 
 def test_block_index_rejects_bad_layers_per_block():
@@ -119,7 +164,7 @@ def test_block_index_rejects_bad_layers_per_block():
 def test_mlp_and_head_zero_of_the_same_block_do_not_collide():
     """An MLP node has head_idx None. It must not be confused with head 0."""
     comps = components_from_nodes(
-        [StubNode(layer=4, head_idx=0), StubNode(layer=5, head_idx=None)]
+        [StubNode(layer=5, head_idx=0), StubNode(layer=6, head_idx=None)]
     )
     assert len(comps) == 2
     assert Component(layer=2, index=0, kind="attn") in comps
@@ -127,13 +172,13 @@ def test_mlp_and_head_zero_of_the_same_block_do_not_collide():
 
 
 def test_duplicate_nodes_collapse():
-    comps = components_from_nodes([StubNode(layer=4, head_idx=1)] * 5)
+    comps = components_from_nodes([StubNode(layer=5, head_idx=1)] * 5)
     assert len(comps) == 1
 
 
 def test_conversion_is_order_independent():
-    a = components_from_nodes([StubNode(2, 1), StubNode(9, 4), StubNode(0, 7)])
-    b = components_from_nodes([StubNode(0, 7), StubNode(2, 1), StubNode(9, 4)])
+    a = components_from_nodes([StubNode(3, 1), StubNode(9, 4), StubNode(1, 7)])
+    b = components_from_nodes([StubNode(1, 7), StubNode(3, 1), StubNode(9, 4)])
     assert a == b
 
 
@@ -150,7 +195,7 @@ def test_empty_node_set_gives_empty_circuit():
 
 def test_position_mass_is_normalised():
     f = features_from_circuit(
-        [StubNode(0, 0)],
+        [StubNode(1, 0)],
         n_blocks=12,
         n_heads_per_block=12,
         position_mass={"income": 3.0, "employment": 1.0},
@@ -173,7 +218,7 @@ def test_zero_and_empty_mass_yield_empty_not_nan():
 def test_negative_mass_is_rejected_downstream():
     with pytest.raises(ValueError, match="negative"):
         features_from_circuit(
-            [StubNode(0, 0)], 12, 12, position_mass={"income": -1.0, "other": 5.0}
+            [StubNode(1, 0)], 12, 12, position_mass={"income": -1.0, "other": 5.0}
         )
 
 
@@ -183,25 +228,10 @@ def test_negative_mass_is_rejected_downstream():
 
 
 def test_full_model_count_includes_mlps_by_default():
-    f = features_from_circuit([StubNode(0, 0)], n_blocks=12, n_heads_per_block=12)
+    f = features_from_circuit([StubNode(1, 0)], n_blocks=12, n_heads_per_block=12)
     assert f.n_components_full_model == 12 * 12 + 12
 
 
-def test_full_model_count_can_exclude_mlps():
-    f = features_from_circuit(
-        [StubNode(0, 0)], n_blocks=12, n_heads_per_block=12,
-        include_mlps_in_full_count=False,
-    )
-    assert f.n_components_full_model == 144
-
-
-def test_denominator_choice_can_change_the_size_class():
-    """Why the denominator must be pre-registered rather than defaulted silently."""
-    nodes = [StubNode(layer=l, head_idx=h) for l in range(0, 6) for h in range(3)]
-    with_mlp = features_from_circuit(nodes, 12, 12, include_mlps_in_full_count=True)
-    without = features_from_circuit(nodes, 12, 12, include_mlps_in_full_count=False)
-    assert with_mlp.n_components_full_model != without.n_components_full_model
-    assert len(with_mlp.components) == len(without.components)
 
 
 def test_invalid_model_shape_is_rejected():
