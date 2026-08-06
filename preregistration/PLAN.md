@@ -233,9 +233,19 @@ compute cost. Sweep runs on **L4**.
 |---|---|---|---|
 | EAP discovery | 1,320 | ~8.05 s *(inferred)* | 2.95 h |
 | IEG-50 discovery | 220 | 172.3 s *(measured)* | 10.53 h |
-| evaluation, 10 rungs | 1,540 | 13.3 s *(measured)* | 5.70 h |
+| evaluation, 10 rungs x 2 patch types | 1,540 | 26.7 s *(measured)* | 11.40 h |
 | IEG-1000 slice | 5 | ~3,293 s *(inferred)* | 4.57 h |
-| **total** | | | **≈ 23.8 h** |
+| **total** | | | **≈ 29.5 h** |
+
+**Evaluation is two passes per cell, not one.** VERIFIED from `auto_circuit`
+usage: `PatchType.TREE_PATCH` ablates the edges **not** in the circuit, so the
+circuit is kept and what is measured is sufficiency; `PatchType.EDGE_PATCH` is
+the complement and gives comprehensiveness. `logit_diff` and `kl_div` come off
+the `TREE_PATCH` pass, but comprehensiveness requires the complement, so both
+passes are needed. Earlier budgets in this plan assumed one pass and were wrong
+by 5.7 h. Getting the two patch types the wrong way round would silently invert
+every faithfulness number, so the direction is asserted in code rather than
+trusted to a comment.
 
 Discovery cost is linear in dataset size, verified: 8× the prompts gave 8.00× the
 time. The measured device factor against CPU is about **7×**, not the 20× D17
@@ -256,6 +266,30 @@ recovering `(1 − tau)` of metric `m` measured on the full model.* Absolute `ta
 (a fixed edge count) is equally defensible and appears in the literature. The
 choice is recorded because it is load-bearing: under absolute `tau` with ACDC,
 both the ablation and metric axes would carry zero claim variance.
+
+**What "recovering" means, fixed 2026-08-06.** The definition above was
+incomplete in a second way: it named a quantity but not a normalisation.
+Recovery is **normalised gap closing**, one convention for all four metrics:
+
+    recovery(C) = (m(C) - m(empty)) / (m(full) - m(empty))
+
+where `m(empty)` is the fully ablated model. A plain ratio `m(C) / m(full)` fails
+for `kl_div`, which is zero at the full model, so that metric would need its own
+convention; two conventions inside one axis would mean a claim shift across
+metrics was partly a shift across normalisations, which is the confound the
+metric axis exists to avoid. Gap closing also handles metric direction without
+special cases: for `kl_div` it reduces to `1 - KL(C) / KL(empty)`, which
+increases as the circuit approaches the full model, so no per-metric sign
+handling is needed and no per-metric sign bug is possible.
+
+Recovery is **not clipped** to `[0, 1]`. A circuit can overshoot the full model
+on a noisy metric or score below the empty one, and both are real. If the full
+and empty models score identically the metric carries no information on that
+item, and the run is **discarded** under section 7 rather than repaired.
+
+Implemented as `p1.metrics.normalised_recovery` and `p1.metrics.select_rung`,
+both pure and unit-tested without a GPU, so the functions that decide which
+circuit `C(s)` is are verifiable on any machine.
 
 **How the circuit is located, fixed 2026-08-05.** The definition above was
 incomplete in every earlier draft: it named the criterion but not the search.

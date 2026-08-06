@@ -2369,3 +2369,59 @@ because the test asserted equality with the frozen constant rather than
 approximate equality, which is the right strictness for a pre-registered number.
 
 Test count 221 to 224.
+
+### 2026-08-06. The metric layer did not exist either
+
+Found while starting `sweep.py`. `METRICS` in `spec.py` names four metrics and
+its docstring says sufficiency and comprehensiveness are "implemented in
+`src/p1` as an additive extension". **No such extension existed.** `grep` found
+no function computing any of the four.
+
+Worse than the `position_mass` gap: without a metric layer, metric-relative
+`tau` cannot be applied at all, so `C(s)` is undefined and the sweep cannot run.
+A hard blocker rather than a degradation.
+
+### Two consequences
+
+**1. The budget was wrong by 5.7 h.** `TREE_PATCH` ablates the edges NOT in the
+circuit, keeping the circuit, and measures sufficiency. `EDGE_PATCH` is the
+complement and gives comprehensiveness. `logit_diff` and `kl_div` come off the
+`TREE_PATCH` pass, but comprehensiveness needs the complement, so evaluation is
+**two passes per discovery cell**. 11.40 h rather than 5.70. Sweep total
+23.8 h to **29.5 h on an L4**.
+
+Note that this was written in a comment in `smoke.py` on 08-04 and I still built
+a budget that assumed one pass. Reading one's own notes is apparently also a
+verification step.
+
+**2. "Recovering (1 - tau) of metric m" does not parse the same way for all
+four.** `kl_div` is a divergence and is zero at the full model, so a ratio to the
+full model is undefined.
+
+**Decision (Ajay, 2026-08-06): normalised gap closing, one convention for all
+four.**
+
+    recovery(C) = (m(C) - m(empty)) / (m(full) - m(empty))
+
+Two properties make this the right choice rather than merely a workable one.
+It is defined for a divergence, because the empty circuit anchors the scale. And
+it is **direction-agnostic**: for `kl_div` it reduces to `1 - KL(C)/KL(empty)`,
+which increases as the circuit approaches the full model, so no metric needs a
+sign flip and therefore no metric can acquire a sign bug. A per-metric convention
+is exactly where that class of bug lives.
+
+Recovery is deliberately **not clipped**. Overshoot and undershoot are real, and
+clipping would hide a run that is worse than the empty circuit, which is a signal
+rather than an untidiness. A metric that scores the full and empty models
+identically raises `DegenerateMetric` and the run is discarded, not repaired.
+
+`src/p1/metrics.py` added: `normalised_recovery` and `select_rung`, both pure,
+14 tests. Together with `attribution.py` this keeps every function that decides
+what `C(s)` is or what claim it maps to verifiable without a GPU.
+
+**One error of mine, in the test rather than the code.** I asserted that a KL
+curve would select rungs 1000 and 5000; the arithmetic gives 500 and 2000. Caught
+on the first run. Worth recording only because the failure mode was the good one:
+the test disagreed with the implementation and the implementation was right.
+
+Test count 224 to 238.
