@@ -2124,3 +2124,72 @@ configurations and nothing finer, and the plan now says so.
 passing. One blocking checklist item left: `requirements-sweep.lock.txt`, which
 requires the Colab runtime that will execute the sweep and is therefore produced
 immediately before launch.
+
+### 2026-08-06. Two defects found while starting the sweep runner, one of them mine
+
+Neither would have raised. Both would have surfaced only after the sweep.
+
+**1. `position_mass` had no producer.** `features_from_circuit` accepts it as an
+optional argument and nothing in the codebase computed one.
+`normalise_position_mass({})` returns `{}`, and `phi_affected` renders an empty
+mass as "no single input region". So **`phi_affected` would have emitted one
+constant claim across all 18,480 specifications and reported a flip rate of
+exactly zero** as an artifact of a missing function rather than as a result.
+
+That is the Article 86(1) map, the affected-person right to an explanation. It is
+the part of the regulatory argument no prior work touches and the reason the
+two-addressee design was chosen on 08-03.
+
+**Decision (Ajay, 2026-08-06): mean attention probability over labelled input
+segments, in the confirmatory grid.**
+
+Precedent rather than invention: arXiv:2211.00593 Figure 10 plots "Average
+attention probability of Name Mover Heads" across the IO, S and S2 positions.
+Attention over labelled segments is the source paper's own way of describing
+where a circuit looks.
+
+Fixed choices, all recorded in CALIBRATION.md 3b rather than left implicit: final
+query position; attention heads in the circuit only; **uniform** weighting across
+heads; mean over clean prompts; `seq_labels` as the single label source.
+
+Uniform weighting is load-bearing and not laziness. Prune scores live on
+different scales across the discovery-objective axis, since the gradient is taken
+through logit, prob, logprob or logit_exp, so a score-weighted mass would not be
+comparable along that axis. Uniform is scale-free.
+
+Owned in the paper: attention is contested as an explanation (Jain and Wallace
+2019; Wiegreffe and Pinter 2019), and an alternative attribution method is a
+further axis this work does not cross.
+
+`src/p1/attribution.py` added, torch-free by design so everything that decides a
+claim stays testable without a GPU. The tensor extraction lives in the runner.
+
+**2. I anchored the size bins to the wrong denominator, and the tests encoded the
+error.**
+
+Earlier today I re-anchored `DEFAULT_SIZE_BINS` to `EDGE_COUNT_LADDER` against
+the 32,491-edge graph and wrote tests asserting a 5/3/2 split with no rung within
+20% of a boundary.
+
+**`phi` does not operate on edges.** `features_from_circuit` takes nodes,
+`components_from_nodes` maps them to `(layer, head)` pairs, and
+`n_components_full_model` counts heads plus MLPs: **156** for GPT-2 small.
+`size_class` is `len(nodes touched) / 156`, and the map from a ladder rung to the
+node count its edges touch is empirical, not analytic.
+
+The constants may or may not be adequate; the justification was computed against
+a quantity `size_class` never sees. Worse, the unit tests written alongside
+encoded the same mistake, so **they would have kept passing while checking
+nothing relevant**. That is the first time on this project an error of mine
+reached both the plan and the test suite.
+
+Calibration 3 written into CALIBRATION.md: measure the rung-to-node-count curve
+over five seeds, then select bounds by a deterministic optimisation over a fixed
+candidate set, with a stated fallback if no bounds can separate the ladder.
+Rule committed before the measurement, as with `n_prompts`.
+
+**Also caught, unresolved:** `features_from_circuit(include_mlps_in_full_count)`
+carries a docstring saying it must be fixed before the sweep because it shifts
+every size class. It is not yet in the pre-registration.
+
+Test count 197 to 214.

@@ -186,3 +186,106 @@ fractional reduction rule in `PLAN.md` section 4, never ad hoc pruning.
 6. Lock, tag, push, file the embargoed OSF registration.
 
 Steps 2 and 3 are independent and may run in either order.
+
+---
+
+## Calibration 3: the domain of `size_class`
+
+**RULE FIXED 2026-08-06, PILOT NOT YET RUN.** Same condition as above: this
+section must be committed before `results/calib-nodes/` exists.
+
+### The error this corrects
+
+On 2026-08-06 `DEFAULT_SIZE_BINS` was re-anchored to `EDGE_COUNT_LADDER` against
+the 32,491-edge graph, with the justification that no ladder rung sits within 20%
+of a bin boundary. **That justification was computed against the wrong
+quantity.** `phi` does not operate on edges. `features_from_circuit` takes nodes,
+`components_from_nodes` maps them to `(layer, head)` pairs, and
+`n_components_full_model` counts attention heads plus MLPs, which is **156** for
+GPT-2 small. `size_class` is therefore `len(nodes touched) / 156`, and the map
+from a ladder rung to the number of nodes its edges touch is empirical, not
+analytic.
+
+The constants may or may not be adequate. The reasoning behind them was not, and
+the unit tests written alongside encoded the same mistake, so they would have
+continued to pass while checking nothing relevant.
+
+### Design
+
+One discovery, at the confirmatory settings, using the cheapest objective:
+`LOGIT_DIFF_GRAD_PRUNE_ALGO`, `RESAMPLE`, `ABC`, ABBA, seed 0, 128 discovery
+prompts. For each rung of `EDGE_COUNT_LADDER`, take the top-k edges by absolute
+prune score and count the **distinct nodes** they touch, via
+`components_from_nodes`.
+
+Repeated over the five confirmatory seeds so the curve carries variance rather
+than being a single draw. Cost is five EAP discoveries, about one minute on an L4.
+
+### The decision rule, fixed now
+
+Let `n(k)` be the mean distinct node count at rung `k`, and `f(k) = n(k) / 156`.
+
+> **Choose the two bin bounds so that the ten rungs split as evenly as the curve
+> permits, subject to: no rung's `f(k)` lies within 20% of a bound, and each bin
+> contains at least two rungs.**
+>
+> Among all bound pairs satisfying those constraints, choose the one maximising
+> the minimum relative distance from any rung to any bound. Ties broken toward
+> the pair with the smaller first bound.
+>
+> **If no bound pair satisfies the constraints**, `size_class` cannot separate
+> the ladder and MEDIUM granularity is reported as degenerate for the edge-level
+> grid. That is a finding about the claim map, stated in the abstract, not a
+> reason to relax the constraints.
+
+This is deterministic given the curve. It is written as an optimisation over
+candidate bounds rather than a judgement so that it cannot be steered.
+
+Candidate bounds are drawn from a fixed set: every value of the form `m * 10^-e`
+for `m` in 1 to 9 and `e` in 1 to 3, plus 1.01 as the fixed upper sentinel.
+
+### Reporting
+
+The `n(k)` curve is reported in the paper with its seed variance, alongside the
+selected bounds and the rule above, whatever it returns.
+
+---
+
+## Calibration 3b: `position_mass` is a method, not a measurement
+
+Recorded here rather than in a calibration because it is a design decision taken
+on 2026-08-06 by Ajay, not a quantity to be measured. It is in this file because
+it must be fixed before any confirmatory run, like everything else here.
+
+`phi_affected` requires `position_mass` and nothing computed it. Left as-is it
+would have emitted one constant claim across all 18,480 specifications, giving a
+flip rate of exactly zero as an artifact of a missing function rather than as a
+result.
+
+**Method: mean attention probability over labelled input segments.**
+
+Precedent: arXiv:2211.00593 Figure 10 plots "Average attention probability of
+Name Mover Heads" across the IO, S and S2 positions. Attention over labelled
+segments is the source paper's own way of describing where a circuit looks, so
+this is cited rather than invented.
+
+Fixed choices, each of which is a researcher degree of freedom and is therefore
+recorded rather than left implicit:
+
+| Choice | Fixed as | Why |
+|---|---|---|
+| query position | the final token | The position at which the prediction is made, and the one Figure 10 uses |
+| which components | attention heads in the circuit; MLPs excluded | MLPs have no attention distribution |
+| weighting across heads | **uniform** | Prune-score weighting would make the mass depend on score magnitudes, which live on different scales across the discovery-objective axis (logit, prob, logprob, logit_exp gradients). Uniform is scale-free and therefore comparable across that axis. Score weighting is defensible and is **not** used. |
+| averaging | mean over the clean prompts | |
+| segment labels | `seq_labels` from `p1.prompts.generate_ioi_dataset` | Single source, so the claim map and the dataset cannot drift |
+
+A circuit containing no attention heads yields an empty mass, which
+`phi_affected` renders as a stated absence. That is a legitimate state and is not
+a discard.
+
+**The objection to own in the paper, not to hide.** Attention is contested as an
+explanation (Jain and Wallace 2019; Wiegreffe and Pinter 2019). P1 uses it to
+construct the affected-person claim and must say so plainly, including that an
+alternative attribution method would be an additional axis this paper does not
+cross.
