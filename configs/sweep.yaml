@@ -1,0 +1,94 @@
+# The confirmatory sweep.
+#
+# Every value here is either transcribed from the instrument or fixed in
+# preregistration/PLAN.md before any result was seen. Nothing in this file may
+# change after the prereg-p1-confirmatory tag without an entry in
+# preregistration/DEVIATIONS.md.
+#
+#   discovery cells   7 objectives x 22 ablation-corruption x 2 prompt x 5 seed
+#                   = 1,540
+#   specifications    1,540 x 4 metrics x 3 tau
+#                   = 18,480
+#
+# Corruption is NESTED within ablation, not crossed: ZERO and TOKENWISE_MEAN_CLEAN
+# ignore the corrupt distribution, so crossing them would emit duplicate
+# specifications. The enumerator handles this; the axis below lists the levels
+# available to the five operators that read it. See DESIGN-DELTAS D18.
+#
+# Budget on an L4: about 29.5 h. Resume is per cell, so a dropped session costs
+# at most the cell in flight.
+
+name: confirmatory
+purpose: the pre-registered confirmatory grid
+confirmatory: true
+
+model:
+  name: gpt2
+  device: auto
+
+model_shape:
+  # n_components_full_model = 12 * 12 + 12 = 156. Numerator and denominator must
+  # count the same population; see features_from_circuit.
+  n_blocks: 12
+  n_heads_per_block: 12
+
+task:
+  name: ioi
+  # 256 total, 128 discovery. Selected by the committed calibration rule, not
+  # chosen: J_seed rose 0.5678 / 0.6386 / 0.7428 / 0.8089 across n in
+  # {16,32,64,128} and no delta fell below 0.05, so the curve had not flattened
+  # and the rule fell back to the largest size tested, which is also
+  # auto-circuit's own default.
+  n_prompts: 256
+  batch_size: 8
+
+axes:
+  # auto-circuit's own named PruneAlgo constants: 6 EAP variants plus IEG-50.
+  # IEG-1000 is the reduced arm and is run separately, never pooled.
+  discovery_objective:
+    - PROB_GRAD_PRUNE_ALGO
+    - LOGIT_EXP_GRAD_PRUNE_ALGO
+    - LOGPROB_GRAD_PRUNE_ALGO
+    - LOGPROB_DIFF_GRAD_PRUNE_ALGO
+    - LOGIT_DIFF_GRAD_PRUNE_ALGO
+    - LOGIT_MSE_GRAD_PRUNE_ALGO
+    - INTEGRATED_EDGE_GRADS_PRUNE_ALGO
+
+  # All seven members of auto_circuit.types.AblationType.
+  ablation:
+    - RESAMPLE
+    - ZERO
+    - TOKENWISE_MEAN_CLEAN
+    - TOKENWISE_MEAN_CORRUPT
+    - TOKENWISE_MEAN_CLEAN_AND_CORRUPT
+    - BATCH_TOKENWISE_MEAN
+    - BATCH_ALL_TOK_MEAN
+
+  # Four constructions, all from arXiv:2211.00593. ABC is section 3; the other
+  # three are appendix A. See spec.py for the verbatim definitions.
+  corruption:
+    - ABC
+    - RANDOM_NAME_FLIP
+    - IO_S1_FLIP
+    - IO_FROM_S2
+
+  metric:
+    - logit_diff
+    - kl_div
+    - sufficiency
+    - comprehensiveness
+
+  # Metric-relative. C(s) is the smallest rung of EDGE_COUNT_LADDER recovering
+  # (1 - tau) of the empty-to-full gap.
+  threshold: [0.05, 0.10, 0.20]
+
+  # Both verbatim in arXiv:2407.08734 section 4.
+  prompt_variant: [ABBA, BABA]
+
+  seed: [0, 1, 2, 3, 4]
+
+  # Edge-level is the confirmatory grid. Node-level is a reported contrast.
+  granularity: [edge]
+
+output:
+  dir: results/sweep
