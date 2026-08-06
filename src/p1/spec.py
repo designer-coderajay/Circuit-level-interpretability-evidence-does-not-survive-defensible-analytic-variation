@@ -26,6 +26,8 @@ __all__ = [
     "CORRUPTION_LEVELS",
     "CORRUPTION_NOT_APPLICABLE",
     "DISCOVERY_OBJECTIVES",
+    "DISCOVERY_OBJECTIVE_PARAMS",
+    "METRIC_SPECS",
     "EDGE_COUNT_LADDER",
     "FIELDS",
     "IEG_1000_OBJECTIVE",
@@ -157,6 +159,67 @@ METRICS: tuple[str, ...] = (
     "sufficiency",
     "comprehensiveness",
 )
+
+#: How each metric is computed. Fixed 2026-08-06 by Ajay.
+#:
+#: `patch_type` is load-bearing and getting it backwards silently inverts every
+#: faithfulness number. VERIFIED: `TREE_PATCH` ablates the edges **not** in the
+#: circuit, so the circuit is retained; `EDGE_PATCH` is the complement and
+#: ablates the circuit itself.
+#:
+#: **Why the split is on logits versus probability.** `logit_diff` and
+#: `sufficiency` both ask whether the retained circuit reproduces the model, so
+#: computed the same way they would be the identical function and the axis would
+#: have four labels and three levels. auto-circuit's native metrics work on raw
+#: logits; ERASER's sufficiency and comprehensiveness are defined on predicted
+#: probability. Splitting there gives four genuinely distinct functions and keeps
+#: the native pair and the ERASER pair cleanly separated.
+#:
+#: **Sufficiency and comprehensiveness are adaptations, not reproductions**, and
+#: the paper says so. ERASER uses the predicted-class probability; this uses the
+#: answer-minus-wrong-answer probability difference, because that is the quantity
+#: the IOI task is defined on and the one auto-circuit's shipped measurement
+#: functions expose.
+#:
+#: Anchors for `normalised_recovery` come from the same pass: `k = 0` is the
+#: empty circuit and `k = n_edges` the full one. Under `TREE_PATCH` that runs
+#: fully-ablated to clean; under `EDGE_PATCH` clean to fully-ablated. Gap closing
+#: therefore yields 1 for "behaves like the full circuit" in both directions,
+#: with no per-metric sign handling.
+METRIC_SPECS: Mapping[str, Mapping[str, str | None]] = {
+    "logit_diff": {"patch": "TREE_PATCH", "measure": "answer_diff", "prob_func": "logits"},
+    "kl_div": {"patch": "TREE_PATCH", "measure": "kl_div", "prob_func": None},
+    "sufficiency": {"patch": "TREE_PATCH", "measure": "answer_diff", "prob_func": "softmax"},
+    "comprehensiveness": {"patch": "EDGE_PATCH", "measure": "answer_diff", "prob_func": "softmax"},
+}
+
+#: The call parameters behind each named `PruneAlgo` constant. VERIFIED
+#: 2026-08-05 by reading `auto_circuit/prune_algos/prune_algos.py`.
+#:
+#: Transcribed rather than imported so that the sweep does not silently follow a
+#: library change: if a future auto-circuit alters one of these constants, the
+#: grid would change underneath a locked pre-registration with nothing raising.
+#: A test asserts these match the installed library.
+DISCOVERY_OBJECTIVE_PARAMS: Mapping[str, Mapping[str, object]] = {
+    "PROB_GRAD_PRUNE_ALGO": {
+        "grad_function": "prob", "answer_function": "avg_val", "mask_val": 0.0},
+    "LOGIT_EXP_GRAD_PRUNE_ALGO": {
+        "grad_function": "logit_exp", "answer_function": "avg_val", "mask_val": 0.0},
+    "LOGPROB_GRAD_PRUNE_ALGO": {
+        "grad_function": "logprob", "answer_function": "avg_val", "mask_val": 0.0},
+    "LOGPROB_DIFF_GRAD_PRUNE_ALGO": {
+        "grad_function": "logprob", "answer_function": "avg_diff", "mask_val": 0.0},
+    "LOGIT_DIFF_GRAD_PRUNE_ALGO": {
+        "grad_function": "logit", "answer_function": "avg_diff", "mask_val": 0.0},
+    "LOGIT_MSE_GRAD_PRUNE_ALGO": {
+        "grad_function": "logit", "answer_function": "mse", "mask_val": 0.0},
+    "INTEGRATED_EDGE_GRADS_PRUNE_ALGO": {
+        "grad_function": "logit", "answer_function": "avg_val",
+        "integrated_grad_samples": 50},
+    "INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO": {
+        "grad_function": "logit", "answer_function": "avg_diff",
+        "integrated_grad_samples": 1000},
+}
 
 #: Edge-level is the confirmatory grid. Node-level is a reported contrast, not a
 #: second grid. See docs/DESIGN-DELTAS.md D8.

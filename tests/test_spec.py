@@ -486,3 +486,54 @@ def test_discovery_id_is_stable_across_processes():
         assert r.returncode == 0, r.stderr
         outs.add(r.stdout.strip())
     assert len(outs) == 1, outs
+
+
+# --------------------------------------------------------------------------
+# The transcribed instrument parameters must match the installed library
+# --------------------------------------------------------------------------
+
+
+def test_every_objective_has_transcribed_parameters():
+    from p1.spec import DISCOVERY_OBJECTIVE_PARAMS
+
+    for name in DISCOVERY_OBJECTIVES + (IEG_1000_OBJECTIVE,):
+        assert name in DISCOVERY_OBJECTIVE_PARAMS, name
+
+
+def test_eap_objectives_set_mask_val_and_ieg_sets_samples():
+    """The XOR mask_gradient_prune_scores asserts, checked before the sweep.
+
+    `assert (mask_val is not None) ^ (integrated_grad_samples is not None)` is a
+    bare AssertionError with no message. Violating it 900 cells into a sweep
+    would be an expensive way to find out.
+    """
+    from p1.spec import DISCOVERY_OBJECTIVE_PARAMS
+
+    for name, params in DISCOVERY_OBJECTIVE_PARAMS.items():
+        has_mask = "mask_val" in params
+        has_ieg = "integrated_grad_samples" in params
+        assert has_mask ^ has_ieg, f"{name} violates the mask_val / IEG XOR"
+
+
+def test_metric_specs_cover_every_metric_and_are_distinct():
+    """Four labels must be four functions, not three.
+
+    logit_diff and sufficiency both measure whether the retained circuit
+    reproduces the model. If they were computed identically the axis would
+    report two identical columns.
+    """
+    from p1.spec import METRIC_SPECS
+
+    assert set(METRIC_SPECS) == set(METRICS)
+    signatures = {
+        (v["patch"], v["measure"], v["prob_func"]) for v in METRIC_SPECS.values()
+    }
+    assert len(signatures) == len(METRICS), signatures
+
+
+def test_exactly_one_metric_uses_the_complement_patch():
+    """Comprehensiveness is the only destruction metric; the rest are retention."""
+    from p1.spec import METRIC_SPECS
+
+    edge = [m for m, v in METRIC_SPECS.items() if v["patch"] == "EDGE_PATCH"]
+    assert edge == ["comprehensiveness"]
