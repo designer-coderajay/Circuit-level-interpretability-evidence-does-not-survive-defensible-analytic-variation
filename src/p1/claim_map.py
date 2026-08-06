@@ -121,15 +121,40 @@ class CircuitFeatures:
 # --------------------------------------------------------------------------
 
 #: Upper bounds, exclusive, on |C| / n_components_full_model. The final class
-#: catches everything above the last bound. PROVISIONAL: these numbers must be
-#: fixed in the pre-registration before any pooled result is inspected.
+#: catches everything above the last bound.
+#:
+#: **FROZEN 2026-08-06 by Ajay. Do not change these numbers again.** They
+#: determine every claim `phi` emits, so moving them after a result is seen would
+#: be indefensible.
+#:
+#: Anchored to the pre-registered `EDGE_COUNT_LADDER`, not chosen freehand.
+#: `C(s)` is always a rung of that ladder, so `size_class` is in effect a
+#: function of which rung was selected. Against the 32,491-edge graph of GPT-2
+#: small at the confirmatory `patchable_model` settings, bounds of 1% and 8%
+#: split the ten rungs 5 / 3 / 2:
+#:
+#:     sparse       10, 20, 50, 100, 200      up to 0.62% of edges
+#:     moderate     500, 1000, 2000           1.54% to 6.16%
+#:     distributed  5000, 10000               15.4% to 30.8%
+#:
+#: No rung sits within 20% of a boundary, so a small change in circuit size
+#: cannot flip the class arbitrarily.
+#:
+#: The previous values, 2% and 10%, were set before the ladder existed and put
+#: **six of the ten rungs into `sparse`**. Had circuits clustered below 500 edges,
+#: `size_class` would have carried no variance, MEDIUM granularity would have
+#: collapsed onto COARSE, and the nested claim map would have silently lost a
+#: level. That is the same defect as DESIGN-DELTAS D12, caught before the sweep
+#: rather than after.
 DEFAULT_SIZE_BINS: tuple[tuple[float, str], ...] = (
-    (0.02, "sparse"),
-    (0.10, "moderate"),
+    (0.01, "sparse"),
+    (0.08, "moderate"),
     (1.01, "distributed"),
 )
 
-#: Layer bands as equal thirds of depth. PROVISIONAL, pre-register before use.
+#: Layer bands as equal thirds of depth. **FROZEN 2026-08-06 by Ajay.**
+#: Equal thirds is the neutral choice and requires no justification beyond
+#: stating it; any unequal split would need one.
 DEFAULT_BAND_NAMES: tuple[str, ...] = ("early", "middle", "late")
 
 

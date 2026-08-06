@@ -2069,3 +2069,58 @@ silently altering a quarter of the corruption axis.
 
 `corrupt_slots` is additive in `src/p1/`; the instrument is untouched. Test count
 184 to 197.
+
+### 2026-08-06. Last three sign-offs. The plan has no open decisions.
+
+**Decisions (Ajay, 2026-08-06):**
+
+- `tau` levels **0.05, 0.10, 0.20**. 0.10 is the modal choice in the faithfulness
+  literature, 0.05 the strictest in common use, 0.20 permissive enough to yield
+  small circuits. Three levels cost no additional discovery, since `tau` is a
+  post-hoc cut on an existing ranking.
+- H4 threshold **gap > 0.10**. Half the H2 threshold, on the reasoning that a gap
+  is a difference of two rates and therefore noisier than either. Judgement call,
+  defended as one, with the full bootstrap distribution reported either way.
+- `phi` constants **frozen**, with the size bins re-anchored first.
+
+### The phi size bins were nearly a silent design defect
+
+`C(s)` is always a rung of `EDGE_COUNT_LADDER`, so `size_class` is in effect a
+function of which rung was selected. The bins at 2% and 10% predated the ladder
+and put **six of the ten rungs into `sparse`**:
+
+    10, 20, 50, 100, 200, 500   all below 2% of 32,491 edges
+
+Had discovered circuits clustered below 500 edges, which is entirely plausible for
+IOI, `size_class` would have taken one value across the whole grid. MEDIUM
+granularity would have collapsed onto COARSE, the nested claim map would have lost
+a level, and the loss would have been invisible until after the sweep.
+
+**This is D12 again**: a design feature that would have carried zero variance at
+full cost. Found by checking the constants against the ladder rather than by
+signing them off.
+
+Re-anchored to **1% and 8%**, splitting the ladder 5 / 3 / 2:
+
+    sparse       10, 20, 50, 100, 200      up to 0.62%
+    moderate     500, 1000, 2000           1.54% to 6.16%
+    distributed  5000, 10000               15.4% to 30.8%
+
+No rung sits within 20% of a boundary. Both properties are unit-tested against
+`EDGE_COUNT_LADDER`, so changing either the bins or the ladder without rechecking
+the other now fails loudly. **These constants must not move again.**
+
+### IEG-1000 wording corrected
+
+Section 4 said the slice tests whether IG sample count changes the claim. It
+cannot. `INTEGRATED_EDGE_GRADS_PRUNE_ALGO` is `avg_val` at 50 samples and
+`INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO` is `avg_diff` at 1000, so the
+comparison is confounded across two parameters. The slice compares two published
+configurations and nothing finer, and the plan now says so.
+
+### State
+
+**No `[CONFIRM]` markers remain. No PROVISIONAL constants remain.** 200 tests
+passing. One blocking checklist item left: `requirements-sweep.lock.txt`, which
+requires the Colab runtime that will execute the sweep and is therefore produced
+immediately before launch.

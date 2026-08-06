@@ -15,6 +15,7 @@ import random
 import pytest
 
 from p1.claim_map import (
+    DEFAULT_SIZE_BINS,
     DEFAULT_BAND_NAMES,
     CircuitFeatures,
     Component,
@@ -322,3 +323,62 @@ def test_dominant_role_of_empty_circuit():
     from p1.claim_map import UNCLASSIFIED_ROLE, dominant_role
 
     assert dominant_role(CircuitFeatures(frozenset(), 12, 144)) == UNCLASSIFIED_ROLE
+
+
+# --------------------------------------------------------------------------
+# Frozen constants, anchored to the pre-registered ladder
+# --------------------------------------------------------------------------
+
+
+def test_size_bins_split_the_edge_count_ladder_five_three_two():
+    """size_class must be able to vary across the rungs C(s) can take.
+
+    C(s) is always a rung of EDGE_COUNT_LADDER, so size_class is in effect a
+    function of which rung was selected. If most rungs fall in one bin, MEDIUM
+    granularity degenerates onto COARSE and the nested claim map silently loses
+    a level. The bins were re-anchored on 2026-08-06 for exactly this reason:
+    the previous 2%/10% bounds put six of the ten rungs into "sparse".
+
+    This asserts the intended 5/3/2 split against the real edge count so that
+    changing either the bins or the ladder without rechecking the other fails.
+    """
+    from p1.spec import EDGE_COUNT_LADDER
+
+    n_edges = 32491  # GPT-2 small, confirmatory patchable_model settings
+
+    def cls_for(rung: int) -> str:
+        frac = rung / n_edges
+        for upper, name in DEFAULT_SIZE_BINS:
+            if frac < upper:
+                return name
+        return DEFAULT_SIZE_BINS[-1][1]
+
+    got = [cls_for(r) for r in EDGE_COUNT_LADDER]
+    assert got.count("sparse") == 5, got
+    assert got.count("moderate") == 3, got
+    assert got.count("distributed") == 2, got
+
+
+def test_no_ladder_rung_sits_near_a_size_bin_boundary():
+    """A rung close to a bound would make size_class fragile to tiny changes."""
+    from p1.spec import EDGE_COUNT_LADDER
+
+    n_edges = 32491
+    bounds = [upper for upper, _ in DEFAULT_SIZE_BINS[:-1]]
+    for rung in EDGE_COUNT_LADDER:
+        frac = rung / n_edges
+        for b in bounds:
+            margin = abs(frac - b) / b
+            assert margin > 0.20, (
+                f"rung {rung} is {margin:.0%} from bound {b}; too close to be stable"
+            )
+
+
+def test_frozen_constants_have_their_pinned_values():
+    """Regression pin on the frozen phi constants. These must not move again."""
+    assert DEFAULT_SIZE_BINS == (
+        (0.01, "sparse"),
+        (0.08, "moderate"),
+        (1.01, "distributed"),
+    )
+    assert DEFAULT_BAND_NAMES == ("early", "middle", "late")

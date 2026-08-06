@@ -9,7 +9,11 @@ execution to date is the Gate 2 smoke configuration, which is a timing
 measurement on 32 prompts, is marked in `configs/smoke.yaml` as excluded from
 any confirmatory analysis, and produced no claim, flip rate, or overlap figure.
 
-Items marked **[CONFIRM]** need Ajay's explicit sign-off before locking.
+**All items requiring Ajay's sign-off were resolved on 2026-08-05 and 2026-08-06.
+No `[CONFIRM]` markers remain.** The specification space, the claim maps, the
+decision rules and the compute plan are complete. What remains before this
+document becomes a pre-registration is the tag, the push, and the third-party
+timestamp; see "Locking" at the end.
 
 ---
 
@@ -39,7 +43,7 @@ research-log entries remain readable. See `docs/DESIGN-DELTAS.md` D9.
 | **P0** | Expected pairwise circuit overlap across specifications is below 1 | `J_bar` with 95% bootstrap CI | **Premise, not tested.** Reported for calibration and cited to 2606.06267. |
 | **H2** *(primary)* | The derived Annex IV claim flips across a non-trivial fraction of specification pairs | `F` = pairwise flip rate | `F > 0.20`, with the 95% bootstrap CI lower bound above 0.20. **Confirmed by Ajay 2026-08-05.** |
 | **H3** | Claim instability for discovered circuits is not clearly separated from size-matched random circuits | overlap of the `F` distributions, discovered versus random null multiverse | **not separated** if the 95% CIs overlap; **separated** if the discovered median lies outside the random 95% CI |
-| **H4** | Filings differ where mechanisms do not | gap between structural and functional instability | `F − (1 − agreement_rate) > 0.10` **[CONFIRM]** |
+| **H4** | Filings differ where mechanisms do not | gap between structural and functional instability | `F − (1 − agreement_rate) > 0.10`. **Confirmed by Ajay 2026-08-06.** |
 
 **The 0.20 threshold on H2 is a judgement call and the paper must defend it as
 one.** It is not derived from anything. The defensible reading is that one flip
@@ -88,7 +92,7 @@ nested within the ablation operator for the reason given below.
 | ablation operator | all seven `auto_circuit.types.AblationType` members | 7 |
 | corruption distribution | **nested within ablation**: 4 levels for the 5 corruption-dependent operators, 1 for the other 2 | 4 / 1 |
 | evaluation metric | logit_diff, kl_div, sufficiency, comprehensiveness | 4 |
-| threshold `tau` | **[CONFIRM]** levels not yet fixed | 3 |
+| threshold `tau` | 0.05, 0.10, 0.20, fixed 2026-08-06 | 3 |
 | prompt variant | ABBA, BABA, both verbatim in 2407.08734 section 4 | 2 |
 | seed | 0, 1, 2, 3, 4 | 5 |
 
@@ -287,12 +291,25 @@ Three properties of this choice, stated so they are not discovered later.
 
 **Reduced arm, pre-registered here and not later.** IEG-1000 runs on a seed-only
 slice: one ablation operator, one corruption, one prompt variant, five seeds,
-five discoveries. The slice tests whether IG sample count changes the claim; it
-is reported separately and never pooled with the confirmatory grid. **The cost
-ratio quoted in the earlier draft, 814 CPU-hours against 13, rested on the
-unmeasured IEG discovery cost and is withdrawn pending the `smoke-ieg`
-measurement.** The reduction rule itself is fixed here regardless of what that
-measurement returns, so that it cannot be tuned after the fact.
+five discoveries. It is reported separately and never pooled with the
+confirmatory grid.
+
+**What this slice can and cannot test, corrected 2026-08-06.** Earlier drafts said
+it tests whether the integrated-gradient sample count changes the claim. **It
+cannot.** VERIFIED from `auto_circuit/prune_algos/prune_algos.py`:
+
+    INTEGRATED_EDGE_GRADS_PRUNE_ALGO             answer_function="avg_val",  samples=50
+    INTEGRATED_EDGE_GRADS_LOGIT_DIFF_PRUNE_ALGO  answer_function="avg_diff", samples=1000
+
+The two shipped constants differ in **two** parameters, not one, so any difference
+between them is confounded between sample count and answer function. The slice
+therefore compares two published IEG configurations and nothing finer, and the
+paper says so. Isolating sample count would require a synthetic constant the
+library does not ship, which D15 rules out: every discovery-objective level cites
+a named implementation by construction.
+
+The reduction rule is fixed here regardless of what any cost measurement returns,
+so that it cannot be tuned after the fact.
 
 **Contrast arms, reported separately, never pooled:** node-level granularity;
 ACDC as an alternative discovery algorithm.
@@ -311,9 +328,37 @@ tuple key, so FINE refines MEDIUM refines COARSE. Unit-tested over randomised
 circuits for both maps. This is the answer to "you chose granularities that gave
 the flip rate you wanted".
 
-**Frozen at lock:** `DEFAULT_SIZE_BINS`, `DEFAULT_BAND_NAMES`, and the per-task
-input segment labels used as `position_mass` keys **[CONFIRM]**, all currently
-marked PROVISIONAL in code.
+**Frozen 2026-08-06, and not to be changed again.**
+
+| Constant | Value | Justification |
+|---|---|---|
+| `DEFAULT_SIZE_BINS` | `(0.01, "sparse")`, `(0.08, "moderate")`, `(1.01, "distributed")` | Anchored to `EDGE_COUNT_LADDER`, not chosen freehand |
+| `DEFAULT_BAND_NAMES` | `("early", "middle", "late")` | Equal thirds of depth; the neutral choice |
+| segment labels | `seq_labels` emitted by `p1.prompts.generate_ioi_dataset` | Single source, so the claim map and the dataset cannot drift apart |
+
+**Why the size bins moved before freezing.** `C(s)` is always a rung of the
+edge-count ladder, so `size_class` is in effect a function of which rung was
+selected. The earlier bounds of 2% and 10% were set before the ladder existed and
+put **six of the ten rungs into `sparse`**. Had circuits clustered below 500
+edges, `size_class` would have carried no variance, MEDIUM granularity would have
+collapsed onto COARSE, and the nested claim map would have silently lost a level.
+That is the same defect as D12, where the metric axis would have carried zero
+variance under absolute `tau`.
+
+Bounds of 1% and 8% against the 32,491-edge graph split the ladder 5 / 3 / 2:
+
+    sparse       10, 20, 50, 100, 200      up to 0.62% of edges
+    moderate     500, 1000, 2000           1.54% to 6.16%
+    distributed  5000, 10000               15.4% to 30.8%
+
+No rung sits within 20% of a boundary, so a small change in circuit size cannot
+flip the class arbitrarily. Both properties are unit-tested against the ladder, so
+changing either the bins or the ladder without rechecking the other fails loudly.
+
+**`tau` levels are 0.05, 0.10, 0.20.** 0.10 is the modal choice in the
+faithfulness literature, 0.05 the strictest in common use, 0.20 permissive enough
+to yield small circuits. Three levels cost no additional discovery, because `tau`
+is a post-hoc cut on an existing ranking.
 
 ## 6. Statistical treatment
 
@@ -419,9 +464,12 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 - [x] IEG-50 discovery cost measured, n = 2, mean 239.574 s, spread 1.5%,
       2026-08-05. 25.8x EAP, not the 51x inferred
 - [x] `CALIBRATION.md` rule committed before either pilot runs
-- [ ] Remaining **[CONFIRM]**: H4 threshold; the three corruption **levels**
-      themselves, each needing a published implementation to cite; `tau` levels;
-      `phi` size bins, band names, and segment labels
+- [x] Corruption levels fixed — four, all from arXiv:2211.00593, implemented and
+      validated against the source's own signal semantics, 2026-08-06
+- [x] `tau` levels fixed — 0.05, 0.10, 0.20, 2026-08-06
+- [x] H4 threshold fixed — gap > 0.10, 2026-08-06
+- [x] `phi` constants frozen — size bins re-anchored to the ladder, band names
+      and segment labels unchanged, 2026-08-06
 - [x] `n_prompts` selected by the calibration rule: 256 total, 128 discovery,
       curve reported, 2026-08-05
 - [x] GPU factor measured on Tesla T4, ~7x not 20x; D17's guess replaced
@@ -430,10 +478,17 @@ and record hash, timestamp, and DOI in `RESEARCH_LOG.md`.
 - [x] `tau` search procedure fixed: smallest rung of a 10-step edge-count ladder
 - [x] Resume design fixed: per-cell manifest, skip if `status: ok`, device
       recorded per cell and homogeneity enforced
-- [ ] `src/p1/spec.py` implements the nesting and carries a
-      `discovery_objective` field; pinned `spec_id` regression value updated
-- [ ] Section 4's IEG-1000 wording corrected: the slice compares two shipped
-      configurations, it does **not** isolate IG sample count
-- [ ] Environment pinned and hash recorded (`requirements-sweep.lock.txt`)
-- [ ] No pooled confirmatory result seen by anyone
+- [x] `src/p1/spec.py` implements the nesting and carries a
+      `discovery_objective` field; duplicates are unconstructible, not merely
+      unemitted; pinned `spec_id` is `80c4f62c924f1f99`, 2026-08-06
+- [x] Section 4's IEG-1000 wording corrected: the slice compares two shipped
+      configurations, it does **not** isolate IG sample count, 2026-08-06
 - [x] Both abstracts drafted — section 8
+- [x] No pooled confirmatory result seen by anyone. The only executions to date
+      are the smoke timings and the `n_prompts` calibration, both marked
+      non-confirmatory, neither producing a claim, flip rate or overlap figure
+- [ ] **Environment pinned and hash recorded.** `pip freeze` on the sweep
+      runtime, committed as `requirements-sweep.lock.txt`. This is the last
+      blocking item and it requires the Colab session that will run the sweep,
+      so it is done immediately before launch and the hash recorded in the first
+      cell manifest.
