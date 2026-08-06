@@ -109,10 +109,67 @@ def test_prompts_end_at_the_answer_slot():
 
 
 def test_top_level_keys_match_the_loader_schema():
-    """The schema block, not the prose, is what load_datasets_from_json parses."""
+    """The schema block, not the prose, is what load_datasets_from_json parses.
+
+    `seq_labels` is deliberately ABSENT, and its removal on 2026-08-06 is the
+    point of this test. It was a seven-entry positional list, but prompts
+    tokenise to 15 to 20 tokens across three templates of differing length and
+    names tokenise to differing token counts, so no positional map could ever
+    have described a prompt. Segments are now resolved per prompt from
+    `p1_roles` by character span. If `seq_labels` ever comes back, something has
+    reintroduced a contract the data cannot satisfy.
+    """
     ds = generate_ioi_dataset(5, seed=0)
     assert "prompts" in ds
-    assert "seq_labels" in ds
+    assert "seq_labels" not in ds
+    assert "p1_roles" in ds
+    assert len(ds["p1_roles"]) == len(ds["prompts"])
+
+
+def test_roles_are_recorded_for_every_prompt():
+    ds = generate_ioi_dataset(8, seed=0)
+    for roles in ds["p1_roles"]:
+        assert set(roles) == {"IO", "S1", "S2", "place", "object"}
+        assert roles["S1"] == roles["S2"], "S1 and S2 are the same name"
+        assert roles["IO"] != roles["S1"]
+
+
+def test_recorded_roles_resolve_against_the_clean_prompt():
+    """End to end: the roles a dataset records must label its own prompts."""
+    from p1.attribution import token_role_labels
+
+    ds = generate_ioi_dataset(8, seed=3)
+    for prompt, roles in zip(ds["prompts"], ds["p1_roles"]):
+        clean = prompt["clean"]
+        # Stand in for a tokeniser by splitting into characters: the only
+        # contract token_role_labels requires is that the pieces concatenate
+        # back to the prompt.
+        labels = token_role_labels(list(clean), clean, roles)
+        assert len(labels) == len(clean)
+        assert labels.count("IO") == len(roles["IO"])
+        assert labels.count("S1") == len(roles["S1"])
+        assert labels.count("S2") == len(roles["S2"])
+
+
+def test_name_occurrence_counts_are_validated():
+    """A name appearing inside another word would claim the wrong span.
+
+    Roles resolve by occurrence order in the prompt string, so if a name also
+    occurs inside the place or object, the span for IO or S1 lands on the wrong
+    characters and `phi_affected` attributes the decision to the wrong segment.
+    Silent, and wrong in a way no downstream test would notice.
+
+    Constructed to be deterministic rather than to rely on the sampler drawing
+    the colliding name: every name here is a substring of the only place, so the
+    collision fires on the first prompt whichever pair is drawn.
+    """
+    with pytest.raises(ValueError, match="must occur exactly"):
+        generate_ioi_dataset(
+            4,
+            seed=0,
+            names=("John", "Johns", "Johnst", "Johnsto"),
+            places=("Johnstown",),
+        )
 
 
 def test_prompt_keys_are_clean_and_corrupt_not_clean_prompt():

@@ -182,7 +182,7 @@ fractional reduction rule in `PLAN.md` section 4, never ad hoc pruning.
 2. Run calibration 1. Apply the rule. Record `J_seed` for all four `n`.
 3. Run calibration 2 on rented GPU. Record both ratios and the environment hash.
 4. Write the selected `n_prompts` and the measured speedup into `PLAN.md`.
-5. Resolve the remaining `[CONFIRM]` items.
+5. Resolve the remaining `[CONFIRM]` items. **Done 2026-08-06; none remain.**
 6. Lock, tag, push, file the embargoed OSF registration.
 
 Steps 2 and 3 are independent and may run in either order.

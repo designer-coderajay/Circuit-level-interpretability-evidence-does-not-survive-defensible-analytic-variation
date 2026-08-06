@@ -2488,3 +2488,44 @@ written against properties rather than against implementations.
 them.** That is worth stating in the paper's limitations: the analysis pipeline
 for a multiverse study is itself a specification space, and its own defects are
 not visible to the tests that check its components.
+
+### 2026-08-06. Roles recorded per prompt; the seq_labels contract removed
+
+`generate_ioi_dataset` now emits a top-level `p1_roles` list parallel to
+`prompts`, mapping `IO`, `S1`, `S2`, `place` and `object` to their literal
+substrings in the **clean** prompt. Clean rather than corrupt, because
+`position_mass` is computed from attention on the clean prompt.
+
+**`seq_labels` is gone**, and its removal is now pinned by a test that asserts
+its absence and states why. A seven-entry positional list could never have
+described a prompt that tokenises to 15 to 20 tokens across three templates of
+differing length. Keeping a wrong thing because a loader tolerates it is worse
+than removing it.
+
+Verified end to end on real generated prompts:
+
+    Then James and David were at the office, and David handed the book to
+         IO:James  S1:David      place:office  S2:David      object:book
+
+`S1` and `S2` are the same name and separate correctly by occurrence order,
+which is the property the whole role-span approach rests on.
+
+### A validation added because the failure would have been silent
+
+Roles resolve by occurrence order in the prompt string. If a name also occurs
+inside the place or object, the span for `IO` or `S1` lands on the wrong
+characters and `phi_affected` attributes the decision to the wrong segment. No
+downstream test would notice: the mass would still normalise, the claim would
+still render, and it would simply be wrong.
+
+`generate_ioi_dataset` now asserts the IO name occurs exactly once and the
+subject name exactly twice in each clean prompt, and raises with the offending
+prompt otherwise.
+
+**The test for it had to be rewritten to be deterministic.** My first version
+supplied colliding names and relied on the sampler drawing one of them, which
+passes or fails by luck. Replaced with a construction where every name is a
+substring of the only place, so the collision fires on the first prompt whichever
+pair is drawn. A flaky test for a silent failure mode is worse than no test.
+
+Test count 263 to 266. `sweep.py` now has every dependency it needs.

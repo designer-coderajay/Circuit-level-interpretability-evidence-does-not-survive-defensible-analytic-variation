@@ -42,9 +42,9 @@ from __future__ import annotations
 
 import json
 import random
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Literal, Sequence
+from typing import Literal, Mapping, Sequence
 
 __all__ = [
     "Order",
@@ -85,6 +85,12 @@ class PromptPair:
     corrupt: str
     answers: tuple[str, ...]
     wrong_answers: tuple[str, ...]
+    #: Role name to the literal substring it occupies in the **clean** prompt.
+    #: Consumed by `p1.attribution.token_role_labels`, which resolves repeated
+    #: substrings by occurrence order, so `S1` and `S2` separate even though both
+    #: are the same name. Clean rather than corrupt because `position_mass` is
+    #: computed from attention on the clean prompt.
+    roles: Mapping[str, str] = field(default_factory=dict)
 
     def as_dict(self) -> dict:
         return {
@@ -243,19 +249,38 @@ def generate_ioi_dataset(
             template, corrupt_slots(a, b, order, corruption, rng, names), place, obj
         )
 
+        # Roles are resolved downstream by occurrence order in the clean prompt,
+        # so a name that also appears inside another word would silently claim
+        # the wrong span. Validate the counts here, loudly, rather than let a
+        # misaligned attribution reach a claim.
+        if clean.count(a) != 1:
+            raise ValueError(
+                f"IO name {a!r} occurs {clean.count(a)} times in {clean!r}; it "
+                f"must occur exactly once for role spans to resolve"
+            )
+        if clean.count(b) != 2:
+            raise ValueError(
+                f"subject name {b!r} occurs {clean.count(b)} times in {clean!r}; "
+                f"it must occur exactly twice as S1 and S2"
+            )
+
         pairs.append(
             PromptPair(
                 clean=clean,
                 corrupt=corrupt,
                 answers=(" " + a,),
                 wrong_answers=(" " + b,),
+                roles={"IO": a, "S1": b, "S2": b, "place": place, "object": obj},
             )
         )
 
     return {
-        "seq_labels": [
-            "prefix", "name_first", "name_second", "place", "subject", "object", "final",
-        ],
+        # `seq_labels` is deliberately absent. It was a seven-entry positional
+        # list and the prompts tokenise to 15 to 20 tokens across three templates
+        # of differing length, so no positional map could ever have been right.
+        # Segments are resolved per prompt from `p1_roles` by character span. See
+        # `p1.attribution.token_role_labels` and RESEARCH_LOG 2026-08-06.
+        "p1_roles": [dict(p.roles) for p in pairs],
         "prompts": [p.as_dict() for p in pairs],
     }
 
