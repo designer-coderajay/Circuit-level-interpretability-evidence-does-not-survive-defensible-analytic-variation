@@ -100,10 +100,98 @@ def _fill(template: str, a: str, b: str, third: str, place: str, obj: str, order
     return template.format(first=first, second=second, third=third, place=place, object=obj)
 
 
+def _fill_slots(template: str, slots: tuple[str, str, str], place: str, obj: str) -> str:
+    """Fill the three name slots directly, bypassing the order logic in `_fill`.
+
+    The corruption transformations rearrange slots in ways that are not
+    expressible as an (a, b, order) triple, so they are built at slot level.
+    """
+    s1, s2, s3 = slots
+    return template.format(first=s1, second=s2, third=s3, place=place, object=obj)
+
+
+def _clean_slots(a: str, b: str, order: Order) -> tuple[str, str, str]:
+    """Clean slot layout. ABBA is (IO, S1, S2); BABA is (S1, IO, S2).
+
+    In both, `a` occurs once and is the answer, and `b` occurs twice.
+    """
+    return (a, b, b) if order == "ABBA" else (b, a, b)
+
+
+def _other_order(order: Order) -> Order:
+    return "BABA" if order == "ABBA" else "ABBA"
+
+
+def corrupt_slots(
+    a: str,
+    b: str,
+    order: Order,
+    corruption: str,
+    rng: random.Random,
+    names: Sequence[str],
+) -> tuple[str, str, str]:
+    """The four corruption constructions, all from arXiv:2211.00593.
+
+    Derivations, so a future reader can check them rather than trust them.
+    Wang et al.'s Figure 9 crosses a token signal in {original, random,
+    S<->IO inverted} with a position signal in {original, inverted}. Token
+    inversion is swapping the S and IO names; position inversion is the
+    IO<->S1 flip, which on this template scheme is exactly the ABBA/BABA
+    toggle with names held fixed.
+
+    ``ABC`` (section 3). Three independently sampled, mutually distinct names,
+    so the duplicate structure is destroyed and no IO is defined. Verbatim:
+    "sentences no longer have a single plausible IO, but the grammatical
+    structures from the pIOI templates are preserved."
+
+    ``RANDOM_NAME_FLIP`` (appendix A). Clean layout, fresh names. Verbatim:
+    "we keep the same position for all names ... each occurrence of a name in
+    the original sentence is replaced by the same random name."
+    Token signal random, position signal original.
+
+    ``IO_S1_FLIP`` (appendix A). Names held, order toggled. Verbatim: "we swap
+    the position of IO and S1 ... correct token signals ... but inverted
+    positional signals."
+
+    ``IO_FROM_S2`` (appendix A). Names swapped AND order toggled, which is both
+    transformations composed, matching "both token signals and positional
+    signals are inverted". On ABBA this maps (a, b, b) to (a, b, a), in which
+    `a`, the original IO, is now the repeated subject and `b`, the original S,
+    appears once as the indirect object. That is the paper's own description:
+    "we make IO become the subject of the sentence and S the indirect object."
+
+    Only ``ABC`` leaves the corrupt prompt without a well-defined IO. The other
+    three are valid IOI sentences. This does not affect any metric: the corrupt
+    prompt supplies ablation activations only, and faithfulness is scored on the
+    clean prompt against the shared answers.
+    """
+    if corruption == "ABC":
+        c1, c2, c3 = rng.sample(list(names), 3)
+        return (c1, c2, c3)
+    if corruption == "RANDOM_NAME_FLIP":
+        pool = [n for n in names if n not in (a, b)]
+        if len(pool) < 2:
+            raise ValueError(
+                f"RANDOM_NAME_FLIP needs 2 names distinct from {a!r} and {b!r}; "
+                f"only {len(pool)} available"
+            )
+        a2, b2 = rng.sample(pool, 2)
+        return _clean_slots(a2, b2, order)
+    if corruption == "IO_S1_FLIP":
+        return _clean_slots(a, b, _other_order(order))
+    if corruption == "IO_FROM_S2":
+        return _clean_slots(b, a, _other_order(order))
+    raise ValueError(
+        f"unknown corruption {corruption!r}; expected one of "
+        f"ABC, RANDOM_NAME_FLIP, IO_S1_FLIP, IO_FROM_S2"
+    )
+
+
 def generate_ioi_dataset(
     n_prompts: int,
     seed: int,
     order: Order = "ABBA",
+    corruption: str = "ABC",
     templates: Sequence[str] = EXAMPLE_TEMPLATES,
     names: Sequence[str] = EXAMPLE_NAMES,
     places: Sequence[str] = EXAMPLE_PLACES,
@@ -114,9 +202,12 @@ def generate_ioi_dataset(
     Clean prompts follow the IOI structure: two names appear, one of them twice,
     and the answer is the name that appeared once, the indirect object.
 
-    Corrupt prompts follow the ABC distribution: three **independently sampled,
-    mutually distinct** names, so no correct completion is defined. That is the
-    point of the corrupt distribution and a test asserts the distinctness.
+    Corrupt prompts follow one of the four constructions in `corrupt_slots`, all
+    taken from arXiv:2211.00593. `ABC` is the default and the de facto standard:
+    three independently sampled, mutually distinct names, so no correct
+    completion is defined. The other three preserve the duplicate structure and
+    are valid IOI sentences; see `corrupt_slots` for the derivation of each and
+    for why that does not affect any metric.
 
     `seq_labels` is emitted because auto-circuit accepts it and because it is the
     natural source of the segment labels that `phi_affected` reads. Keeping the
@@ -146,11 +237,11 @@ def generate_ioi_dataset(
 
         a, b = rng.sample(list(names), 2)
         # Clean: A and B appear, B repeats as the subject, so A is the answer.
-        clean = _fill(template, a, b, b, place, obj, order)
+        clean = _fill_slots(template, _clean_slots(a, b, order), place, obj)
 
-        # Corrupt: three independent, mutually distinct names. No correct answer.
-        c1, c2, c3 = rng.sample(list(names), 3)
-        corrupt = _fill(template, c1, c2, c3, place, obj, order)
+        corrupt = _fill_slots(
+            template, corrupt_slots(a, b, order, corruption, rng, names), place, obj
+        )
 
         pairs.append(
             PromptPair(

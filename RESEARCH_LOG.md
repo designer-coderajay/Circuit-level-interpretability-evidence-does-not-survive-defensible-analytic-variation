@@ -1941,3 +1941,131 @@ rebuilds the VM, and the `pip install` cell was not re-run. The failure signatur
 is distinctive and worth recognising: a fast import failure with zero VRAM.
 Mitigation adopted: one self-contained cell that installs, extracts, verifies
 CUDA, and runs, starting from `%cd /content` so it is idempotent.
+
+---
+
+## 2026-08-06. Corruption levels resolved from the primary source
+
+`preregistration/CALIBRATION.md` step 1 executed. arXiv:2211.00593 fetched as
+PDF; ar5iv had returned an unusable render on 08-05. **Four published
+constructions found, not the one I feared, and all in a single source.**
+
+Verbatim, VERIFIED this session.
+
+Section 3, the distribution used for all knockouts:
+
+> "instead of using two names (IO and S) it used three unrelated random names
+> (A, B and C). In pABC, sentences no longer have a single plausible IO, but the
+> grammatical structures from the pIOI templates are preserved."
+
+Appendix A, "Disentangling token and positional signal in the output of
+S-Inhibition heads": *"We constructed six datasets by combining three
+transformations of the original pIOI distribution."*
+
+> "Random name flip: we replace the names from a given sentence with random
+> names, but we keep the same position for all names. Moreover, each occurrence
+> of a name in the original sentence is replaced by the same random name."
+
+> "IO<->S1 flip: we swap the position of IO and S1. The output of S-inhibition
+> heads will contain correct token signals ... but inverted positional signals"
+
+> "IO<-S2 replacement: we make IO become the subject of the sentence and S the
+> indirect object. In this dataset, both token signals and positional signals are
+> inverted."
+
+**Decision (Ajay, 2026-08-06): all four levels.**
+
+### The objection this axis invites, and the answer fixed before results
+
+The same appendix reports that these transformations carry systematically
+different information: logit difference is approximated by
+`2.31*S_pos + 0.99*S_tok` with 7% mean error. A reviewer will therefore say a
+claim shift across counterfactuals the source paper proved are different is close
+to tautological, and they will be partly right.
+
+**Secondary outcome pre-registered in response:** `F` is additionally reported for
+the `ABC` versus `RANDOM_NAME_FLIP` pair alone. Both are "replace the names with
+random names" and differ only in whether the duplicate-name structure survives, so
+an analyst choosing between them would not believe they were making a substantive
+choice. A flip confined to that pair cannot be dismissed as tautological. Post-hoc
+partition of the same runs, zero additional compute, fixed now precisely so it
+cannot be introduced later as a rescue.
+
+### Two corrections of my own, made before the decision was acted on
+
+**Arithmetic.** I quoted 17,850 specifications for the four-level option. Wrong.
+Correct: `5*4 + 2*1 = 22` ablation-corruption cells, `7*22*2*5 = 1,540` discovery
+cells, **18,480 specifications**. Verified against `enumerate_grid`, zero
+duplicates.
+
+**An objection I overstated.** I said `IO_FROM_S2` breaks the shared `answers`
+field because it changes the correct answer. It does not. VERIFIED from
+`mask_gradient_prune_scores`: the metric is computed on `model(batch.clean)`
+against `batch.answers`, and the corrupt prompt supplies ablation activations
+only, so its own answer never enters. What remains true is that `IO_FROM_S2`
+yields a valid IOI sentence with a different answer rather than a degraded one,
+which is a substantively different kind of counterfactual and is described as one.
+
+### Grid and budget
+
+    ablation x corruption cells   22
+    discovery cells            1,540
+    specifications            18,480      unique spec_ids 18,480, duplicates 0
+
+L4 budget 23.76 h, from measured per-cell costs.
+
+### Code
+
+`CORRUPTION_LEVELS` added to `src/p1/spec.py` with the verbatim provenance of
+each level in the docstring. `Specification` now validates corruption against
+that closed set: an unvalidated free-form string means a typo silently produces a
+different `spec_id` and an orphaned results file, which is the failure the pinned
+test exists to prevent.
+
+**The pin moved again, deliberately, second time in two days.**
+`1831d8ce1a1673a0` to `80c4f62c924f1f99`. Both moves are pre-lock and recorded.
+After the lock it freezes.
+
+### 2026-08-06. Corruption transformations implemented and validated against the source
+
+`src/p1/prompts.py` generated only ABC. Three of the four levels had no
+implementation, which would have blocked the sweep.
+
+**One construction was genuinely ambiguous from the prose and I did not guess
+it.** "We make IO become the subject of the sentence and S the indirect object"
+is compatible with several slot layouts, and two of the three I derived first
+contradicted the paper's own statement that both signals are inverted.
+
+Resolved from **Figure 9's row labels** rather than the prose. The table crosses
+a token signal in {original, random, **S<->IO inverted**} with a position signal
+in {original, inverted}. So token inversion means swapping the S and IO names,
+and position inversion is the IO<->S1 flip, which on this template scheme is
+exactly the ABBA/BABA toggle with names held fixed. `IO<-S2 replacement` is both
+composed.
+
+Writing ABBA as `(IO, S1, S2)` and BABA as `(S1, IO, S2)`:
+
+    clean ABBA        (a, b, b)
+    RANDOM_NAME_FLIP  (a', b', b')   fresh names, layout held
+    IO_S1_FLIP        (b, a, b)      names held, order toggled
+    IO_FROM_S2        (a, b, a)      names swapped, order toggled
+
+`(a, b, a)` reads exactly as the paper describes: `a`, the original IO, is now
+the repeated subject; `b`, the original S, now appears once as the indirect
+object.
+
+**Validated against the paper, not against the derivation.** Measured signal
+content of the generated prompts, both template orders:
+
+    ABC                no unique IO                     matches "no single plausible IO"
+    RANDOM_NAME_FLIP   pos original, tok random         matches Figure 10 left
+    IO_S1_FLIP         pos INVERTED, tok original       matches appendix A
+    IO_FROM_S2         pos INVERTED, tok INVERTED       matches appendix A
+
+The tests assert these signal properties rather than the slot layouts, so they
+check the implementation against the source paper's claims rather than against my
+reasoning. A future edit that changes a construction fails loudly instead of
+silently altering a quarter of the corruption axis.
+
+`corrupt_slots` is additive in `src/p1/`; the instrument is untouched. Test count
+184 to 197.

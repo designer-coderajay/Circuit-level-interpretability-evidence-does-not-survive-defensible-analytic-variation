@@ -23,6 +23,7 @@ from typing import Iterator, Mapping, Sequence
 __all__ = [
     "AUTO_CIRCUIT_ABLATIONS",
     "CORRUPTION_DEPENDENT_ABLATIONS",
+    "CORRUPTION_LEVELS",
     "CORRUPTION_NOT_APPLICABLE",
     "DISCOVERY_OBJECTIVES",
     "EDGE_COUNT_LADDER",
@@ -160,6 +161,53 @@ METRICS: tuple[str, ...] = (
 #: second grid. See docs/DESIGN-DELTAS.md D8.
 GRANULARITIES: tuple[str, ...] = ("edge", "node")
 
+#: The corruption axis. Four levels, all transcribed from arXiv:2211.00593,
+#: VERIFIED 2026-08-06 by fetching the PDF and quoting verbatim. Decision by
+#: Ajay, 2026-08-06.
+#:
+#: Each level cites a published construction, which is the standard every axis in
+#: this grid meets. Definitions, verbatim from the source:
+#:
+#: - ``ABC``            section 3: "instead of using two names (IO and S) it used
+#:                      three unrelated random names (A, B and C). In pABC,
+#:                      sentences no longer have a single plausible IO, but the
+#:                      grammatical structures from the pIOI templates are
+#:                      preserved." This is the distribution the paper uses for
+#:                      all knockouts, and the de facto default.
+#: - ``RANDOM_NAME_FLIP`` appendix A: "we replace the names from a given sentence
+#:                      with random names, but we keep the same position for all
+#:                      names. Moreover, each occurrence of a name in the original
+#:                      sentence is replaced by the same random name."
+#: - ``IO_S1_FLIP``     appendix A: "we swap the position of IO and S1. The output
+#:                      of S-inhibition heads will contain correct token signals
+#:                      ... but inverted positional signals".
+#: - ``IO_FROM_S2``     appendix A: "we make IO become the subject of the sentence
+#:                      and S the indirect object. In this dataset, both token
+#:                      signals and positional signals are inverted."
+#:
+#: **The source quantifies that these carry different information**, reporting
+#: that logit difference is approximated by ``2.31*S_pos + 0.99*S_tok`` with 7%
+#: mean error. That is not a defect of the axis but it must be handled in the
+#: paper: a reviewer will say a claim shift across known-different counterfactuals
+#: is tautological. The answer is the pairwise decomposition described in
+#: preregistration/PLAN.md section 3, which isolates the ABC versus
+#: RANDOM_NAME_FLIP pair. Those two are both "replace the names with random
+#: names" and differ only in whether the duplicate-name structure survives, so an
+#: analyst choosing between them would not believe they were making a substantive
+#: choice. A flip across that pair alone cannot be dismissed as tautological.
+#:
+#: Note on ``IO_FROM_S2``: it produces a valid IOI sentence with a different
+#: answer rather than a degraded one. This does not break anything mechanically,
+#: because `mask_gradient_prune_scores` scores `model(batch.clean)` against
+#: `batch.answers` and the corrupt prompt supplies ablation activations only. It
+#: is a substantively different kind of counterfactual and is described as such.
+CORRUPTION_LEVELS: tuple[str, ...] = (
+    "ABC",
+    "RANDOM_NAME_FLIP",
+    "IO_S1_FLIP",
+    "IO_FROM_S2",
+)
+
 #: Where `C(s)` is located on the prune-score ranking. Fixed 2026-08-05.
 #:
 #: `tau` is metric-relative, so the criterion is "recovers `(1 - tau)` of metric
@@ -218,6 +266,17 @@ class Specification:
             raise ValueError(
                 f"unknown ablation {self.ablation!r}; auto-circuit 1.0.1 ships "
                 f"{AUTO_CIRCUIT_ABLATIONS}"
+            )
+
+        # Corruption is a closed set now that the levels are sourced. An
+        # unvalidated free-form string means a typo silently produces a different
+        # spec_id and therefore an orphaned results file, which is the same
+        # failure mode the pinned regression test exists to prevent.
+        if self.corruption not in CORRUPTION_LEVELS + (CORRUPTION_NOT_APPLICABLE,):
+            raise ValueError(
+                f"unknown corruption {self.corruption!r}; expected one of "
+                f"{CORRUPTION_LEVELS} or {CORRUPTION_NOT_APPLICABLE!r}. Each "
+                f"level must cite a published construction; see spec.py."
             )
 
         # The nesting invariant, enforced on the object rather than only in the

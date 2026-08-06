@@ -86,7 +86,7 @@ nested within the ablation operator for the reason given below.
 |---|---|---|
 | discovery objective | 6 EAP variants + IEG-50, from auto-circuit's named `PruneAlgo` constants | 7 |
 | ablation operator | all seven `auto_circuit.types.AblationType` members | 7 |
-| corruption distribution | **nested within ablation**: 3 levels for the 5 corruption-dependent operators, 1 for the other 2 | 3 / 1 |
+| corruption distribution | **nested within ablation**: 4 levels for the 5 corruption-dependent operators, 1 for the other 2 | 4 / 1 |
 | evaluation metric | logit_diff, kl_div, sufficiency, comprehensiveness | 4 |
 | threshold `tau` | **[CONFIRM]** levels not yet fixed | 3 |
 | prompt variant | ABBA, BABA, both verbatim in 2407.08734 section 4 | 2 |
@@ -103,7 +103,45 @@ misrepresents itself, and the specification curve would plot three identical
 points where one specification exists. The degeneracy is reported in the paper as
 a small finding about the instrument. See DESIGN-DELTAS D18.
 
-Ablation-by-corruption cells: `5 x 3 + 2 x 1 = 17`.
+Ablation-by-corruption cells: `5 x 4 + 2 x 1 = 22`.
+
+**The four corruption levels, fixed 2026-08-06.** All four are transcribed from
+arXiv:2211.00593, VERIFIED by fetching the PDF, so each level cites a published
+construction rather than being invented to fill an axis.
+
+| Level | Source | Verbatim |
+|---|---|---|
+| `ABC` | section 3 | "instead of using two names (IO and S) it used three unrelated random names (A, B and C). In pABC, sentences no longer have a single plausible IO, but the grammatical structures from the pIOI templates are preserved." |
+| `RANDOM_NAME_FLIP` | appendix A | "we replace the names from a given sentence with random names, but we keep the same position for all names. Moreover, each occurrence of a name in the original sentence is replaced by the same random name." |
+| `IO_S1_FLIP` | appendix A | "we swap the position of IO and S1. The output of S-inhibition heads will contain correct token signals ... but inverted positional signals" |
+| `IO_FROM_S2` | appendix A | "we make IO become the subject of the sentence and S the indirect object. In this dataset, both token signals and positional signals are inverted." |
+
+`ABC` is the distribution the source uses for all knockouts and is the de facto
+default in the circuit-discovery literature. The other three come from appendix A,
+where the authors state: "We constructed six datasets by combining three
+transformations of the original pIOI distribution."
+
+**The objection this axis invites, and the pre-registered answer.** The same
+appendix reports that these transformations carry systematically different
+information: logit difference is approximated by `2.31*S_pos + 0.99*S_tok` with
+7% mean error. A reviewer will therefore say that a claim shift across
+known-different counterfactuals is close to tautological.
+
+**Secondary outcome, pre-registered here.** `F` is additionally reported for the
+`ABC` versus `RANDOM_NAME_FLIP` pair alone. Both are "replace the names with
+random names" and differ only in whether the duplicate-name structure survives.
+An analyst choosing between them would not believe they were making a substantive
+choice, so a flip confined to that pair cannot be dismissed as tautological. This
+is a post-hoc partition of the same runs and costs no additional compute. It is
+fixed now, before any result is seen, precisely so it cannot be introduced later
+as a rescue.
+
+`IO_FROM_S2` produces a valid IOI sentence with a different answer rather than a
+degraded one. This is mechanically sound: `mask_gradient_prune_scores` scores
+`model(batch.clean)` against `batch.answers`, and the corrupt prompt supplies
+ablation activations only, so the corrupt prompt's own answer never enters any
+metric. It is nonetheless a substantively different kind of counterfactual and is
+described as one, not folded in silently.
 
 **`clean_corrupt` is fixed at `"corrupt"`. Decision by Ajay, 2026-08-05.**
 VERIFIED from the `mask_gradient_prune_scores` signature, where it is an explicit
@@ -124,19 +162,22 @@ instrument, which is forbidden. The axis is not available and is not in the grid
 
 **Grid arithmetic.**
 
-    discovery cells   7 objectives x 17 ablation-corruption x 2 prompt x 5 seed
-                    = 1,190
-    specifications    1,190 x 4 metrics x 3 tau
-                    = 14,280
+    discovery cells   7 objectives x 22 ablation-corruption x 2 prompt x 5 seed
+                    = 1,540
+    specifications    1,540 x 4 metrics x 3 tau
+                    = 18,480
 
 `tau` is metric-relative, so the `(metric, tau)` cut is post-hoc on an existing
 ranking and does not require a new discovery. This is the reuse architecture
 measured at Gate 2.
 
-The grid was 26,460 specifications from 2,205 discovery cells before these two
-decisions. It is now 54.0% of that on both counts: the corruption nesting removes
-420 discovery cells that were exact duplicates, and dropping the unsourced third
-prompt variant removes a third of the remainder.
+History of this figure, so the arithmetic is auditable. The grid was 26,460
+specifications from 2,205 discovery cells before the nesting and prompt-variant
+decisions of 2026-08-05, which took it to 14,280 from 1,190. Fixing the
+corruption axis at four sourced levels on 2026-08-06 raised it to 18,480 from
+1,540. Net against the original: 70% of the specifications and 70% of the
+discovery cells, with every remaining specification distinct and every axis level
+citing a published implementation.
 
 **`n_prompts` = 256 total, 128 discovery. Selected 2026-08-05 by the committed
 calibration rule, not chosen.** The seed-agreement curve was
@@ -169,16 +210,32 @@ discovery at **229.142 s**, evaluation at **1.756 s per cut**, and peak VRAM at
 **3,651 MB against the card's 15,360 MB**, so memory is not the binding
 constraint and `batch_size` remains free rather than pinned by the hardware.
 
+Card comparison, both configs run unchanged on each device:
+
+| | T4 | L4 |
+|---|---|---|
+| IEG-50 discovery, 128 prompts | 229.1 s | 172.3 s |
+| evaluation per cut | 1.756 s | 1.333 s |
+| peak VRAM | 3,651.4 MB | 3,651.4 MB |
+
+**The workload does not scale with GPU class.** The L4 is only 1.33x the T4, and
+VRAM is byte-identical. GPT-2 small is 124M parameters and `patchable_model` runs
+many small hooked operations per pass, so cost is bound by kernel launch and
+Python overhead rather than arithmetic throughput. INFERRED consequence, not
+measured: A100 and H100 would give a similar 1.3 to 1.5x at several times the
+compute cost. Sweep runs on **L4**.
+
 | | cells | each | total |
 |---|---|---|---|
-| EAP discovery | 1,020 | ~10.7 s *(inferred)* | 3.0 h |
-| IEG-50 discovery | 170 | 229.1 s *(measured)* | 10.8 h |
-| evaluation, 10 rungs | 1,190 | 17.6 s *(measured)* | 5.8 h |
-| IEG-1000 slice | 5 | ~4,380 s *(inferred)* | 6.1 h |
-| **total** | | | **≈ 25.7 h** |
+| EAP discovery | 1,320 | ~8.05 s *(inferred)* | 2.95 h |
+| IEG-50 discovery | 220 | 172.3 s *(measured)* | 10.53 h |
+| evaluation, 10 rungs | 1,540 | 13.3 s *(measured)* | 5.70 h |
+| IEG-1000 slice | 5 | ~3,293 s *(inferred)* | 4.57 h |
+| **total** | | | **≈ 23.8 h** |
 
 Discovery cost is linear in dataset size, verified: 8× the prompts gave 8.00× the
-time. The measured device factor is about **7×**, not the 20× D17 guessed.
+time. The measured device factor against CPU is about **7×**, not the 20× D17
+guessed.
 
 **Resume, because 25.7 h exceeds a Colab session.** Each discovery cell writes
 its own manifest and prune-score file keyed by `spec_id`; the runner skips any

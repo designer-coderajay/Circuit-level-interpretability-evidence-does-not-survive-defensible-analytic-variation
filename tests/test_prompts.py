@@ -167,3 +167,124 @@ def test_example_templates_are_well_formed():
     for t in EXAMPLE_TEMPLATES:
         for slot in ("{first}", "{second}", "{third}", "{place}", "{object}"):
             assert slot in t
+
+
+# --------------------------------------------------------------------------
+# The four corruption constructions, arXiv:2211.00593
+# --------------------------------------------------------------------------
+#
+# These tests validate the implementation against the SOURCE PAPER'S OWN
+# description of what each transformation does to the token and position
+# signals, not against the derivation used to write the code. Wang et al.
+# Figure 9 crosses a token signal in {original, random, S<->IO inverted} with a
+# position signal in {original, inverted}, and Figure 10 states which cell each
+# named transformation occupies. If a future edit changes a construction, the
+# signal properties break and this fails loudly rather than silently altering a
+# quarter of the corruption axis.
+
+import random as _random
+from collections import Counter as _Counter
+
+from p1.prompts import _clean_slots, corrupt_slots
+
+_NAMES = ["Alice", "Bob", "Carol", "Dave", "Eve", "Frank"]
+
+
+def _io_signal(slots):
+    """(position, token) of the name occurring exactly once, or (None, None)."""
+    counts = _Counter(slots)
+    unique = [n for n in slots if counts[n] == 1]
+    if len(unique) != 1:
+        return (None, None)
+    return (slots.index(unique[0]), unique[0])
+
+
+@pytest.mark.parametrize("order", ["ABBA", "BABA"])
+def test_abc_destroys_the_duplicate_structure(order):
+    """Verbatim: "sentences no longer have a single plausible IO"."""
+    slots = corrupt_slots("Alice", "Bob", order, "ABC", _random.Random(1), _NAMES)
+    assert len(set(slots)) == 3, "ABC must use three mutually distinct names"
+    assert _io_signal(slots) == (None, None), "ABC must leave no unique IO"
+
+
+@pytest.mark.parametrize("order", ["ABBA", "BABA"])
+def test_random_name_flip_keeps_position_and_randomises_token(order):
+    """Figure 10 left: "same position signal, random token signal"."""
+    a, b = "Alice", "Bob"
+    clean_pos, clean_tok = _io_signal(_clean_slots(a, b, order))
+    slots = corrupt_slots(a, b, order, "RANDOM_NAME_FLIP", _random.Random(1), _NAMES)
+    pos, tok = _io_signal(slots)
+    assert pos == clean_pos, "position signal must be preserved"
+    assert tok not in (a, b), "token signal must be unrelated to the clean names"
+    assert _Counter(slots).most_common(1)[0][1] == 2, "duplicate structure preserved"
+
+
+@pytest.mark.parametrize("order", ["ABBA", "BABA"])
+def test_io_s1_flip_inverts_position_and_keeps_token(order):
+    """Verbatim: "correct token signals ... but inverted positional signals"."""
+    a, b = "Alice", "Bob"
+    clean_pos, clean_tok = _io_signal(_clean_slots(a, b, order))
+    slots = corrupt_slots(a, b, order, "IO_S1_FLIP", _random.Random(1), _NAMES)
+    pos, tok = _io_signal(slots)
+    assert pos != clean_pos, "position signal must be inverted"
+    assert tok == clean_tok, "token signal must be unchanged"
+    assert set(slots) == {a, b}, "names must be held fixed"
+
+
+@pytest.mark.parametrize("order", ["ABBA", "BABA"])
+def test_io_from_s2_inverts_both_signals(order):
+    """Verbatim: "both token signals and positional signals are inverted".
+
+    Also checks the paper's own description of the result: "we make IO become
+    the subject of the sentence and S the indirect object". The original IO must
+    end up as the repeated name, and the original S as the single one.
+    """
+    a, b = "Alice", "Bob"
+    clean_pos, clean_tok = _io_signal(_clean_slots(a, b, order))
+    slots = corrupt_slots(a, b, order, "IO_FROM_S2", _random.Random(1), _NAMES)
+    pos, tok = _io_signal(slots)
+    assert pos != clean_pos, "position signal must be inverted"
+    assert tok != clean_tok and tok in (a, b), "token signal must be inverted, not random"
+    assert tok == b, "the original S must become the indirect object"
+    assert _Counter(slots)[a] == 2, "the original IO must become the repeated subject"
+
+
+@pytest.mark.parametrize("order", ["ABBA", "BABA"])
+def test_the_three_structured_corruptions_occupy_distinct_signal_cells(order):
+    """No two of them may land in the same cell of Wang's 3x2 table."""
+    a, b = "Alice", "Bob"
+    cells = set()
+    for corr in ("RANDOM_NAME_FLIP", "IO_S1_FLIP", "IO_FROM_S2"):
+        slots = corrupt_slots(a, b, order, corr, _random.Random(1), _NAMES)
+        pos, tok = _io_signal(slots)
+        clean_pos, clean_tok = _io_signal(_clean_slots(a, b, order))
+        cells.add((pos == clean_pos, tok == clean_tok, tok in (a, b)))
+    assert len(cells) == 3, f"corruptions collapsed onto the same signal cell: {cells}"
+
+
+def test_corrupt_slots_rejects_an_unknown_construction():
+    with pytest.raises(ValueError, match="unknown corruption"):
+        corrupt_slots("Alice", "Bob", "ABBA", "SHUFFLE", _random.Random(1), _NAMES)
+
+
+def test_generate_ioi_dataset_accepts_every_corruption_level():
+    from p1.spec import CORRUPTION_LEVELS
+
+    for corr in CORRUPTION_LEVELS:
+        ds = generate_ioi_dataset(n_prompts=8, seed=0, corruption=corr)
+        assert len(ds["prompts"]) == 8
+        for p in ds["prompts"]:
+            assert p["clean"] != p["corrupt"], f"{corr} produced an identity corruption"
+
+
+def test_corruption_changes_the_dataset():
+    """Four levels must not silently collapse to the same prompts."""
+    from p1.spec import CORRUPTION_LEVELS
+
+    seen = {}
+    for corr in CORRUPTION_LEVELS:
+        ds = generate_ioi_dataset(n_prompts=16, seed=0, corruption=corr)
+        seen[corr] = tuple(p["corrupt"] for p in ds["prompts"])
+    assert len(set(seen.values())) == len(CORRUPTION_LEVELS), (
+        "two corruption levels produced identical corrupt prompts"
+    )

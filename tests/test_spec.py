@@ -25,6 +25,7 @@ import pytest
 from p1.spec import (
     AUTO_CIRCUIT_ABLATIONS,
     CORRUPTION_DEPENDENT_ABLATIONS,
+    CORRUPTION_LEVELS,
     CORRUPTION_NOT_APPLICABLE,
     DISCOVERY_OBJECTIVES,
     EDGE_COUNT_LADDER,
@@ -41,7 +42,7 @@ from p1.spec import (
 CANONICAL_SPEC = dict(
     discovery_objective="LOGIT_DIFF_GRAD_PRUNE_ALGO",
     ablation="RESAMPLE",
-    corruption="abc",
+    corruption="ABC",
     metric="logit_diff",
     threshold=0.05,
     prompt_variant="ABBA",
@@ -49,7 +50,7 @@ CANONICAL_SPEC = dict(
     granularity="edge",
 )
 
-PINNED_SPEC_ID = "1831d8ce1a1673a0"
+PINNED_SPEC_ID = "80c4f62c924f1f99"
 
 
 # --------------------------------------------------------------------------
@@ -125,7 +126,7 @@ def test_edge_count_ladder_is_ascending_and_below_the_full_model():
 def test_corruption_independent_ablation_rejects_a_real_corruption_level():
     for ablation in ("ZERO", "TOKENWISE_MEAN_CLEAN"):
         with pytest.raises(ValueError, match="nested"):
-            Specification(**{**CANONICAL_SPEC, "ablation": ablation, "corruption": "abc"})
+            Specification(**{**CANONICAL_SPEC, "ablation": ablation, "corruption": "ABC"})
 
 
 def test_corruption_dependent_ablation_rejects_the_sentinel():
@@ -134,7 +135,7 @@ def test_corruption_dependent_ablation_rejects_the_sentinel():
 
 
 def test_sentinel_may_not_be_supplied_as_a_corruption_level():
-    axes = {**AXES, "corruption": [CORRUPTION_NOT_APPLICABLE, "c1"]}
+    axes = {**AXES, "corruption": [CORRUPTION_NOT_APPLICABLE, "ABC"]}
     with pytest.raises(ValueError, match="sentinel"):
         list(enumerate_grid(axes))
 
@@ -194,7 +195,7 @@ def test_spec_id_is_sensitive_to_every_field():
     variants = [
         {"discovery_objective": "PROB_GRAD_PRUNE_ALGO"},
         {"ablation": "TOKENWISE_MEAN_CORRUPT"},
-        {"corruption": "other"},
+        {"corruption": "RANDOM_NAME_FLIP"},
         {"metric": "kl_div"},
         {"threshold": 0.06},
         {"prompt_variant": "BABA"},
@@ -260,7 +261,7 @@ def test_invalid_values_are_rejected(bad):
 AXES = {
     "discovery_objective": DISCOVERY_OBJECTIVES,   # 7
     "ablation": AUTO_CIRCUIT_ABLATIONS,            # 7, corruption nested inside
-    "corruption": ["c1", "c2", "c3"],              # 3, levels still [CONFIRM]
+    "corruption": CORRUPTION_LEVELS,               # 4, fixed 2026-08-06
     "metric": METRICS,                             # 4
     "threshold": [0.05, 0.10, 0.20],               # 3, levels still [CONFIRM]
     "prompt_variant": ["ABBA", "BABA"],            # 2, fixed 2026-08-05
@@ -269,33 +270,54 @@ AXES = {
 }
 
 
-def test_ablation_corruption_cells_is_seventeen():
-    # 5 corruption-dependent operators x 3 levels, plus 2 that get one cell each.
-    assert ablation_corruption_cells(AXES) == 17
-    assert 5 * 3 + 2 * 1 == 17
+def test_four_corruption_levels_all_from_one_primary_source():
+    """Each level cites a construction in arXiv:2211.00593. See spec.py."""
+    assert len(CORRUPTION_LEVELS) == 4
+    assert CORRUPTION_LEVELS[0] == "ABC", "ABC is the default and leads the axis"
+    assert set(CORRUPTION_LEVELS) == {
+        "ABC", "RANDOM_NAME_FLIP", "IO_S1_FLIP", "IO_FROM_S2"
+    }
 
 
-def test_discovery_cells_is_1190():
+def test_the_tautology_control_pair_is_present():
+    """ABC and RANDOM_NAME_FLIP are the pre-registered secondary comparison.
+
+    Both are "replace the names with random names", differing only in whether the
+    duplicate-name structure survives, so a flip confined to this pair cannot be
+    dismissed as a consequence of choosing counterfactuals known to differ. If
+    either level is ever removed, the secondary outcome in PLAN.md section 3
+    becomes uncomputable and this fails loudly.
+    """
+    assert {"ABC", "RANDOM_NAME_FLIP"} <= set(CORRUPTION_LEVELS)
+
+
+def test_ablation_corruption_cells_is_twentytwo():
+    # 5 corruption-dependent operators x 4 levels, plus 2 that get one cell each.
+    assert ablation_corruption_cells(AXES) == 22
+    assert 5 * 4 + 2 * 1 == 22
+
+
+def test_discovery_cells_is_1540():
     """What the sweep budget scales with. tau is applied post-hoc to a ranking."""
-    assert discovery_cells(AXES) == 1190
-    assert 7 * 17 * 2 * 5 * 1 == 1190
+    assert discovery_cells(AXES) == 1540
+    assert 7 * 22 * 2 * 5 * 1 == 1540
 
 
-def test_confirmatory_grid_is_14280():
-    assert grid_size(AXES) == 14280
-    assert 1190 * 4 * 3 == 14280
+def test_confirmatory_grid_is_18480():
+    assert grid_size(AXES) == 18480
+    assert 1540 * 4 * 3 == 18480
 
 
 def test_nesting_removed_exactly_the_duplicate_cells():
-    """The fully crossed design would have been 21 ablation-corruption cells.
+    """The fully crossed design would have been 28 ablation-corruption cells.
 
-    Four of those 21 were duplicates: two operators that ignore corruption, each
-    crossed against three levels, giving three identical cells where one exists.
+    Six of those 28 were duplicates: two operators that ignore corruption, each
+    crossed against four levels, giving four identical cells where one exists.
     """
     fully_crossed = len(AXES["ablation"]) * len(AXES["corruption"])
-    assert fully_crossed == 21
-    assert fully_crossed - ablation_corruption_cells(AXES) == 4
-    assert 2 * (3 - 1) == 4
+    assert fully_crossed == 28
+    assert fully_crossed - ablation_corruption_cells(AXES) == 6
+    assert 2 * (4 - 1) == 6
 
 
 def test_enumeration_matches_declared_size():
@@ -361,7 +383,7 @@ def test_seed_only_slice_isolates_sampling_noise():
         **AXES,
         "discovery_objective": ("LOGIT_DIFF_GRAD_PRUNE_ALGO",),
         "ablation": ("RESAMPLE",),
-        "corruption": ["c1"],
+        "corruption": ["ABC"],
         "metric": ("logit_diff",),
         "threshold": [0.05],
         "prompt_variant": ["ABBA"],
@@ -379,7 +401,7 @@ def test_ieg_1000_arm_is_a_seed_only_slice_outside_the_confirmatory_grid():
         **AXES,
         "discovery_objective": (IEG_1000_OBJECTIVE,),
         "ablation": ("RESAMPLE",),
-        "corruption": ["c1"],
+        "corruption": ["ABC"],
         "metric": ("logit_diff",),
         "threshold": [0.05],
         "prompt_variant": ["ABBA"],
