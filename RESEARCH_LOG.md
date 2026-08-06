@@ -2604,3 +2604,60 @@ The necessity/sufficiency asymmetry, if it survives 1,540 cells across all seven
 objectives, is the paper's thesis in miniature: the same circuit is necessary and
 not sufficient depending on which metric a provider files. **It is not a result
 yet** and the manuscript will not call it one until the full grid has run.
+
+---
+
+## 2026-08-06T18:06:10Z. LOCKED.
+
+    tag     prereg-p1-confirmatory
+    commit  b800f5f9985ff9009a2daf74e73b74ada7a42268
+    time    2026-08-06T18:06:10Z
+    remote  github.com/designer-coderajay/p1-circuit-multiverse
+
+`preregistration/DEVIATIONS.md` is append-only from this moment.
+
+The plan carries 18,480 specifications over 1,540 discovery cells, every axis
+level citing a published implementation, every constant either transcribed from
+the instrument or selected by a rule committed before the measurement that fed
+it, and a measured budget of about 29 h on an L4.
+
+### One thing went wrong at the lock itself
+
+`requirements-sweep.lock.txt` was never committed. It was generated on the Colab
+runtime and never downloaded, and the commit meant to carry it reported "nothing
+staged; working tree clean". The tag was pushed with the pre-registration's one
+unchecked item still unchecked.
+
+**The tag is not being moved.** A tag that moves is not a timestamp. The
+environment file goes in afterwards and the first post-lock entry in
+DEVIATIONS.md records why, with the audit test stated: the commit adding the lock
+file must predate the earliest manifest under `results/sweep/`, or the sweep is
+invalid and must be rerun.
+
+No confirmatory number exists yet, so nothing is contaminated. The defect is the
+ordering of two commits, not the provenance of a result. Recording it anyway,
+because a deviations file that is empty after a lock is usually a file nobody is
+being honest in.
+
+### Where the project stands
+
+Gate 1 passed. Gate 2 passed. Gate 3, the lock, done on 2026-08-06 against a
+deadline of 2026-08-16: **ten days early**.
+
+Five defects were found in the two days before the lock, all of them in seams
+rather than in components, all of them by writing the runner rather than by
+reading the code: `position_mass` had no producer, `block_index` was off by one,
+the residual terminals were mapped as MLPs, the metric layer did not exist, and
+the segment labels never aligned with tokens. Every one would have surfaced only
+after burning sweep time.
+
+Six inferences of mine were corrected by measurement across the project: 12x
+reuse measured 4.62x, 51x IEG measured 25.8x, 20x GPU measured 7x, L4 predicted
+2 to 3x measured 1.33x, `n_prompts` was absent from the design entirely, and the
+size bins were anchored to the wrong denominator. That last one reached both the
+pre-registration and the test suite before it was caught.
+
+**The lesson worth carrying to P2 and P3:** a test written from the same
+derivation as the code tests nothing. Both mapping bugs were found by deriving
+the expectation from the instrument's own source and its own naming, not from my
+reasoning about it.
