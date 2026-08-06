@@ -225,24 +225,47 @@ than being a single draw. Cost is five EAP discoveries, about one minute on an L
 
 Let `n(k)` be the mean distinct node count at rung `k`, and `f(k) = n(k) / 156`.
 
-> **Choose the two bin bounds so that the ten rungs split as evenly as the curve
-> permits, subject to: no rung's `f(k)` lies within 20% of a bound, and each bin
-> contains at least two rungs.**
+**Revised 2026-08-06, before any measurement was run.** The first version of this
+rule attempted three bins on a linear scale and nothing else. Stress-testing it
+against plausible curves showed it would return "degenerate" in most of them, for
+a structural reason: the node count **saturates**, because by the upper rungs a
+circuit already touches most of the 156 components, so consecutive rungs differ
+by very little. A rule that is near-certain to fail is a pre-commitment to losing
+MEDIUM granularity rather than a test of whether the claim map can separate
+circuits, which is the opposite of the design principle in PLAN.md section 8. The
+revision is legitimate only because it precedes the measurement; the same change
+after seeing the curve would not be.
+
+> **Bins are chosen in log10 space, and the bin count cascades.**
 >
-> Among all bound pairs satisfying those constraints, choose the one maximising
-> the minimum relative distance from any rung to any bound. Ties broken toward
-> the pair with the smaller first bound.
+> For `n_bins` in `(3, 2)`, in that order, take the first that admits a solution:
+> among all choices of `n_bins - 1` bounds from the declared candidate grid such
+> that every bin holds at least **2** rungs and no rung's `log10 f(k)` lies within
+> **0.08 dex** of any bound, choose the one maximising the minimum separation.
+> Ties broken toward the smaller bounds.
 >
-> **If no bound pair satisfies the constraints**, `size_class` cannot separate
-> the ladder and MEDIUM granularity is reported as degenerate for the edge-level
+> **If neither 3 nor 2 admits a solution**, `size_class` cannot separate the
+> ladder and MEDIUM granularity is reported as degenerate for the edge-level
 > grid. That is a finding about the claim map, stated in the abstract, not a
 > reason to relax the constraints.
 
-This is deterministic given the curve. It is written as an optimisation over
-candidate bounds rather than a judgement so that it cannot be steered.
+Log space rather than linear because the quantity is compressed at the top; a
+linear candidate grid is far too coarse where the data lives. 0.08 dex is a
+factor of about 1.20, so this preserves the original intent of "no rung within
+20% of a bound" while measuring it on the scale the bins are chosen on.
 
-Candidate bounds are drawn from a fixed set: every value of the form `m * 10^-e`
-for `m` in 1 to 9 and `e` in 1 to 3, plus 1.01 as the fixed upper sentinel.
+Class names are `sparse / moderate / distributed` at three bins and
+`compact / distributed` at two.
+
+Candidate bounds are a fixed log-spaced grid: 45 values at 0.05 dex intervals
+from `10^-2.2`, just under one component in 156, up to the whole model, plus 1.01
+as the fixed upper sentinel.
+
+**The rule is code, not prose.** It is implemented as
+`p1.claim_map.select_size_bins`, is deterministic given the curve, and is
+unit-tested including the three-bin case, the two-bin fallback, and both
+degenerate cases. It is written as an exhaustive optimisation over a declared
+candidate set precisely so that it cannot be steered once the numbers are known.
 
 ### Reporting
 

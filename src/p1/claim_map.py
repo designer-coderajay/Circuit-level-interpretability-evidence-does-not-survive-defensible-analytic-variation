@@ -49,6 +49,12 @@ __all__ = [
     "Granularity",
     "Component",
     "CircuitFeatures",
+    "SIZE_BIN_CANDIDATES",
+    "SIZE_BIN_MIN_MARGIN_DEX",
+    "SIZE_BIN_CASCADE",
+    "SIZE_BIN_NAMES",
+    "SIZE_BIN_MIN_PER_BIN",
+    "select_size_bins",
     "DEFAULT_SIZE_BINS",
     "DEFAULT_BAND_NAMES",
     "IOI_HEAD_ROLES",
@@ -123,34 +129,167 @@ class CircuitFeatures:
 #: Upper bounds, exclusive, on |C| / n_components_full_model. The final class
 #: catches everything above the last bound.
 #:
-#: **FROZEN 2026-08-06 by Ajay. Do not change these numbers again.** They
-#: determine every claim `phi` emits, so moving them after a result is seen would
-#: be indefensible.
+#: **PLACEHOLDER, pending calibration 3. Not yet frozen.** These values are
+#: whatever `select_size_bins` returns from the measured node-count curve, and
+#: they are written here by hand only once that pilot has run. Until then they
+#: exist so the module imports and the unit tests have something to exercise.
 #:
-#: Anchored to the pre-registered `EDGE_COUNT_LADDER`, not chosen freehand.
-#: `C(s)` is always a rung of that ladder, so `size_class` is in effect a
-#: function of which rung was selected. Against the 32,491-edge graph of GPT-2
-#: small at the confirmatory `patchable_model` settings, bounds of 1% and 8%
-#: split the ten rungs 5 / 3 / 2:
+#: **Two superseded justifications, recorded rather than deleted**, because the
+#: second is the only error on this project so far that reached both the
+#: pre-registration and the test suite.
 #:
-#:     sparse       10, 20, 50, 100, 200      up to 0.62% of edges
-#:     moderate     500, 1000, 2000           1.54% to 6.16%
-#:     distributed  5000, 10000               15.4% to 30.8%
+#: The original values, 2% and 10%, predated `EDGE_COUNT_LADDER`. Against the
+#: 32,491-edge graph they put six of the ten rungs into `sparse`.
 #:
-#: No rung sits within 20% of a boundary, so a small change in circuit size
-#: cannot flip the class arbitrarily.
+#: They were then re-anchored to 1% and 8% with the justification that no ladder
+#: rung sits within 20% of a boundary. **That justification was computed against
+#: the wrong quantity.** `phi` does not operate on edges. `features_from_circuit`
+#: takes nodes, `components_from_nodes` maps them to `(layer, head)` pairs, and
+#: `n_components_full_model` counts heads plus MLPs: 156 for GPT-2 small. So
+#: `size_class` is `len(nodes touched) / 156`, and the map from a ladder rung to
+#: the node count its edges touch is empirical, not analytic. The unit tests
+#: written alongside encoded the same mistake and would have kept passing while
+#: checking nothing relevant.
 #:
-#: The previous values, 2% and 10%, were set before the ladder existed and put
-#: **six of the ten rungs into `sparse`**. Had circuits clustered below 500 edges,
-#: `size_class` would have carried no variance, MEDIUM granularity would have
-#: collapsed onto COARSE, and the nested claim map would have silently lost a
-#: level. That is the same defect as DESIGN-DELTAS D12, caught before the sweep
-#: rather than after.
+#: The correct bounds are therefore measured, not reasoned, by the rule in
+#: `select_size_bins`. See `preregistration/CALIBRATION.md` section 3.
 DEFAULT_SIZE_BINS: tuple[tuple[float, str], ...] = (
     (0.01, "sparse"),
     (0.08, "moderate"),
     (1.01, "distributed"),
 )
+
+#: Candidate bin bounds for `select_size_bins`, as size fractions on a
+#: **log-spaced** grid: 0.05 dex from 1/156 (one component) up to the whole
+#: model. Declared here so the search cannot be widened once the curve is seen.
+#:
+#: Log spacing rather than linear because the quantity being binned is
+#: compressed at the top. The number of distinct nodes a circuit touches
+#: saturates: by the upper rungs of the edge-count ladder a circuit reaches most
+#: of the 156 components, so consecutive rungs differ by very little. A linear
+#: candidate grid is far too coarse where the data actually lives.
+SIZE_BIN_CANDIDATES: tuple[float, ...] = tuple(
+    round(10.0 ** (-2.2 + 0.05 * i), 6) for i in range(45)
+)
+
+#: Minimum separation between any observed size fraction and any bin bound,
+#: **in log10 units**. 0.08 dex is a factor of about 1.20, so this preserves the
+#: original intent of "no rung within 20% of a bound" while measuring it on the
+#: scale the bins are chosen on.
+SIZE_BIN_MIN_MARGIN_DEX: float = 0.08
+
+#: Minimum number of ladder rungs that must land in each bin, so that no bin is
+#: decorative.
+SIZE_BIN_MIN_PER_BIN: int = 2
+
+#: Bin counts attempted, in order. **The cascade is part of the rule.** Three
+#: classes are preferred; two are accepted if three cannot be separated; only if
+#: neither works is `size_class` degenerate.
+#:
+#: The cascade exists because the first version of this rule attempted three bins
+#: and nothing else, and stress-testing it against plausible saturating curves
+#: showed it would return degenerate in most of them. That would have been a
+#: pre-commitment to losing MEDIUM granularity for a structural reason rather
+#: than a test of whether the claim map can separate circuits. Revised
+#: 2026-08-06, before any measurement was run.
+SIZE_BIN_CASCADE: tuple[int, ...] = (3, 2)
+
+#: Class names by bin count.
+SIZE_BIN_NAMES: Mapping[int, tuple[str, ...]] = {
+    3: ("sparse", "moderate", "distributed"),
+    2: ("compact", "distributed"),
+}
+
+
+def _best_bounds(
+    log_fracs: Sequence[float],
+    log_candidates: Sequence[float],
+    n_bounds: int,
+    min_margin_dex: float,
+    min_per_bin: int,
+) -> tuple[float, ...] | None:
+    """Best `n_bounds` bounds in log space, or None if the constraints fail.
+
+    Exhaustive over the declared candidate grid. `n_bounds` is at most 2 here, so
+    the search is at most 45 choose 2 and needs no cleverness.
+    """
+    from itertools import combinations
+
+    best: tuple[float, tuple[float, ...]] | None = None
+    for combo in combinations(range(len(log_candidates)), n_bounds):
+        bounds = tuple(log_candidates[i] for i in combo)
+        counts = [0] * (n_bounds + 1)
+        for f in log_fracs:
+            idx = sum(1 for b in bounds if f >= b)
+            counts[idx] += 1
+        if any(c < min_per_bin for c in counts):
+            continue
+        margin = min(abs(f - b) for f in log_fracs for b in bounds)
+        if margin <= min_margin_dex:
+            continue
+        if best is None or margin > best[0] or (margin == best[0] and bounds < best[1]):
+            best = (margin, bounds)
+    return None if best is None else best[1]
+
+
+def select_size_bins(
+    fracs: Sequence[float],
+    candidates: Sequence[float] = SIZE_BIN_CANDIDATES,
+    min_margin_dex: float = SIZE_BIN_MIN_MARGIN_DEX,
+    min_per_bin: int = SIZE_BIN_MIN_PER_BIN,
+    cascade: Sequence[int] = SIZE_BIN_CASCADE,
+) -> tuple[tuple[float, str], ...] | None:
+    """The calibration-3 rule, as code rather than as a judgement.
+
+    `fracs` are the observed size fractions, one per rung of
+    `p1.spec.EDGE_COUNT_LADDER`: the mean number of distinct nodes the top-k
+    edges touch, divided by `n_components_full_model`.
+
+    Returns the selected bins, or **`None` if no candidate pair satisfies the
+    constraints**, in which case `size_class` cannot separate the ladder and
+    MEDIUM granularity is reported as degenerate. That is a finding about the
+    claim map, stated in the abstract, and not a licence to relax the
+    constraints.
+
+    The rule, fixed in `preregistration/CALIBRATION.md` before the pilot ran:
+    among all bound pairs drawn from `candidates` such that every bin holds at
+    least `min_per_bin` rungs and no rung lies within `min_margin` of any bound,
+    choose the pair maximising the minimum relative distance from any rung to any
+    bound; break ties toward the smaller first bound.
+
+    Written as an optimisation over a declared candidate set precisely so that it
+    cannot be steered once the numbers are known. It is deterministic given
+    `fracs`, and a test asserts that.
+
+    Bins are chosen in **log10 space**, because the node count saturates: by the
+    upper ladder rungs a circuit touches most of the model, so consecutive rungs
+    differ by very little on a linear scale. The margin is therefore expressed in
+    dex, and the returned bounds are ordinary fractions so `size_class` needs no
+    change.
+    """
+    import math
+
+    if not fracs:
+        raise ValueError("fracs must be non-empty")
+    if any(f <= 0 for f in fracs):
+        raise ValueError("size fractions must be positive to be binned in log space")
+
+    log_fracs = [math.log10(f) for f in fracs]
+    log_candidates = [math.log10(c) for c in candidates]
+
+    for n_bins in cascade:
+        names = SIZE_BIN_NAMES[n_bins]
+        bounds = _best_bounds(
+            log_fracs, log_candidates, n_bins - 1, min_margin_dex, min_per_bin
+        )
+        if bounds is None:
+            continue
+        out = [(10.0**b, names[i]) for i, b in enumerate(bounds)]
+        out.append((1.01, names[-1]))
+        return tuple(out)
+
+    return None
+
 
 #: Layer bands as equal thirds of depth. **FROZEN 2026-08-06 by Ajay.**
 #: Equal thirds is the neutral choice and requires no justification beyond

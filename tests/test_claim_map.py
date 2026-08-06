@@ -330,55 +330,97 @@ def test_dominant_role_of_empty_circuit():
 # --------------------------------------------------------------------------
 
 
-def test_size_bins_split_the_edge_count_ladder_five_three_two():
-    """size_class must be able to vary across the rungs C(s) can take.
-
-    C(s) is always a rung of EDGE_COUNT_LADDER, so size_class is in effect a
-    function of which rung was selected. If most rungs fall in one bin, MEDIUM
-    granularity degenerates onto COARSE and the nested claim map silently loses
-    a level. The bins were re-anchored on 2026-08-06 for exactly this reason:
-    the previous 2%/10% bounds put six of the ten rungs into "sparse".
-
-    This asserts the intended 5/3/2 split against the real edge count so that
-    changing either the bins or the ladder without rechecking the other fails.
-    """
-    from p1.spec import EDGE_COUNT_LADDER
-
-    n_edges = 32491  # GPT-2 small, confirmatory patchable_model settings
-
-    def cls_for(rung: int) -> str:
-        frac = rung / n_edges
-        for upper, name in DEFAULT_SIZE_BINS:
-            if frac < upper:
-                return name
-        return DEFAULT_SIZE_BINS[-1][1]
-
-    got = [cls_for(r) for r in EDGE_COUNT_LADDER]
-    assert got.count("sparse") == 5, got
-    assert got.count("moderate") == 3, got
-    assert got.count("distributed") == 2, got
 
 
-def test_no_ladder_rung_sits_near_a_size_bin_boundary():
-    """A rung close to a bound would make size_class fragile to tiny changes."""
-    from p1.spec import EDGE_COUNT_LADDER
 
-    n_edges = 32491
-    bounds = [upper for upper, _ in DEFAULT_SIZE_BINS[:-1]]
-    for rung in EDGE_COUNT_LADDER:
-        frac = rung / n_edges
-        for b in bounds:
-            margin = abs(frac - b) / b
-            assert margin > 0.20, (
-                f"rung {rung} is {margin:.0%} from bound {b}; too close to be stable"
-            )
+# --------------------------------------------------------------------------
+# The calibration-3 bin selection rule
+# --------------------------------------------------------------------------
+#
+# The three tests that used to sit here asserted a 5/3/2 split of the edge-count
+# ladder against a 32,491-edge denominator. They were deleted on 2026-08-06
+# because phi does not bin on edges: it bins on the fraction of the 156 model
+# components a circuit touches. Those tests encoded a mistaken derivation and
+# would have kept passing while checking nothing relevant. The bounds are now
+# measured by calibration 3 and selected by the rule tested below.
 
 
-def test_frozen_constants_have_their_pinned_values():
-    """Regression pin on the frozen phi constants. These must not move again."""
-    assert DEFAULT_SIZE_BINS == (
-        (0.01, "sparse"),
-        (0.08, "moderate"),
-        (1.01, "distributed"),
-    )
-    assert DEFAULT_BAND_NAMES == ("early", "middle", "late")
+def test_selection_rule_is_deterministic():
+    from p1.claim_map import select_size_bins
+
+    curve = [0.02, 0.04, 0.08, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 0.95]
+    assert select_size_bins(curve) == select_size_bins(curve)
+
+
+def test_selection_rule_returns_three_bins_when_the_curve_supports_them():
+    from p1.claim_map import select_size_bins
+
+    curve = [0.02, 0.04, 0.08, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 0.95]
+    bins = select_size_bins(curve)
+    assert bins is not None and len(bins) == 3
+    assert [n for _, n in bins] == ["sparse", "moderate", "distributed"]
+
+
+def test_selection_rule_falls_back_to_two_bins_on_a_saturating_curve():
+    """Node counts saturate toward the model size; the cascade must absorb that."""
+    from p1.claim_map import select_size_bins
+
+    curve = [0.077, 0.128, 0.244, 0.372, 0.513, 0.705, 0.865, 0.962, 1.0, 1.0]
+    bins = select_size_bins(curve)
+    assert bins is not None and len(bins) == 2
+    assert [n for _, n in bins] == ["compact", "distributed"]
+
+
+def test_selection_rule_reports_degeneracy_rather_than_forcing_a_split():
+    """If nothing separates, size_class is degenerate and that is a finding."""
+    from p1.claim_map import select_size_bins
+
+    assert select_size_bins([0.9] * 10) is None
+    assert select_size_bins([0.60, 0.75, 0.88, 0.95, 0.98, 0.99, 1.0, 1.0, 1.0, 1.0]) is None
+
+
+def test_selected_bounds_come_from_the_declared_candidate_set():
+    """The search may not invent a bound outside the pre-registered grid."""
+    from p1.claim_map import SIZE_BIN_CANDIDATES, select_size_bins
+
+    curve = [0.02, 0.04, 0.08, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 0.95]
+    bins = select_size_bins(curve)
+    assert bins is not None
+    for bound, _ in bins[:-1]:
+        assert any(abs(bound - c) < 1e-9 for c in SIZE_BIN_CANDIDATES), bound
+    assert bins[-1][0] == 1.01
+
+
+def test_every_bin_holds_at_least_two_rungs():
+    from p1.claim_map import SIZE_BIN_MIN_PER_BIN, select_size_bins
+
+    curve = [0.02, 0.04, 0.08, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 0.95]
+    bins = select_size_bins(curve)
+    assert bins is not None
+    counts = {}
+    for f in curve:
+        for upper, name in bins:
+            if f < upper:
+                counts[name] = counts.get(name, 0) + 1
+                break
+    assert all(c >= SIZE_BIN_MIN_PER_BIN for c in counts.values()), counts
+
+
+def test_no_observed_fraction_sits_within_the_margin_of_a_bound():
+    import math
+
+    from p1.claim_map import SIZE_BIN_MIN_MARGIN_DEX, select_size_bins
+
+    curve = [0.02, 0.04, 0.08, 0.15, 0.25, 0.40, 0.55, 0.70, 0.85, 0.95]
+    bins = select_size_bins(curve)
+    assert bins is not None
+    for bound, _ in bins[:-1]:
+        for f in curve:
+            assert abs(math.log10(f) - math.log10(bound)) > SIZE_BIN_MIN_MARGIN_DEX
+
+
+def test_non_positive_fractions_are_rejected():
+    from p1.claim_map import select_size_bins
+
+    with pytest.raises(ValueError, match="positive"):
+        select_size_bins([0.0, 0.5, 0.9])

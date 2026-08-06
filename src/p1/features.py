@@ -124,11 +124,15 @@ def features_from_circuit(
     """Build a `CircuitFeatures` from an auto-circuit node set.
 
     `n_components_full_model` is the denominator for the size class, so what it
-    counts is a pre-registration decision, not an implementation detail. The
-    default counts every attention head plus one MLP per block. Setting
-    `include_mlps_in_full_count=False` counts heads only. Whichever is chosen
-    must be fixed before the sweep, because changing it shifts every size class
-    and therefore every MEDIUM and FINE claim.
+    counts is a pre-registration decision, not an implementation detail.
+
+    **Fixed at `include_mlps_in_full_count=True` on 2026-08-06, and the choice is
+    forced rather than a judgement.** `components_from_nodes` emits Components
+    with `kind="mlp"` when the circuit contains an MLP node, so MLPs can appear
+    in the numerator. A denominator that counted attention heads only could
+    therefore yield a size fraction above 1, and `size_class` would fall through
+    every bin to the last. The numerator and denominator must count the same
+    population. For GPT-2 small that is 12 x 12 heads plus 12 MLPs = **156**.
     """
     if n_blocks <= 0:
         raise ValueError(f"n_blocks must be positive, got {n_blocks}")

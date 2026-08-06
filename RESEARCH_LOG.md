@@ -2193,3 +2193,56 @@ carries a docstring saying it must be fixed before the sweep because it shifts
 every size class. It is not yet in the pre-registration.
 
 Test count 197 to 214.
+
+### 2026-08-06. The size-bin rule was revised before it ran, and why that matters
+
+Calibration 3's first draft attempted three bins on a linear scale and nothing
+else. Before running it I stress-tested `select_size_bins` against plausible
+node-count curves. **It returned "degenerate" in most of them**, and for a
+structural reason rather than a bug: the node count saturates. By the upper rungs
+of the edge-count ladder a circuit already touches most of the 156 components, so
+consecutive rungs differ by very little and no bound can sit clear of them.
+
+A rule that is near-certain to fail is not a test. It is a pre-commitment to
+losing MEDIUM granularity dressed up as a measurement, which is the opposite of
+the both-outcomes-publishable principle the whole protocol rests on.
+
+**Decision (Ajay, 2026-08-06): bin on log node count, with a cascade.**
+
+Revised rule: bins chosen in log10 space; bin count cascades 3 then 2; minimum
+separation 0.08 dex, a factor of about 1.20, preserving the original "no rung
+within 20% of a bound" intent on the scale the bins are actually chosen on;
+candidate grid 45 log-spaced values at 0.05 dex. Class names `sparse / moderate /
+distributed` at three bins, `compact / distributed` at two. Degenerate only if
+neither admits a solution.
+
+**The revision is legitimate only because it precedes the measurement.** Nothing
+had been run and nothing committed. The identical change after seeing the curve
+would not be defensible, and the distinction is the entire content of
+pre-registration.
+
+Behaviour on synthetic curves, checked before committing:
+
+    geometric, well spread     -> 3 bins
+    saturating, plausible      -> 2 bins  (cascade absorbs it)
+    hard saturation            -> None    (degenerate, correctly)
+    all identical              -> None    (degenerate, correctly)
+
+`DEFAULT_SIZE_BINS` is now marked **PLACEHOLDER, pending calibration 3**, not
+frozen. Its docstring records both superseded justifications rather than deleting
+them, because the second is the only error on this project that reached the
+pre-registration and the test suite together.
+
+**Three stale tests deleted.** `test_size_bins_split_the_edge_count_ladder_five_three_two`,
+`test_no_ladder_rung_sits_near_a_size_bin_boundary` and
+`test_frozen_constants_have_their_pinned_values` all asserted the edge-based
+derivation. They passed, and they checked nothing relevant. Replaced by eight
+tests of the selection rule itself, including both degenerate cases.
+
+Also fixed: `include_mlps_in_full_count` is now **forced, not chosen**.
+`components_from_nodes` can emit MLP Components, so they appear in the numerator;
+a denominator counting attention heads only could yield a fraction above 1 and
+`size_class` would fall through every bin. Numerator and denominator must count
+the same population. 156 for GPT-2 small.
+
+Test count 214 to 219.
