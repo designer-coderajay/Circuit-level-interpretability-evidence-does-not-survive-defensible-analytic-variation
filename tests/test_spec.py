@@ -412,3 +412,77 @@ def test_ieg_1000_arm_is_a_seed_only_slice_outside_the_confirmatory_grid():
     assert not ({s.spec_id for s in specs} & full_ids), (
         "IEG-1000 specifications must not collide with the confirmatory grid"
     )
+
+
+# --------------------------------------------------------------------------
+# Discovery cells: the unit the sweep checkpoints on
+# --------------------------------------------------------------------------
+
+
+def test_metric_and_threshold_do_not_change_the_discovery_id():
+    """The reuse architecture, asserted rather than assumed.
+
+    tau is metric-relative and the (metric, tau) cut is post-hoc on an existing
+    ranking, so specifications differing only in those two fields must share a
+    discovery. If this ever fails the sweep silently costs 18,480 discoveries
+    instead of 1,540, which is twelve times the budget.
+    """
+    base = Specification(**CANONICAL_SPEC)
+    for v in ({"metric": "kl_div"}, {"threshold": 0.20}, {"metric": "sufficiency", "threshold": 0.10}):
+        other = Specification(**{**CANONICAL_SPEC, **v})
+        assert other.discovery_id == base.discovery_id
+        assert other.spec_id != base.spec_id
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("discovery_objective", "PROB_GRAD_PRUNE_ALGO"),
+        ("ablation", "TOKENWISE_MEAN_CORRUPT"),
+        ("corruption", "IO_S1_FLIP"),
+        ("prompt_variant", "BABA"),
+        ("seed", 3),
+        ("granularity", "node"),
+    ],
+)
+def test_every_discovery_field_changes_the_discovery_id(field, value):
+    base = Specification(**CANONICAL_SPEC)
+    other = Specification(**{**CANONICAL_SPEC, field: value})
+    assert other.discovery_id != base.discovery_id, f"discovery_id blind to {field}"
+
+
+def test_grid_has_exactly_the_declared_number_of_discovery_cells():
+    """Ties the closed form, the enumerator and the id together.
+
+    discovery_cells() is arithmetic, enumerate_grid() is construction, and
+    discovery_id is what the runner keys on. All three must agree or the sweep
+    does a different amount of work than the plan says.
+    """
+    ids = {s.discovery_id for s in enumerate_grid(AXES)}
+    assert len(ids) == discovery_cells(AXES) == 1540
+
+
+def test_each_discovery_cell_carries_exactly_twelve_specifications():
+    """4 metrics x 3 tau. Every cell must be complete, none short or duplicated."""
+    from collections import Counter
+
+    counts = Counter(s.discovery_id for s in enumerate_grid(AXES))
+    assert set(counts.values()) == {12}
+
+
+def test_discovery_id_is_stable_across_processes():
+    code = (
+        "import sys; sys.path.insert(0, 'src');"
+        "from p1.spec import Specification;"
+        f"print(Specification(**{CANONICAL_SPEC!r}).discovery_id)"
+    )
+    outs = set()
+    for seed in ("0", "1", "12345"):
+        r = subprocess.run(
+            [sys.executable, "-c", code],
+            capture_output=True, text=True,
+            env={"PYTHONHASHSEED": seed, "PATH": "/usr/bin:/bin:/usr/local/bin"},
+        )
+        assert r.returncode == 0, r.stderr
+        outs.add(r.stdout.strip())
+    assert len(outs) == 1, outs

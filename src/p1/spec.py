@@ -34,6 +34,7 @@ __all__ = [
     "Specification",
     "ablation_corruption_cells",
     "discovery_cells",
+    "_DISCOVERY_FIELDS",
     "enumerate_grid",
     "grid_size",
 ]
@@ -236,6 +237,18 @@ EDGE_COUNT_LADDER: tuple[int, ...] = (
 # --------------------------------------------------------------------------
 
 
+#: Fields that require a forward pass. Metric and threshold are excluded: the
+#: `(metric, tau)` cut is post-hoc on an existing ranking.
+_DISCOVERY_FIELDS: tuple[str, ...] = (
+    "discovery_objective",
+    "ablation",
+    "corruption",
+    "prompt_variant",
+    "seed",
+    "granularity",
+)
+
+
 @dataclass(frozen=True, order=True)
 class Specification:
     """One point in S.
@@ -332,6 +345,45 @@ class Specification:
         result on disk.
         """
         return hashlib.sha256(self.canonical().encode("utf-8")).hexdigest()[:16]
+
+    @property
+    def discovery_key(self) -> tuple:
+        """The fields that require a forward pass, in canonical order.
+
+        `tau` is metric-relative and the `(metric, tau)` cut is applied post-hoc
+        to an existing prune-score ranking, so two specifications differing only
+        in metric or threshold share a discovery. That is the reuse architecture
+        measured at Gate 2, and it is why the sweep costs 1,540 discoveries
+        rather than 18,480.
+        """
+        return (
+            self.discovery_objective,
+            self.ablation,
+            self.corruption,
+            self.prompt_variant,
+            self.seed,
+            self.granularity,
+        )
+
+    @property
+    def discovery_id(self) -> str:
+        """Deterministic 16-hex identifier for the discovery cell.
+
+        The sweep writes one manifest and one ranking per `discovery_id` and
+        skips any cell whose manifest already reports `status: ok`. The results
+        directory is therefore the checkpoint, with no separate state file that
+        could be corrupted by a session dying mid-write.
+
+        Built the same way as `spec_id`: SHA-256 of a canonical JSON encoding,
+        never Python's salted `hash`, so a cell computed in one Colab session
+        matches the same cell in the next one.
+        """
+        payload = json.dumps(
+            dict(zip(_DISCOVERY_FIELDS, self.discovery_key)),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()[:16]
 
 
 # --------------------------------------------------------------------------
