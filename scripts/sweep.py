@@ -127,6 +127,7 @@ def main() -> int:
     out_dir.mkdir(parents=True, exist_ok=True)
 
     from p1.spec import (
+        CORRUPTION_NOT_APPLICABLE,
         DISCOVERY_OBJECTIVE_PARAMS,
         EDGE_COUNT_LADDER,
         METRIC_SPECS,
@@ -212,9 +213,28 @@ def main() -> int:
 
         try:
             t0 = time.perf_counter()
+            # `ZERO` and `TOKENWISE_MEAN_CLEAN` never read the corrupt
+            # distribution, so their specifications carry the
+            # CORRUPTION_NOT_APPLICABLE sentinel rather than a real level. The
+            # dataset generator only accepts real levels, so the sentinel is
+            # resolved here to ABC.
+            #
+            # **The choice cannot affect the result, and that is provable rather
+            # than hoped.** VERIFIED from `ablation_activations.py`: `ZERO` sets
+            # `out = t.zeros_like(out)` and forces `input_batch = batch.clean`;
+            # `TOKENWISE_MEAN_CLEAN` reads `clean_dataset` only. Neither ever
+            # touches `batch.corrupt`, so any corruption level yields an
+            # identical circuit. ABC is used because it is the canonical default.
+            #
+            # This is the whole reason the sentinel exists: crossing these two
+            # operators against four corruption levels would emit four identical
+            # specifications. See DESIGN-DELTAS D18 and DEVIATIONS entry 3.
+            corruption = head.corruption
+            if corruption == CORRUPTION_NOT_APPLICABLE:
+                corruption = "ABC"
             ds = generate_ioi_dataset(
                 n_prompts=cfg["task"]["n_prompts"], seed=head.seed,
-                order=head.prompt_variant, corruption=head.corruption,
+                order=head.prompt_variant, corruption=corruption,
             )
             ds_path = write_dataset_json(ds, cell_dir / "prompts.json")
             train_loader, test_loader = load_datasets_from_json(

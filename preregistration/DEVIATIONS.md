@@ -102,3 +102,33 @@ acting on it. No test covered it, because every unit test of the specification
 space runs without torch and the assertion lives inside the instrument. The
 seam was untested, which is the same failure mode as the five defects recorded in
 RESEARCH_LOG for 2026-08-06.
+
+### 2026-08-07. The corruption sentinel was passed to the dataset generator
+
+**What happened.** `ZERO` and `TOKENWISE_MEAN_CLEAN` never read the corrupt
+distribution, so their specifications carry `CORRUPTION_NOT_APPLICABLE`, the
+string `"n/a"`, rather than a real level. `scripts/sweep.py` passed that value
+straight into `generate_ioi_dataset`, which accepts only the four sourced levels
+and raises. Every cell for those two operators failed, 20 per discovery
+objective, 140 across the grid.
+
+**The fix.** The sentinel is resolved to `ABC` at the point of dataset
+generation.
+
+**Why the choice cannot affect any result.** VERIFIED from
+`auto_circuit/utils/ablation_activations.py`: `ZERO` sets
+`out = t.zeros_like(out)` and forces `input_batch = batch.clean`;
+`TOKENWISE_MEAN_CLEAN` reads `clean_dataset` only. Neither ever touches
+`batch.corrupt`. The corrupt prompts are generated and then never read, so every
+corruption level yields a bit-identical circuit for these two operators. `ABC` is
+used because it is the canonical default.
+
+This is the same fact that motivates the nesting in the first place: crossing
+these operators against four corruption levels would emit four identical
+specifications. See DESIGN-DELTAS D18.
+
+**Not a design change.** No axis, level, constant or rule moves. The grid remains
+18,480 specifications over 1,540 discovery cells.
+
+**Effect on results already banked.** None. No cell for either operator has ever
+completed, so there is nothing to invalidate. They are retried automatically.
