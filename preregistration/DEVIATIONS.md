@@ -60,3 +60,45 @@ Anyone auditing this should check that the commit adding
 `requirements-sweep.lock.txt` predates the earliest manifest under
 `results/sweep/`. If it does not, this entry is insufficient and the sweep should
 be rerun.
+
+### 2026-08-07. `clean_corrupt` was not passed conditionally; 100 of every 220 cells failed
+
+**What happened.** `scripts/sweep.py` called `mask_gradient_prune_scores` without
+supplying `clean_corrupt`, so it took the function's default of `"corrupt"`.
+`auto_circuit/utils/ablation_activations.py` asserts
+
+    assert (clean_corrupt is not None) == (ablation_type in batch_specific_ablation)
+
+with `batch_specific_ablation = [RESAMPLE, BATCH_TOKENWISE_MEAN,
+BATCH_ALL_TOK_MEAN]`. For the other four operators the argument must be `None`,
+and the assertion carries no message, so the failure surfaced only as a bare
+`AssertionError` in the cell manifests.
+
+**Scale.** Per discovery objective, 120 of 220 cells succeeded and 100 failed.
+The first run reached 1,075 attempted cells with 574 marked `ok`, which matches
+that split to within one cell.
+
+**The fix.** `clean_corrupt="corrupt"` is passed for the three operators that
+accept it and `None` for the other four.
+
+**Why this is a bug fix and not a design change.** `PLAN.md` fixes
+`clean_corrupt` at `"corrupt"` **where the analyst has a choice**. For the
+remaining four operators the instrument permits no choice, so nothing about the
+pre-registered specification space moves. The grid is still 18,480
+specifications over 1,540 discovery cells, and the 5/2 corruption-dependency
+split is unchanged: `TOKENWISE_MEAN_CORRUPT` and
+`TOKENWISE_MEAN_CLEAN_AND_CORRUPT` read the corrupt distribution through their
+own `corrupt_dataset` property rather than through this argument.
+
+**Effect on results already banked.** None. The 574 completed cells are all
+`RESAMPLE`, `BATCH_TOKENWISE_MEAN` or `BATCH_ALL_TOK_MEAN`, which received
+`"corrupt"` before the fix and receive `"corrupt"` after it. They are not rerun.
+The failed cells carry `status: failed`, the runner skips only `status: ok`, so
+they are retried automatically.
+
+**How it was missed.** The constraint is documented in DESIGN-DELTAS D18, written
+on 2026-08-04 by the same author who then wrote the runner on 2026-08-06 without
+acting on it. No test covered it, because every unit test of the specification
+space runs without torch and the assertion lives inside the instrument. The
+seam was untested, which is the same failure mode as the five defects recorded in
+RESEARCH_LOG for 2026-08-06.

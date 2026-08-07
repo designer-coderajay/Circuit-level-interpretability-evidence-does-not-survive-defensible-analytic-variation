@@ -2661,3 +2661,58 @@ pre-registration and the test suite before it was caught.
 derivation as the code tests nothing. Both mapping bugs were found by deriving
 the expectation from the instrument's own source and its own naming, not from my
 reasoning about it.
+
+---
+
+## 2026-08-07. The sweep was failing 45% of cells. Cause found, fixed, resumed.
+
+Overnight run reached 1,075 attempted cells with **574 `ok`**. The rest carried
+`status: failed` with a bare `AssertionError` and no message.
+
+**Cause.** `mask_gradient_prune_scores` defaults `clean_corrupt="corrupt"`, and
+`batch_src_ablations` asserts that the argument is non-None **only** for
+`RESAMPLE`, `BATCH_TOKENWISE_MEAN` and `BATCH_ALL_TOK_MEAN`. The other four
+operators require `None`. `sweep.py` never passed the argument, so four of seven
+operators died on every cell.
+
+The arithmetic confirms it exactly: 120 of 220 cells per objective succeed,
+four objectives complete plus part of a fifth gives 1,075 attempted and 575 `ok`
+against the observed 574.
+
+**Not a Drive problem.** 178 GB free. Checking that first cost thirty seconds and
+avoided a day of chasing quotas.
+
+**The fix** is conditional: `"corrupt"` for the three operators that accept it,
+`None` for the four that do not.
+
+**Not a design change.** `PLAN.md` fixes `clean_corrupt` at `"corrupt"` *where
+the analyst has a choice*; for the other four the instrument allows none. Grid
+unchanged at 18,480 over 1,540. The 5/2 corruption-dependency split is unchanged,
+because `TOKENWISE_MEAN_CORRUPT` and `TOKENWISE_MEAN_CLEAN_AND_CORRUPT` read the
+corrupt distribution through their own `corrupt_dataset` property, not through
+this argument.
+
+**No completed work is lost.** The 574 banked cells are all operators that
+received `"corrupt"` before the fix and still do. Failed cells are retried
+automatically because the runner skips only `status: ok`.
+
+### The uncomfortable part
+
+**This constraint is written down in DESIGN-DELTAS D18, dated 2026-08-04, by me.
+I then wrote the runner on 08-06 without acting on it.**
+
+That is the sixth defect in this seam, and it is the same shape as the other
+five: the specification space, the claim map and the statistics are covered by
+227 tests that run without torch, and every one of these bugs lives in the strip
+of code where P1 meets the instrument, which none of those tests can reach.
+
+Two lessons, both worth carrying to P2 and P3.
+
+1. **A constraint recorded in a design document is not a constraint enforced by
+   anything.** D18 named this precisely and it still shipped. Findings that
+   constrain implementation need to become assertions or tests at the moment they
+   are found, not notes to be honoured later by the same person who wrote them.
+2. **The seam needs a smoke test that exercises every axis level once.** Seven
+   objectives times seven ablations is 49 discovery calls at EAP prices, about
+   four minutes, and it would have caught this before the sweep rather than 1,075
+   cells into it. That test does not exist and should.

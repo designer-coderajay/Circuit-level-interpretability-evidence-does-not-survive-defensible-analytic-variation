@@ -226,12 +226,40 @@ def main() -> int:
 
             # ---- discovery -------------------------------------------------
             params = dict(DISCOVERY_OBJECTIVE_PARAMS[head.discovery_objective])
+
+            # `clean_corrupt` is not free for every operator, and the library
+            # enforces that with a bare assertion. VERIFIED from
+            # `auto_circuit/utils/ablation_activations.py`:
+            #
+            #   assert (clean_corrupt is not None)
+            #          == (ablation_type in batch_specific_ablation)
+            #
+            # with `batch_specific_ablation = [RESAMPLE, BATCH_TOKENWISE_MEAN,
+            # BATCH_ALL_TOK_MEAN]`. Those three take the value; the other four
+            # must receive `None` or the call dies with an AssertionError
+            # carrying no message.
+            #
+            # `mask_gradient_prune_scores` defaults it to "corrupt", so passing
+            # nothing fails for four of the seven operators. That is what killed
+            # 100 of every 220 cells on the first attempt.
+            #
+            # This is not a design change. PLAN.md fixes `clean_corrupt` at
+            # "corrupt" **where the analyst has a choice**, and for the other
+            # four the instrument allows no choice at all. The five
+            # corruption-dependent operators are unaffected: TOKENWISE_MEAN_CORRUPT
+            # and TOKENWISE_MEAN_CLEAN_AND_CORRUPT read the corrupt distribution
+            # via their own `corrupt_dataset` property, not via this argument.
+            # See DESIGN-DELTAS D18 and DEVIATIONS entry 2.
+            takes_clean_corrupt = head.ablation in (
+                "RESAMPLE", "BATCH_TOKENWISE_MEAN", "BATCH_ALL_TOK_MEAN",
+            )
             t0 = time.perf_counter()
             ps = mask_gradient_prune_scores(
                 model=pmodel, dataloader=train_loader, official_edges=None,
                 grad_function=params["grad_function"],
                 answer_function=params["answer_function"],
                 ablation_type=AblationType[head.ablation],
+                clean_corrupt="corrupt" if takes_clean_corrupt else None,
                 mask_val=params.get("mask_val"),
                 integrated_grad_samples=params.get("integrated_grad_samples"),
             )
