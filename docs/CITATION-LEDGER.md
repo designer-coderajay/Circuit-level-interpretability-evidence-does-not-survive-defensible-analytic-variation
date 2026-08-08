@@ -158,3 +158,23 @@ source PDF.
 section 5.3.2. The HTML fetch truncated before the body of section 5. Their
 released code at `github.com/UKPLab/arxiv2026-phantom-specialization` is the
 better source for reproducing it verbatim.
+
+## Amending instrument, added 2026-08-08
+
+**Regulation (EU) 2026/1744**, Digital Omnibus on AI, of 8 July 2026, amending
+Regulation (EU) 2024/1689 and Regulations (EU) 2018/1139 and (EU) 2023/1230.
+OJ L, 24 July 2026. In force 27 July 2026.
+
+| item | state | note |
+|---|---|---|
+| Existence, ELI, OJ date, date of the act | **VERIFIED 2026-08-08** | EUR-Lex ELI record, `https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng` |
+| Annex III deferral, 2 Aug 2026 to 2 Dec 2027 | **VERIFIED, secondary** | Convergent independent legal commentary. Not read in the OJ. |
+| Annex I deferral to 2 Aug 2028 | **VERIFIED, secondary** | Same basis. |
+| Operative text of the amendments | **UNREAD** | Two EUR-Lex fetches returned an empty body 2026-08-08. Needs a browser. |
+
+**Consequence for every row in the table below.** The AI Act Service Desk states
+it reproduces the official version of **13 June 2024**. All strings below were
+read from it on 2026-08-03 and are therefore **pre-Omnibus**. Whether any of the
+ten provisions P1 relies on were amended is **UNKNOWN**, not "unchanged". None of
+them may enter the manuscript until checked against consolidated CELEX
+`02024R1689-20260727`.

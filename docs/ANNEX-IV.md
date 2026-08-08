@@ -372,3 +372,79 @@ different standards:
 These are not the same sentence and they will not have the same flip rate.
 Whether `phi` targets one, or both as separate claim maps, is the next design
 decision.
+
+# The Digital Omnibus, and what it does to this chain, 2026-08-08
+
+## The instrument
+
+Regulation (EU) 2026/1744 of 8 July 2026, the **Digital Omnibus on AI**, amends
+Regulation (EU) 2024/1689. Published in OJ L on 24 July 2026, in force
+27 July 2026. **VERIFIED 2026-08-08** from the EUR-Lex ELI record.
+
+- Primary text: `https://eur-lex.europa.eu/eli/reg/2026/1744/oj/eng`
+- AI Act consolidated as amended: CELEX `02024R1689-20260727`
+
+## The dates
+
+**VERIFIED 2026-08-08 from convergent independent legal commentary, NOT from the
+operative text.** Two fetches of the EUR-Lex HTML returned an empty body; the
+site renders client-side and the document is large. Reading it needs a browser.
+
+| provision | was | now |
+|---|---|---|
+| Annex III standalone high-risk obligations | 2 August 2026 | **2 December 2027** |
+| Annex I high-risk embedded in regulated products | 2 August 2027 | 2 August 2028 |
+| Article 50 transparency | unchanged | unchanged |
+| Article 50(2) watermarking, systems on market at 2 Aug 2026 | 2 August 2026 | 2 December 2026 |
+| Article 4 AI literacy | unchanged | unchanged |
+
+Several independent law firm commentaries agree on the first two rows.
+Convergence across independent secondary sources is weaker evidence than the
+Official Journal and is recorded here as such, not laundered into a fact.
+
+## What this does to P1's motivation: changes the tense, not the force
+
+Under the original calendar the Annex IV conformity regime for Annex III 5(b)
+credit systems applied from **2 August 2026**, six days before this was written.
+A paper arguing the evidence base is unstable would have been arguing about a
+filing obligation already live.
+
+Under the Omnibus it applies from **2 December 2027**, sixteen months out. The
+standards, guidance and notified-body practice that will decide what counts as
+adequate interpretability evidence are being drafted **now**. A result showing
+that circuit evidence does not survive defensible analytic variation is more
+useful before that practice hardens than after.
+
+Write this as timing, not urgency. Reviewers punish manufactured urgency, and
+the honest version is the stronger one.
+
+## The problem this uncovered, which is not about dates
+
+The AI Act Service Desk states that it reproduces **the official version of
+13 June 2024**. Every verbatim string in `docs/CITATION-LEDGER.md` was read from
+it on 2026-08-03. **That is the pre-Omnibus text.**
+
+The ten provisions P1's claim map depends on, Annex IV 2(b), 2(e), 3 and 4,
+Article 13(3)(d), 14(4)(b), 14(4)(c), 86(1) and 86(3), and Annex III 5(b), have
+therefore **not** been checked against the consolidated text as amended. Whether
+the Omnibus touched any of them is **UNKNOWN**. It is not "unchanged". The
+instrument is titled a simplification measure, which is precisely the sort that
+trims documentation requirements.
+
+`phi_overseer` is defined against Annex IV 2(e) and 3 together with Article
+14(4)(c). `phi_affected` is defined against Article 86(1). If any of those moved,
+the addressees move with them.
+
+**This does not touch the sweep.** The sweep measures circuits, not law. `phi` is
+deterministic code applied to circuits after the fact, so a change in the mapping
+is a re-run of `phi` over banked results, not a re-run of 1,540 discovery cells.
+The exposure is confined to the mapping and to every sentence in the manuscript
+that characterises the regulation.
+
+## Action, before any manuscript sentence characterises the regulation
+
+1. Read CELEX `02024R1689-20260727` from EUR-Lex, the consolidated version dated
+   27 July 2026, in a browser.
+2. Re-verify all ten strings against it.
+3. Record any that moved, and re-derive `phi`'s addressee constants if so.
+4. Cite the Official Journal, never the Service Desk.
