@@ -132,3 +132,66 @@ specifications. See DESIGN-DELTAS D18.
 
 **Effect on results already banked.** None. No cell for either operator has ever
 completed, so there is nothing to invalidate. They are retried automatically.
+
+### 2026-08-08. Post-lock entry 1 was wrong. The pin predates the tag, and it is stale
+
+**What entry 1 claimed.** That `requirements-sweep.lock.txt` was uncommitted when
+`prereg-p1-confirmatory` was tagged, having been generated on the Colab runtime
+and never downloaded, and that the commit meant to carry it reported `nothing
+staged; working tree clean`.
+
+**What git says.** VERIFIED 2026-08-08 from `git log -- requirements-sweep.lock.txt`,
+which returns exactly one commit:
+
+    054f18a  2026-08-04T20:34:51+02:00  GATE 2 PASSED
+
+That is two days **before** the tag at `b800f5f`, 2026-08-06T20:05:55+02:00. The
+file was in the repository the whole time. Commit `2f2430a`, the one that claimed
+to add it, changed only `RESEARCH_LOG.md` and `preregistration/DEVIATIONS.md`,
+VERIFIED from `git show --stat`. It reported a clean tree because there was
+nothing left to add. That message was read as absence when it meant presence.
+
+**Entry 1 is not edited.** This file is append-only. An entry documenting a
+deviation that did not occur is itself part of the record, and removing it would
+be the second error.
+
+**Consequence for the audit instruction.** Entry 1 told an auditor to check that
+the pin commit predates the earliest manifest and to rerun the sweep if it does
+not. It predates it by two days. The check passes. The instruction stands; its
+premise was wrong, and wrong in the safe direction.
+
+**The real problem, which entry 1 obscured.** The committed lock does not
+describe the runtime executing the confirmatory sweep.
+
+| | lock file | sweep runtime |
+|---|---|---|
+| `transformer-lens` | `3.6.0` | `2.18.0` |
+| `torch` | `2.13.0` | not verified today |
+
+The `transformer-lens` figure for the runtime is VERIFIED: the Colab cell
+executed on 2026-08-08 installs `transformer-lens==2.18.0` by explicit pin. The
+runtime `torch` version is **not verified this session**; an earlier session
+recorded `2.11.0+cu128` for the same install path, which is RECALLED from a
+screenshot and has not been re-checked.
+
+The lock was captured on 2026-08-04 against a Colab image that has since moved,
+and the `transformer-lens` pin was tightened after it was written. It is an
+accurate record of the **Gate 2 measurement environment** and not of the
+confirmatory sweep.
+
+**Why no reported number is unprovenanced regardless.** Rule 8 is satisfied by
+the manifests, not by this file. `src/p1/manifest.py` records `environment`, a
+fingerprint over Python version, platform, machine and the installed versions of
+`auto-circuit`, `torch`, `transformer-lens`, `numpy`, `scipy` and `statsmodels`,
+together with `commit` carrying a `-dirty` suffix when the tree is not clean.
+`scripts/sweep.py` writes one manifest per discovery cell. Every figure therefore
+carries the versions that produced it **per cell**, and cells run on different
+images are separable by `environment_hash` rather than silently pooled.
+
+**Action.** `requirements-sweep.lock.txt` is left exactly as committed, because
+regenerating it now would destroy the record of the Gate 2 environment that
+several measured costs in `CALIBRATION.md` depend on. A second file,
+`requirements-confirmatory.lock.txt`, is captured from the sweep runtime and
+committed when the sweep ends. If the pooled manifests carry more than one
+`environment_hash`, the count and the split across cells are reported in the
+paper rather than collapsed.

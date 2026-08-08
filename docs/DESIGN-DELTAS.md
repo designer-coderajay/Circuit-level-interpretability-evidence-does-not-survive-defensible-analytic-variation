@@ -659,3 +659,54 @@ undocumented researcher degree of freedom of exactly the kind the paper is about
 and it applies to three of the seven operators. Either add it, or fix it at
 `"corrupt"` and record the choice in the pre-registration. **Do not leave it
 implicit.**
+
+## D19. LOGIT_MSE_GRAD_PRUNE_ALGO broadcasts in its own reference implementation
+
+**Status: observed 2026-08-08 during the confirmatory sweep. Not fixed. Reported.**
+
+Emitted once per discovery batch, quoted verbatim from the running cell:
+
+```
+/usr/local/lib/python3.12/dist-packages/auto_circuit/prune_algos/mask_gradient.py:105:
+UserWarning: Using a target size (torch.Size([8, 1])) that is different to the
+input size
+  loss = t.nn.functional.mse_loss(token_vals, batch.answers)
+```
+
+**VERIFIED as emitted**, read from the sweep output on 2026-08-08. The file, line
+number and source line are transcribed from that output. The surrounding source
+has not been re-read this session, so the shape of `token_vals` is **INFERRED**:
+`batch.answers` is `(batch, 1)`, and the warning fires only when the operands
+differ, so `token_vals` is `(batch, n)` for some `n > 1`.
+
+**What it means.** `torch.nn.functional.mse_loss` broadcasts mismatched operands
+rather than raising. The reduction is therefore taken over a `(batch, n)`
+difference matrix and not the `(batch, 1)` the call reads as. The quantity that
+`answer_function="mse"` minimises is not the one the line appears to state.
+
+**Why it is not fixed.** Rule 2. auto-circuit is the instrument under test and is
+reproduced verbatim. `LOGIT_MSE_GRAD_PRUNE_ALGO` is one of the seven named
+algorithms this paper treats as defensible analytic choices precisely because
+they are published, exported by name, and would be reached for by a competent
+analyst. Correcting it would substitute our improved instrument for the one that
+actually ships, which is the single change that would let a reviewer discard the
+entire multiverse.
+
+**Why it belongs in the paper and not a footnote.** P1 claims that circuit
+evidence is not stable across defensible analytic choices. This is such a choice,
+available by name in the library's own API, whose reference implementation warns
+on every batch and whose semantics differ from its surface reading. If its
+circuits sit as outliers on the specification curve, that is a fact about the
+state of the instrument, not a defect in this harness. It is reported either way,
+including if the circuits turn out to be unremarkable, and no analysis is
+conditioned on which way it lands.
+
+**Scope.** 220 of 1,540 discovery cells. `answer_function="mse"` is unique to
+this objective among the seven, INFERRED from the parameter table transcribed in
+D15, so no other arm is affected by this particular call.
+
+**Reviewer objection to expect.** That we should have excluded a warning-emitting
+objective. The answer is that exclusion is the analytic choice under study: an
+analyst who silences warnings, which is the default posture in most notebooks,
+never sees this and files the circuit anyway. Removing it would assume the
+diligence the paper is testing for.

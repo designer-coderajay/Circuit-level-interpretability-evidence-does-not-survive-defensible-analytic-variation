@@ -2716,3 +2716,79 @@ Two lessons, both worth carrying to P2 and P3.
    objectives times seven ablations is 49 discovery calls at EAP prices, about
    four minutes, and it would have caught this before the sweep rather than 1,075
    cells into it. That test does not exist and should.
+
+## 2026-08-08. Sweep resumed at 1,100 cells. Two record corrections.
+
+### Run state
+
+Colab VM recycled overnight. Repo re-uploaded and extracted, `auto-circuit==1.0.1`
+and `transformer-lens==2.18.0` reinstalled, L4 confirmed. The Drive output folder
+had lost its `(1)` suffix, which Drive reassigns once the colliding name is freed,
+so the launch path is `/content/drive/MyDrive/p1_sweep` with no suffix.
+
+Resumed 2026-08-08T07:17:45Z. `already complete 1,100`, `to run 440`. Overnight
+progress before the VM died: 758 to 1,100.
+
+Remaining time is **INFERRED**, not measured. Objectives run in config order and
+IEG-50 is last, so of the 440 outstanding roughly 220 are EAP at about 45 s and
+220 are IEG-50 at about 200 s. That is close to 15 h, with the second half far
+slower than the first. The slowdown is expected and is not a fault signal.
+
+### Correction 1. The environment pin was never missing
+
+DEVIATIONS post-lock entry 1, written 2026-08-06, records that
+`requirements-sweep.lock.txt` was uncommitted at tag time. VERIFIED false today
+from `git log -- requirements-sweep.lock.txt`: single commit `054f18a`,
+2026-08-04T20:34:51+02:00, two days before the tag. The commit that claimed to
+add it touched only two markdown files.
+
+The failure was one of reading, not of process. `nothing staged; working tree
+clean` was interpreted as the file being absent when it meant the file was
+already present. **That is the fourth time in this project a diagnosis has been
+made from a summary line without checking the state it summarised**, and it is
+the same shape as the tarball episode, where `Saving p1.tar.gz to p1.tar (1).gz`
+sat visible in the output through three failed cycles.
+
+The rule that follows: **a claim about repository state is checked with a command
+against the repository, never inferred from what a previous command printed.**
+
+### Correction 2. The stale pin, which is the problem that actually matters
+
+The committed lock records `transformer-lens==3.6.0` and `torch==2.13.0`. The
+sweep runs `transformer-lens==2.18.0`, VERIFIED from the executed install
+command. Today's torch is unverified. The lock describes the Gate 2 environment
+of 2026-08-04, not the confirmatory runtime.
+
+This is survivable only because provenance was never resting on that file.
+`src/p1/manifest.py` fingerprints python, platform, machine and six package
+versions per cell and stamps the git commit with a `-dirty` suffix, and
+`scripts/sweep.py` writes one manifest per discovery cell. Cells from different
+images remain separable by `environment_hash` instead of pooling silently.
+
+Design note worth carrying to P2 and P3: **the per-artifact fingerprint saved
+this, and the repository-level lock file did not.** A lock file records what one
+machine had on one day. A manifest records what produced this number. When the
+two disagree, the manifest is the evidence and the lock is documentation.
+
+The lock is left unmodified so the Gate 2 costs in `CALIBRATION.md` keep their
+environment. `requirements-confirmatory.lock.txt` is captured from the sweep
+runtime at the end of the run.
+
+### Instrument observation, DESIGN-DELTAS D19
+
+`LOGIT_MSE_GRAD_PRUNE_ALGO` emits a broadcasting `UserWarning` from
+`auto_circuit/prune_algos/mask_gradient.py:105` on every discovery batch:
+`mse_loss` receives operands of different shape and broadcasts rather than
+raising. Not fixed, per rule 2. 220 of 1,540 cells. Reported as an observed
+property of a published, exported, defensible analytic choice, and reported
+whichever way its circuits fall on the specification curve.
+
+### Still owed
+
+- Seam smoke test over every axis level. Six defects have now lived in this seam
+  and none was caught by the 266 tests, which cannot import torch.
+- `requirements-confirmatory.lock.txt` at end of run.
+- EU AI Act date correction: Annex III high-risk obligations deferred from
+  2 August 2026 to 2 December 2027 by Regulation (EU) 2026/1744. `docs/ANNEX-IV.md`
+  and `preregistration/PLAN.md` still carry the old framing.
+- Results-independent manuscript sections.
