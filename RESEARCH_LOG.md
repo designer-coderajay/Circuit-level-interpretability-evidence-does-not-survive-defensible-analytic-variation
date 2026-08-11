@@ -3124,3 +3124,65 @@ This is the second consequence of the same omission that broke H4: the sweep
 recorded conclusions and discarded the intermediates they were computed from. If
 the H4 repair run happens, it should write the attention cache as well, which
 costs nothing extra once the model is loaded.
+
+## 2026-08-11. Stage 4. H3 separated, and in the opposite direction.
+
+R = 1,000 null multiverses, seed 0, definitions committed at `6e17c58` before any
+null value existed.
+
+| granularity | discovered `F` | 95% CI | null `F` | null 95% CI | verdict |
+|---|---|---|---|---|---|
+| COARSE | 0.5733 | [0.5684, 0.5780] | 0.4829 | [0.4751, 0.4912] | separated |
+| **MEDIUM (primary)** | **0.7316** | [0.7247, 0.7380] | **0.6774** | [0.6734, 0.6810] | **separated** |
+
+The intervals do not overlap at either granularity and the discovered median lies
+outside the null interval, so by the pre-registered rule **H3 is rejected: claim
+instability is clearly separated from the size-matched random null.**
+
+### The direction is the finding
+
+The separation runs the wrong way for interpretability. **Discovered circuits
+produce *less* stable claims than random circuits of the same size.** Modal share
+tells the same story: 0.4109 for discovered against 0.5244 for the null at
+MEDIUM. A randomly drawn circuit yields a more reproducible Annex IV statement
+than one produced by a published discovery algorithm.
+
+PLAN.md section 2 recorded the expectation that a circuit-level test would
+separate trivially, since a 500-edge circuit has `J_rand = 0.008`, and stated H3
+about the claim precisely to avoid that. The claim-level test did separate, but
+the anticipated reading was "discovered circuits carry information random ones do
+not". They do carry different information. It is less consistent information.
+
+### Why, mechanically, and it is not mysterious
+
+`overseer_key` at MEDIUM is `(layer_band, size_class)`. A uniform random draw of
+`k` edges spreads across the model, so its layer band is near-constant across
+draws at a given `k`, and its size class is a near-deterministic function of `k`.
+Discovery does the opposite: it concentrates edges, and *where* it concentrates
+depends on the objective and the ablation operator. The concentration that makes
+a circuit interpretable is exactly what makes the resulting claim specification
+dependent.
+
+**That is the paper's thesis stated in a null comparison rather than asserted.**
+
+### The strongest objection, and it needs answering before submission
+
+At `k = 10,000`, which is 2,067 of the 7,561 specifications, a uniform random
+circuit almost certainly touches all 156 components. Those draws collapse to one
+claim by construction, which depresses null `F`. A reviewer will say the null is
+degenerate at large `k` and that the comparison is therefore unfair.
+
+The answer cannot be to re-specify the null after seeing this. What the paper
+should do is **report the null's claim distribution by circuit size** as a
+descriptive diagnostic, labelled exploratory, and let a reader see exactly where
+the null's stability comes from. If the separation survives only at small `k`,
+say so.
+
+Not yet computed. It is a limitation, not a result, until it is.
+
+### Scope, restated so it is not overlooked
+
+The null covers `phi_overseer` at COARSE and MEDIUM. FINE and `phi_affected` need
+`position_mass`, which the sweep never wrote. **H3 is decided for the primary
+outcome only**, and the paper says so rather than reporting one map and letting a
+reader assume both.

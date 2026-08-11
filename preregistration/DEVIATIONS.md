@@ -657,3 +657,24 @@ to components, and leaves `CircuitFeatures`, `layer_band`, `size_class` and
 verified path in `tests/test_null_multiverse.py` across circuit sizes 1 to
 32,491 and on an adversarial MLP-only circuit. **A faster path that is not
 bit-identical to the verified one would be a different experiment.**
+
+#### Refinement 2026-08-11, before any null value existed: per-replicate streams
+
+The analysis sandbox terminates a process when its parent shell exits, so the
+27-minute run cannot be issued as one call and cannot be backgrounded. The script
+is therefore resumable: it fills the null distribution under a wall-clock budget,
+saves progress, and continues on the next invocation.
+
+Resumption forces one change to how "seed 0" is realised. A single shared
+generator makes replicate `r` depend on every replicate before it, so a run
+interrupted at 600 could not resume without redrawing all 600. Replicate `r`
+instead draws from `numpy.random.default_rng([NULL_SEED, r])`, an independent
+stream per replicate.
+
+**This changes which specific circuits are drawn, and it is recorded for that
+reason.** It does not change `R`, the seed constant, the sampling distribution,
+the edge population or the statistic. The result is now identical whether the
+1,000 replicates run in one pass or in ten, which it was not before.
+
+Fixed before any null value was computed. No null distribution had been produced
+when this was written.

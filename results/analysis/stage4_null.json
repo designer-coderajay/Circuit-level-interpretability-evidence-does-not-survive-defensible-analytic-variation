@@ -1,0 +1,65 @@
+{
+  "by_granularity": {
+    "COARSE": {
+      "discovered": {
+        "F": 0.5732696117433587,
+        "ci95_high": 0.5779590302226197,
+        "ci95_low": 0.5683985988038032,
+        "median": 0.5731735325175347,
+        "pi_star": 0.4787726491204867
+      },
+      "null": {
+        "F_ci95_high": 0.49118017811395015,
+        "F_ci95_low": 0.47507898632567985,
+        "F_max": 0.4971996369562829,
+        "F_mean": 0.48292723219752715,
+        "F_median": 0.4828697318248965,
+        "F_min": 0.4684809755435334,
+        "R": 1000,
+        "pi_star_median": 0.6828461843671472,
+        "seed": 0
+      }
+    },
+    "MEDIUM": {
+      "discovered": {
+        "F": 0.7316107300831544,
+        "ci95_high": 0.7380295973699624,
+        "ci95_low": 0.7247002212691276,
+        "median": 0.7315634077405007,
+        "pi_star": 0.4109244808887713
+      },
+      "h3": {
+        "cis_overlap": false,
+        "discovered_ci95": [
+          0.7247002212691276,
+          0.7380295973699624
+        ],
+        "discovered_median": 0.7315634077405007,
+        "discovered_median_outside_null_ci": true,
+        "null_ci95": [
+          0.6733934843169733,
+          0.6809728616424159
+        ],
+        "rule": "not separated if the 95% CIs overlap; separated if the discovered median lies outside the random 95% CI",
+        "verdict": "separated"
+      },
+      "null": {
+        "F_ci95_high": 0.6809728616424159,
+        "F_ci95_low": 0.6733934843169733,
+        "F_max": 0.6830193788929406,
+        "F_mean": 0.6773158447099394,
+        "F_median": 0.6773634579844077,
+        "F_min": 0.6693375011983662,
+        "R": 1000,
+        "pi_star_median": 0.5244015341885994,
+        "seed": 0
+      },
+      "primary": true
+    }
+  },
+  "constants": "preregistration/DEVIATIONS.md 2026-08-11",
+  "n_specifications": 7561,
+  "plan": "preregistration/PLAN.md sections 2 and 6",
+  "scope_limitation": "phi_overseer COARSE and MEDIUM only; FINE and phi_affected need position_mass, which the sweep never wrote to disk",
+  "stage": 4
+}

@@ -90,3 +90,27 @@ def test_slow_path_agreement_holds_for_an_adversarial_all_mlp_circuit(index):
         nodes_from_edge_names([index.edges[i] for i in idx])
     )
     assert fast == slow
+
+
+def test_memoised_claims_match_uncached_phi(index):
+    """The cache keys on the component set. If that key were wrong, two circuits
+    with different claims could collide and the null would be silently wrong."""
+    rng = np.random.default_rng(11)
+    grans = (Granularity.COARSE, Granularity.MEDIUM)
+    for k in (10, 50, 500, 5_000, 10_000, 32_491):
+        for _ in range(4):
+            idx = index.sample(k, rng)
+            feats = index.features(idx)
+            assert index.claims(idx, grans) == tuple(
+                phi_overseer(feats, g) for g in grans
+            )
+
+
+def test_component_ids_match_the_unique_based_definition(index):
+    """`bincount` replaced `unique`; they must agree, including on emptiness."""
+    rng = np.random.default_rng(3)
+    for k in (1, 9, 100, 4_000, 32_491):
+        idx = index.sample(k, rng)
+        want = np.unique(index.table[idx].ravel())
+        want = want[want != DROPPED]
+        assert np.array_equal(index.component_ids(idx), want)

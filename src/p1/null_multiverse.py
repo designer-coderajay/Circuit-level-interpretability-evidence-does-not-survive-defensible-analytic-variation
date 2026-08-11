@@ -23,7 +23,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from p1.claim_map import CircuitFeatures, Component
+from p1.claim_map import CircuitFeatures, Component, phi_overseer
 from p1.features import components_from_nodes
 from p1.graph import enumerate_edges, parse_node
 
@@ -60,6 +60,7 @@ class EdgeComponentIndex:
             table[i, 0] = self._component_id(src)
             table[i, 1] = self._component_id(dest)
         self.table = table
+        self._claim_cache: dict[bytes, tuple[str, ...]] = {}
 
     def _component_id(self, node_name: str) -> int:
         node = parse_node(node_name)
@@ -73,6 +74,18 @@ class EdgeComponentIndex:
             return c.layer * self.n_heads + c.index
         return self.n_blocks * self.n_heads + c.layer
 
+    def component_ids(self, edge_idx: np.ndarray) -> np.ndarray:
+        """Sorted distinct component ids touched by these edges.
+
+        `bincount` over the 157-value id space, rather than `unique`, which
+        sorts. At k = 10,000 that is 20,000 elements sorted per circuit against a
+        fixed-width count, and the null draws 7,561 circuits per replicate.
+        """
+        counts = np.bincount(
+            self.table[edge_idx].ravel() + 1, minlength=self.n_components_full_model + 1
+        )
+        return np.flatnonzero(counts[1:])
+
     def features(self, edge_idx: np.ndarray) -> CircuitFeatures:
         """CircuitFeatures for a circuit given as edge indices.
 
@@ -80,13 +93,34 @@ class EdgeComponentIndex:
         the null cannot reach FINE because the sweep never wrote the attention
         cache. Callers must not ask this for FINE or for `phi_affected`.
         """
-        ids = np.unique(self.table[edge_idx].ravel())
-        ids = ids[ids != DROPPED]
+        return self._features_from_ids(self.component_ids(edge_idx))
+
+    def _features_from_ids(self, ids: np.ndarray) -> CircuitFeatures:
         return CircuitFeatures(
             components=frozenset(self.components[i] for i in ids),
             n_layers=self.n_blocks,
             n_components_full_model=self.n_components_full_model,
         )
+
+    def claims(self, edge_idx: np.ndarray, granularities) -> tuple[str, ...]:
+        """Claims for a circuit, memoised on the set of components it touches.
+
+        `phi_overseer` at COARSE and MEDIUM is a pure function of the component
+        set, so two circuits touching the same components must produce the same
+        claim. Caching on that set is not an approximation.
+
+        It pays because the size distribution is bimodal: 2,067 of 7,561
+        specifications select 10,000 edges, and a 10,000-edge random circuit
+        almost always touches all 156 components. Those all collapse to one entry.
+        """
+        ids = self.component_ids(edge_idx)
+        key = ids.tobytes()
+        hit = self._claim_cache.get(key)
+        if hit is None:
+            feats = self._features_from_ids(ids)
+            hit = tuple(phi_overseer(feats, g) for g in granularities)
+            self._claim_cache[key] = hit
+        return hit
 
     def sample(self, k: int, rng: np.random.Generator) -> np.ndarray:
         """k distinct edges drawn uniformly from the full namespace."""

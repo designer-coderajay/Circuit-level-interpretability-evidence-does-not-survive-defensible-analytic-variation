@@ -51,30 +51,87 @@ NULL_SEED = 0
 NULL_GRANULARITIES = (Granularity.COARSE, Granularity.MEDIUM)
 
 
-def null_distribution(sizes: list[int], granularity: Granularity) -> dict:
+def _replicate_rng(r: int) -> np.random.Generator:
+    """Independent stream per replicate, derived from the fixed seed.
+
+    One shared stream would make replicate `r` depend on every replicate before
+    it, so a run interrupted at 600 could not be resumed without redrawing all
+    600. Per-replicate streams from `[NULL_SEED, r]` make the work order
+    irrelevant and the result identical whether it runs in one pass or ten.
+    Recorded in DEVIATIONS 2026-08-11 as a refinement of "seed 0", fixed before
+    any null value was computed.
+    """
+    return np.random.default_rng([NULL_SEED, r])
+
+
+def null_distributions(
+    sizes: list[int], cache: Path, budget_s: float
+) -> dict[str, dict] | None:
+    """Fill the null for every granularity at once, resuming from `cache`.
+
+    COARSE and MEDIUM are evaluated on the **same** drawn circuits. That is not a
+    saving imposed on the design: `_replicate_rng(r)` already gave both
+    granularities identical streams, so they were drawing the same circuits and
+    paying twice. Evaluating one draw at both granularities is the same
+    experiment at half the cost, and it makes the two rows of the result
+    genuinely paired rather than coincidentally so.
+
+    Returns None while incomplete.
+    """
+    import time
+
+    names = [g.name for g in NULL_GRANULARITIES]
+    if cache.exists():
+        store = np.load(cache)
+        f_vals = {n: store[f"f_{n}"] for n in names}
+        pi_vals = {n: store[f"pi_{n}"] for n in names}
+        done = int(store["done"])
+    else:
+        f_vals = {n: np.empty(R_NULL) for n in names}
+        pi_vals = {n: np.empty(R_NULL) for n in names}
+        done = 0
+
     index = EdgeComponentIndex()
-    rng = np.random.default_rng(NULL_SEED)
-    f_vals = np.empty(R_NULL)
-    pi_vals = np.empty(R_NULL)
-    for r in range(R_NULL):
-        labels = [
-            phi_overseer(index.features(index.sample(k, rng)), granularity)
-            for k in sizes
-        ]
-        f_vals[r] = flip_rate(labels)
-        pi_vals[r] = modal_share(labels)
-    lo, hi = np.percentile(f_vals, [2.5, 97.5])
-    return {
-        "R": R_NULL,
-        "seed": NULL_SEED,
-        "F_median": float(np.median(f_vals)),
-        "F_mean": float(f_vals.mean()),
-        "F_ci95_low": float(lo),
-        "F_ci95_high": float(hi),
-        "F_min": float(f_vals.min()),
-        "F_max": float(f_vals.max()),
-        "pi_star_median": float(np.median(pi_vals)),
-    }
+    started = time.time()
+    while done < R_NULL and time.time() - started < budget_s:
+        rng = _replicate_rng(done)
+        labels: dict[str, list[str]] = {n: [] for n in names}
+        for k in sizes:
+            got = index.claims(index.sample(k, rng), NULL_GRANULARITIES)
+            for n, claim in zip(names, got):
+                labels[n].append(claim)
+        for n in names:
+            f_vals[n][done] = flip_rate(labels[n])
+            pi_vals[n][done] = modal_share(labels[n])
+        done += 1
+
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    np.savez(
+        cache,
+        done=done,
+        **{f"f_{n}": f_vals[n] for n in names},
+        **{f"pi_{n}": pi_vals[n] for n in names},
+    )
+    print(f"  null replicates {done}/{R_NULL}")
+    if done < R_NULL:
+        return None
+
+    out = {}
+    for n in names:
+        f, pi = f_vals[n], pi_vals[n]
+        lo, hi = np.percentile(f, [2.5, 97.5])
+        out[n] = {
+            "R": R_NULL,
+            "seed": NULL_SEED,
+            "F_median": float(np.median(f)),
+            "F_mean": float(f.mean()),
+            "F_ci95_low": float(lo),
+            "F_ci95_high": float(hi),
+            "F_min": float(f.min()),
+            "F_max": float(f.max()),
+            "pi_star_median": float(np.median(pi)),
+        }
+    return out
 
 
 def decide_h3(discovered: dict, null: dict) -> dict:
@@ -102,11 +159,32 @@ def main() -> int:
     ap.add_argument("--results", type=Path, default=Path("results/sweep"))
     ap.add_argument("--config", type=Path, default=Path("configs/sweep.yaml"))
     ap.add_argument("--out", type=Path, default=Path("results/analysis"))
+    ap.add_argument(
+        "--budget-seconds",
+        type=float,
+        default=150.0,
+        help="wall-clock budget per granularity; the run resumes from its cache",
+    )
     args = ap.parse_args()
 
-    axes = yaml.safe_load(args.config.read_text())["axes"]
-    records, _ = load_records(args.results, axes)
-    sizes = [int(r["edges"]) for r in records]
+    # Parsing 1,320 result files costs most of a call's wall-clock budget, and
+    # the run needs only sizes and claim labels. Cached so a resumed invocation
+    # spends its budget on replicates instead of on JSON.
+    inputs_cache = args.out / "stage4_inputs.json"
+    if inputs_cache.exists():
+        cached = json.loads(inputs_cache.read_text())
+        sizes = cached["sizes"]
+        label_sets = cached["labels"]
+    else:
+        axes = yaml.safe_load(args.config.read_text())["axes"]
+        records, _ = load_records(args.results, axes)
+        sizes = [int(r["edges"]) for r in records]
+        label_sets = {
+            g.name: [r["claims"][g.name][PRIMARY_MAP] for r in records]
+            for g in NULL_GRANULARITIES
+        }
+        args.out.mkdir(parents=True, exist_ok=True)
+        inputs_cache.write_text(json.dumps({"sizes": sizes, "labels": label_sets}))
 
     report: dict = {
         "stage": 4,
@@ -120,8 +198,13 @@ def main() -> int:
         "by_granularity": {},
     }
 
-    for g in NULL_GRANULARITIES:
-        labels = [r["claims"][g.name][PRIMARY_MAP] for r in records]
+    nulls = null_distributions(
+        sizes, args.out / "stage4_null.npz", args.budget_seconds
+    )
+    incomplete = nulls is None
+    for g in () if incomplete else NULL_GRANULARITIES:
+        null = nulls[g.name]
+        labels = label_sets[g.name]
         boot = bootstrap_over_specifications(
             labels, flip_rate, n_boot=N_BOOT, seed=BOOTSTRAP_SEED
         )
@@ -133,12 +216,15 @@ def main() -> int:
             "ci95_high": hi,
             "pi_star": modal_share(labels),
         }
-        null = null_distribution(sizes, g)
         entry = {"discovered": discovered, "null": null}
         if g.name == PRIMARY_GRANULARITY:
             entry["h3"] = decide_h3(discovered, null)
             entry["primary"] = True
         report["by_granularity"][g.name] = entry
+
+    if incomplete:
+        print("\nnot finished; rerun the same command to resume from the cache")
+        return 0
 
     args.out.mkdir(parents=True, exist_ok=True)
     dest = args.out / "stage4_null.json"
