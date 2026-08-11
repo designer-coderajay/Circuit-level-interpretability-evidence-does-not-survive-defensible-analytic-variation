@@ -2883,3 +2883,97 @@ Rule that follows, and it is the third time this rule has been written here in
 five days: **when a document records a constraint, the same commit must add the
 thing that fails when the constraint is violated.** For this one, the check is
 `git ls-files results/ | grep -c manifest.json` in CI.
+
+## 2026-08-11. Primary outcome, stage 1. H2 confirmed.
+
+Script committed at `04f8df2` before it produced a number. Plan locked
+2026-08-06 at `b800f5f`, tagged `prereg-p1-confirmatory`. Run took 20 s on CPU.
+
+### Primary
+
+`F`, pairwise flip rate of `phi_overseer` at MEDIUM over the confirmatory grid:
+
+```
+F        0.7316
+95% CI   [0.7247, 0.7380]   bootstrap over specifications, B = 10,000, seed 0
+pi*      0.4109
+classes  9
+n        7,561 specifications
+```
+
+**H2 is confirmed.** The rule was `F > 0.20` with the CI lower bound above 0.20.
+The lower bound is 0.7247, three and a half times the threshold. Filability fails
+at every pre-registered tolerance: `pi* = 0.411` against requirements of 0.95,
+0.90 and 0.80.
+
+The two most common claims, 41.1% and 28.5% of specifications, attribute the same
+model's behaviour on the same task to **early layers** and to **late layers**
+respectively. They are not different emphases of one account. They contradict.
+
+### All six map and granularity combinations
+
+| outcome | n | classes | F | pi* |
+|---|---|---|---|---|
+| affected COARSE | 7,561 | 2 | 0.3950 | 0.7291 |
+| affected MEDIUM | 7,561 | 4 | 0.6597 | 0.4875 |
+| affected FINE | 7,561 | 8 | 0.6744 | 0.4786 |
+| overseer COARSE | 7,561 | 3 | 0.5733 | 0.4788 |
+| **overseer MEDIUM** | 7,561 | 9 | **0.7316** | 0.4109 |
+| overseer FINE | 7,561 | 12 | 0.7681 | 0.4109 |
+
+Monotone in granularity, as it must be, since granularities are nested by
+construction. Nothing filable at any tolerance in any cell.
+
+**The COARSE rows matter more than the primary for robustness.** `affected` at
+COARSE is a two-class claim, the crudest statement the map can make to an
+affected person, and it still flips on 39.5% of specification pairs. The result
+is not an artefact of fine-grained claim language.
+
+`F` is bounded above by `1 - 1/k` for `k` classes, so the ceiling at MEDIUM is
+0.889. The observed 0.7316 is 82% of that ceiling. State the bound in the paper;
+a reader is entitled to know `F` is not near 1 by construction.
+
+### The discard rate, and the objection it creates
+
+8,279 of 15,840 specifications discarded, **52.3%**, under the pre-registered
+`tau` rule. Strongly non-uniform by metric:
+
+| metric | kept | discarded | rate |
+|---|---|---|---|
+| comprehensiveness | 3,947 | 13 | 0.003 |
+| kl_div | 1,467 | 2,493 | 0.630 |
+| logit_diff | 1,270 | 2,690 | 0.679 |
+| sufficiency | 877 | 3,083 | 0.779 |
+
+By ablation, `ZERO` and `BATCH_ALL_TOK_MEAN` discard at 0.75, `RESAMPLE` at 0.19.
+By objective the spread is narrow, 0.488 to 0.572.
+
+**This was disclosed before the lock.** PLAN.md section 11b records from the
+six-cell slice that comprehensiveness reaches 0.84 at rung 10 and 0.98 by rung
+100 while sufficiency never reaches 0.90 within 10,000 edges. The pattern is the
+one anticipated, at grid scale. It is not a post-hoc discovery and must not be
+presented as one.
+
+**The consequence is real and goes in the paper, not a footnote.** The surviving
+pool is 52% comprehensiveness against 25% by design. `F` is therefore computed
+over a metric-imbalanced set.
+
+**Strongest reviewer objection, stated before anyone raises it:** that `F` is
+driven by pooling across metrics which ask different questions, so a
+sufficiency-selected and a comprehensiveness-selected circuit differing is not
+instability but four separate questions.
+
+Two answers, and the paper needs both. First, Annex IV point 4 requires the filer
+to justify "the appropriateness of the performance metrics for the specific AI
+system", so the regulation itself treats the metric as a choice the filer makes
+and defends. Two filers choosing defensibly produce contradictory Annex IV 2(e)
+statements, which is the claim. Second, the answer is empirical and is already
+pre-registered: the variance decomposition by axis. **It is not computed yet.**
+Until it is, how much of `F` the metric axis carries is unknown, and the paper
+claims nothing about it.
+
+### Not yet done
+
+`J_bar` and pairwise `D` (stage 2), variance decomposition (stage 3), the
+random-circuit null multiverse and therefore H3 (stage 4), H4 pending the repair
+run.
