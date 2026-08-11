@@ -112,8 +112,8 @@ def synthesise_prune_scores(pmodel, top_edges, torch):
 def probe(results: Path) -> int:
     """Validate every API assumption on one cell. Cheap, and mandatory."""
     import torch as t
+    from auto_circuit.experiment_utils import load_tl_model
     from auto_circuit.utils.graph_utils import patchable_model
-    from transformer_lens import HookedTransformer
 
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from sweep import ranked_edges  # the sweep's own ordering, reused verbatim
@@ -122,9 +122,19 @@ def probe(results: Path) -> int:
     print(f"probe cell      {cell.name}")
     print(f"selected rungs  {rungs}")
 
-    model = HookedTransformer.from_pretrained("gpt2", device="cpu")
+    # `load_tl_model`, not `HookedTransformer.from_pretrained`. The first probe
+    # used the latter and hit `assert model.cfg.use_attn_result` inside
+    # `factorized_src_nodes`: auto-circuit needs per-head outputs, split QKV
+    # inputs and MLP input hooks, and its own loader sets them. Using the sweep's
+    # exact loader is also correctness, not convenience, since a differently
+    # configured model would give a different graph.
+    model = load_tl_model("gpt2", t.device("cpu"))
     pmodel = patchable_model(
-        model, factorized=True, slice_output="last_seq", separate_qkv=True, device="cpu"
+        model,
+        factorized=True,
+        slice_output="last_seq",
+        separate_qkv=True,
+        device=t.device("cpu"),
     )
     print(f"model edges     {len(pmodel.edges):,}")
 
