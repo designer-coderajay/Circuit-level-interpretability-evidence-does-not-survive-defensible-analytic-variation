@@ -3186,3 +3186,73 @@ The null covers `phi_overseer` at COARSE and MEDIUM. FINE and `phi_affected` nee
 `position_mass`, which the sweep never wrote. **H3 is decided for the primary
 outcome only**, and the paper says so rather than reporting one map and letting a
 reader assume both.
+
+## 2026-08-11. The size diagnostic reverses the direction of H3's reading.
+
+Exploratory, not pre-registered, no decision depends on it. Run because the
+obvious reviewer objection to stage 4 was that the null is degenerate at large
+circuit sizes. **The objection is correct, and it matters more than expected.**
+
+### Flip rate within each circuit size, MEDIUM, R = 60
+
+| size | n specs | discovered `F` | null `F` | discovered classes | null classes |
+|---|---|---|---|---|---|
+| 10 | 2,492 | 0.4543 | **0.7331** | 3 | 6 |
+| 20 | 489 | 0.3380 | **0.6622** | 4 | 3 |
+| 50 | 519 | 0.4639 | **0.7310** | 3 | 6 |
+| 100 | 242 | 0.5792 | 0.6584 | 3 | 3 |
+| 200 | 199 | 0.5122 | 0.6366 | 4 | 3 |
+| 500 | 236 | **0.4258** | 0.1421 | 3 | 3 |
+| 1,000 | 380 | **0.5133** | 0.0000 | 3 | 1 |
+| 2,000 | 312 | **0.5714** | 0.0000 | 3 | 1 |
+| 5,000 | 625 | 0.0000 | 0.0000 | 1 | 1 |
+| 10,000 | 2,067 | 0.0000 | 0.0000 | 1 | 1 |
+
+**With size held fixed: discovered 0.2746, null 0.4230.**
+
+### What this does to the stage 4 conclusion
+
+The pre-registered comparison stands exactly as computed and is not revised: at
+MEDIUM, pooled discovered `F = 0.7316` against null `0.6774`, intervals disjoint,
+H3 rejected. That is what the plan specified and it is what the plan gets.
+
+**But the direction of the pooled result is an artefact of the size
+distribution.** Once size is held fixed the ordering reverses, and it reverses by
+a wide margin. The null is *more* unstable than discovery at every size from 10
+to 200 edges, and degenerate from 1,000 upward where a uniform draw touches all
+156 components and can only produce one claim.
+
+The pooled figures compare a discovered multiverse whose instability is spread
+across sizes against a null whose instability is concentrated at small sizes and
+zero at large ones. Those are not the same comparison.
+
+**The honest report is both numbers, with the diagnostic table, and a statement
+that the pooled null comparison is uninformative about the direction.** Reporting
+only the pooled result would state something the data does not support. Reporting
+only the within-size result would discard a pre-registered outcome because it
+became inconvenient. Neither is acceptable.
+
+### A second thing this exposes, and it is not small
+
+At 5,000 and 10,000 edges the **discovered** multiverse also collapses to a
+single class, `F = 0`. That is 2,692 of 7,561 specifications, **36%**,
+contributing no flips at all. All of the primary outcome's instability comes from
+circuits of 2,000 edges or fewer.
+
+And fixing size alone drops discovered `F` from 0.7316 to 0.2746, a larger drop
+than standardising any pre-registered axis, including the metric at 0.5939.
+**Circuit size is not an axis of the design; it is an outcome of the `tau` rule.**
+So the largest single driver of claim instability is the selection rule choosing
+different rungs, not any analytic choice the design varies.
+
+That is a real result and it is uncomfortable, because `size_class` is one of the
+two fields in the MEDIUM key. The check that keeps it from being circular is
+COARSE, which is `layer_band` alone with no size term: `F = 0.5733` pooled. Layer
+attribution flips on 57% of pairs with no size component in the claim at all. The
+finding survives, but the paper must show that check rather than assert it.
+
+### Owed before write-up
+
+`F_within(size)` at COARSE, to state the layer-only instability at fixed size.
+Not computed. Until it is, the sentence "the finding survives with size held
+fixed" is INFERRED from the COARSE pooled figure, not measured.
