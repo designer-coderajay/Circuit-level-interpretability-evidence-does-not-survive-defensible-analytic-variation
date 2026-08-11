@@ -678,3 +678,38 @@ the edge population or the statistic. The result is now identical whether the
 
 Fixed before any null value was computed. No null distribution had been produced
 when this was written.
+
+#### 2026-08-11. Repair run: `correct` defined, and the reproduction gate
+
+Fixed before the repair run exists. No verdict has been computed.
+
+**`correct`, per example.** A circuit gets an IOI example right when it assigns a
+higher logit to the indirect-object token than to the subject token. This is the
+standard IOI success criterion and it is the sign of the answer difference the
+sweep already measured in aggregate, so the per-example verdicts decompose a
+quantity already reported rather than introducing a new one. Upstream's shape,
+`{example_index: bool}`, is preserved so `p1.agreement` applies unchanged.
+
+**Discovery is not rerun; the ranking is reproduced.** `ranked_edges` sorts by
+`(-abs(score), str(edge))`. Assigning score `N - rank` to the r-th banked edge
+gives distinct, strictly decreasing magnitudes, so the name tie-break never fires
+and the induced order is exactly the banked one. Only the order is used, and only
+top-k selection depends on it. This makes the circuits under test bit-identical
+to the ones already reported, at zero discovery cost.
+
+**The gate, satisfying constraint 5.** For every cell the recomputed mean answer
+difference at the selected rung is compared against the banked `metric_curves`
+value, tolerance 1e-3 for float32 nondeterminism across GPU runs. Agreement
+proves the per-example numbers decompose the banked figure. Cells that disagree
+are written `status: "mismatch"`, excluded from H4, and their rate reported. If
+the mismatch rate is material, **H4 is reported as not computed**, per the
+constraint fixed on 2026-08-11.
+
+**Written blind, and gated accordingly.** `scripts/repair.py` was authored with
+no torch and no GPU available, so every auto-circuit API assumption in it is
+unverified. It ships with `--probe`, which validates the Edge attributes, checks
+that all 10,000 banked edge names exist in the model graph, and asserts that the
+synthesised scores reproduce the banked ranking exactly. **The evaluation loop is
+deliberately not written until the probe passes.** Writing it against untested
+assumptions and discovering an attribute name is wrong an hour into a GPU session
+is the failure mode this project has already paid for seven times.
