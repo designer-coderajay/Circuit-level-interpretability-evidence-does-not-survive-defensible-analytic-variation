@@ -3313,3 +3313,69 @@ paper that reported only 1 would be making a claim its own data does not support
 `J_bar` and pairwise `D` for P0 (stage 2), the EMS cross-check on the balanced
 five-operator block, H4 pending the repair run, and the FINE and `phi_affected`
 null which needs the attention cache the sweep never wrote.
+
+## 2026-08-11. Stage 2. P0: circuits are almost disjoint, claims are not.
+
+Exact over all 28,580,580 specification pairs, not sampled. 7,561 specifications
+hold 3,218 distinct circuits, so the pair space collapses to 5,176,153
+distinct-circuit pairs plus a closed form for the identical ones. Sets are held
+as 32,491-bit Python ints, whose `&` and `.bit_count()` run in C; the bitmask
+Jaccard is checked against `p1.multiverse.jaccard_similarity` on sampled pairs
+rather than trusted.
+
+```
+J_bar   0.1396   95% CI [0.1377, 0.1418]   bootstrap over specifications, B=10,000, seed 0
+```
+
+**P0 holds emphatically.** Expected pairwise overlap is 0.14, nowhere near 1.
+
+### The distribution, which says more than the mean
+
+| quantile of pairwise `D` | value |
+|---|---|
+| 1% | 0.196 |
+| 5% | 0.470 |
+| 25% | 0.788 |
+| **50%** | **0.960** |
+| 75% | 0.998 |
+| 95% | 0.999 |
+
+**The median pair of circuits shares 4% of its edges.** Half of all specification
+pairs are, to a first approximation, disjoint objects. Only 1% of pairs reach
+`J > 0.8`.
+
+Against chance: median circuit size is 200 edges, and the analytic line adopted
+from 2606.06267, `J_rand = k / (2N - k)`, gives 0.0031 there. So `J_bar` sits
+about 45x random, comfortably inside the 4x to 27x band they report, and far
+enough above chance that the earlier warning stands: at this scale any overlap
+above roughly one percent already beats chance, so "better than random" is not
+evidence of anything.
+
+### The tension this creates, and it favours the paper
+
+Circuits from different defensible specifications are nearly disjoint, `J_bar` =
+0.14. Yet with size held fixed their COARSE claims agree on 73% of pairs,
+`F` = 0.2706.
+
+**`phi` compresses enormously.** It maps a 32,491-dimensional object to 3 classes
+at COARSE and 9 at MEDIUM. Two circuits sharing 4% of their edges can and often
+do produce the same sentence.
+
+That means **`F` is a conservative floor on disagreement, not a ceiling.** The
+filing language hides most of the underlying divergence, and the instability that
+survives compression is the part a regulator would actually see. A reviewer
+tempted to argue `F` is inflated by a fine-grained claim map has the relationship
+backwards, and the number to put in front of them is this one: the objects agree
+on 4% of their content and the sentences still disagree a quarter of the time.
+
+### Status of the pre-registered outcomes
+
+| | outcome | status |
+|---|---|---|
+| P0 | `J_bar` = 0.1396 [0.1377, 0.1418] | reported, premise holds |
+| H2 | `F` = 0.7316 [0.7247, 0.7380] > 0.20 | **confirmed** |
+| H3 | pooled separated; direction is a size artefact | **rejected, both readings reported** |
+| H4 | not computable from the sweep | awaiting repair run |
+
+Still owed: the EMS cross-check on the balanced five-operator block, H4, and the
+FINE and `phi_affected` null.
