@@ -3056,3 +3056,71 @@ and does not explain `F`. Its value is precisely that it disagrees.
 
 EMS cross-check on the balanced five-operator block, `J_bar` and pairwise `D`
 (stage 2), the random-circuit null and H3 (stage 4), H4 pending the repair run.
+
+## 2026-08-11. The claim map replays exactly on CPU. Stage 4 is unblocked.
+
+Stage 4 needs a size-matched random-circuit null drawn from the same edge
+population as the discovered circuits, pushed through the identical pipeline and
+the identical claim map. Two things had to be established first.
+
+### The edge population is reconstructible without the model
+
+The banked `top_edges` union covers **26,888 of 32,491 edges, 82.8%**. Sampling a
+"random" circuit from that union would sample from edges some objective already
+ranked in its top ten thousand, which is not a null.
+
+`src/p1/graph.py` reconstructs the full population from the graph ordering: three
+input slots per attention head, MLPs additionally seeing their own block's heads,
+Resid End seeing all 157 non-terminal sources.
+
+    sum over b of [ 3*12*(1+13b) + (1+13b) + 12 ] + 157  =  32,491
+
+**VERIFIED**: 32,491 enumerated, all distinct, and all 26,888 observed edges are
+members with zero left over. The count is not fitted to the target; it falls out
+of the ordering, and the agreement with what the instrument reports in every
+manifest is the check.
+
+### The reconstruction reproduces the sweep exactly
+
+`scripts/sweep.py` built features as
+`nodes = [n for e in order[:k] for n in (e.src, e.dest)]`, then
+`components_from_nodes`, then `features_from_circuit`. `p1.graph` reproduces that
+from edge **names** alone, with no torch and no auto-circuit.
+
+Replayed over every banked specification, comparing against what the GPU wrote:
+
+| quantity | agreement |
+|---|---|
+| `phi_overseer` COARSE | **7,561 / 7,561** |
+| `phi_overseer` MEDIUM | **7,561 / 7,561** |
+| component count | **7,561 / 7,561** |
+
+Zero mismatches. This verifies the node parser, the layer-to-block mapping, the
+terminal-dropping rule, `layer_band` and `size_class` together, against a ground
+truth produced by different code on different hardware. It is also independent
+evidence for the paper's claim that `phi` is deterministic, which until now
+rested on the assertion that it is written as deterministic code.
+
+**It is not a test I wrote passing a test I wrote.** The comparison target came
+out of the sweep on an L4 three days earlier.
+
+### The limitation this exposes, and it is not small
+
+`overseer_key` needs `layer_band` at COARSE and additionally `size_class` at
+MEDIUM. Neither touches `position_mass`. **FINE adds `ranked_segments`, and
+`affected_key` leads with it at every granularity.** `position_mass` came from
+attention cached per `(prompt_variant, seed)` during the sweep, and **that cache
+was never written to disk.**
+
+So the null multiverse is computable for `phi_overseer` at COARSE and MEDIUM, and
+not for FINE or for `phi_affected` at any granularity, without rerunning the
+model.
+
+**The primary outcome is `phi_overseer` at MEDIUM, so H3 is testable as
+pre-registered.** The secondary claim-map cells are not, and the paper says so
+rather than quietly reporting H3 for one map and letting a reader assume both.
+
+This is the second consequence of the same omission that broke H4: the sweep
+recorded conclusions and discarded the intermediates they were computed from. If
+the H4 repair run happens, it should write the attention cache as well, which
+costs nothing extra once the model is loaded.
