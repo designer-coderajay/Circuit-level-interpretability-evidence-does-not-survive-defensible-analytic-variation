@@ -223,3 +223,49 @@ this CELEX identifier, not the AI Act Service Desk. The Service Desk states it
 reproduces the version of 13 June 2024, which for these nine provisions turns out
 to be the same text, but that is a fact established here rather than an
 assumption a reader should be asked to share.
+
+### 2606.06267 upgraded from RECALLED to VERIFIED, 2026-08-11
+
+The ledger recorded this as "**The paper that most threatens P1.** Findings are
+RECALLED from search summaries only." That state is now closed.
+
+**VERIFIED 2026-08-11** from the authors' own replication repository,
+`github.com/UKPLab/arxiv2026-phantom-specialization`, Apache-2.0, whose README
+reproduces the abstract and whose structure matches what DESIGN-DELTAS D4
+describes.
+
+Confirmed as stated: authors Bayat Makou, Niu, Dutta and Gurevych, UKP Lab, TU
+Darmstadt, 2026. Literal Sequence Copying across four token-frequency bands in
+five Pythia models, 70M to 1.4B, **75 circuits**. Findings: band-specific edges
+transfer across bands, a shared core recovers at least 99% of circuit
+performance, and causal interchange interventions show internal representations
+are interchangeable across bands.
+
+**The sentence P1 must engage with, quoted from their abstract:** repeated
+extractions within the same band "suggest that discovery algorithms sample from
+an equivalence class of valid subgraphs rather than recovering a unique
+mechanism".
+
+**Citation state.** The README says a preprint "will be made available on arXiv;
+please check back here for the final citation once it is posted", and their own
+BibTeX carries `note = {arXiv preprint, link to be added}`. **So the arXiv
+identifier 2606.06267 is not confirmed by the authors' own artifact.** The work,
+authors, venue and findings are verified; the identifier is not. Cite the
+repository and the author list, and resolve the arXiv ID before the bibliography
+is final. Do not print 2606.06267 until it resolves.
+
+**Their code is now read, not recalled.** `05_Phase_Targeted/per_example_agreement.py`
+was fetched and `agreement_rate` and `cohens_kappa` are transcribed character for
+character into `src/p1/agreement.py`, which closes the "Not yet located in source"
+entry for the interchange protocol's cheap measures. The expensive
+interchange-intervention protocol in their section 5.3.2 remains unread.
+
+**What this does to P1's positioning, stated plainly.** They vary input
+statistics with the analysis fixed and conclude structure does not imply
+mechanism. P1 varies analytic specification with the input fixed and asks what
+reaches a regulatory filing. Their result makes P1's premise more likely, not
+less, and it also supplies the strongest objection to P1: if discovery samples
+from an equivalence class, a flip rate over claims may be measuring which member
+was sampled rather than any disagreement about the model. **P1 cannot answer that
+without the functional-equivalence measurement**, which is exactly what the
+repair run produces.
