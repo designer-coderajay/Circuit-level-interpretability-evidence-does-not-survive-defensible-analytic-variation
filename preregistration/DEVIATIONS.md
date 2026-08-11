@@ -615,3 +615,45 @@ happens to fix the number.
 standardised first". That question is answered by `F_fixed`, whose intervals are
 valid, whose bias is under 0.0006 on every axis, and whose group sizes are in the
 thousands. The unquotable family is the complementary view, not the promised one.
+
+### 2026-08-11. The null multiverse: two constants the plan left open, fixed before running
+
+**Written before any null value was computed.** No null multiverse has been
+generated at the time of this entry.
+
+PLAN.md section 6 fixes the null as "the size-matched random-circuit null
+multiverse, pushed through the identical pipeline and the identical claim maps"
+and H3 as separated when "the discovered median lies outside the random 95% CI".
+It does not fix how many null multiverses are drawn, nor the seed.
+
+**Fixed here.** `R = 1,000` independent null multiverses, seed 0. One null
+multiverse assigns to every kept specification a circuit of **that
+specification's own recorded edge count**, drawn uniformly without replacement
+from the full 32,491-edge namespace, and computes `F` over the 7,561 resulting
+claims exactly as the primary outcome is computed. Measured cost 1.6 s per
+multiverse, so `R = 1,000` is 27 minutes and no accuracy is traded for time.
+
+**The edge population is the full namespace, not the observed union.** The banked
+`top_edges` cover 26,888 of 32,491 edges. Sampling from that union would sample
+from edges some discovery objective already ranked in its top ten thousand, which
+would make the null a function of the thing it is supposed to be a null for.
+`p1.graph.enumerate_edges` reconstructs all 32,491 combinatorially and the count
+agrees with what the instrument reports in every manifest.
+
+**Scope, and it is a real limitation.** The null is computed for `phi_overseer`
+at COARSE and MEDIUM only. `overseer_key` reaches `position_mass` only at FINE,
+and `affected_key` uses it at every granularity. `position_mass` came from
+attention cached during the sweep and never written to disk, so it cannot be
+recovered for a random circuit without rerunning the model. **The primary outcome
+is `phi_overseer` at MEDIUM, so H3 is decided as pre-registered.** H3 is not
+decided for `phi_affected` or for FINE, and the paper states that rather than
+reporting one map and letting a reader assume both.
+
+**Optimisation, and how it is prevented from becoming a deviation.** Generating
+1,000 multiverses through the verified path costs 107 s each, thirty hours in
+total. `p1.null_multiverse` vectorises exactly one step, mapping edge endpoints
+to components, and leaves `CircuitFeatures`, `layer_band`, `size_class` and
+`phi_overseer` untouched. The vectorised mapping is asserted equal to the
+verified path in `tests/test_null_multiverse.py` across circuit sizes 1 to
+32,491 and on an adversarial MLP-only circuit. **A faster path that is not
+bit-identical to the verified one would be a different experiment.**
