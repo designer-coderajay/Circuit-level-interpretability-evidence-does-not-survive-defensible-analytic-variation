@@ -269,3 +269,108 @@ from an equivalence class, a flip rate over claims may be measuring which member
 was sampled rather than any disagreement about the model. **P1 cannot answer that
 without the functional-equivalence measurement**, which is exactly what the
 repair run produces.
+
+## Full verification pass, 2026-08-11
+
+Every row below fetched from `arxiv.org/abs/<ID>` this session and compared field
+by field. Discrepancies against the 3 August brief are recorded, not silently
+corrected.
+
+| ID | Exact title as fetched | Authors | Venue | Date | State |
+|---|---|---|---|---|---|
+| 2407.08734 | Transformer Circuit Faithfulness Metrics are not Robust | Joseph Miller, Bilal Chughtai, William Saunders | **CoLM 2024** (Comments) | v1, 11 Jul 2024 | **VERIFIED** |
+| 2606.00033 | Make Mechanistic Interpretability Auditable: A Call to Develop Guidelines via Continuous Collaborative Reviewing | Michael Lan, Narmeen Fatimah Oozeer, Chaithanya Bandi, Philip Quirke, Austin Meek, Fazl Barez, Amirali Abdullah | **Accepted at ACL 2026 main conference** (Comments) | v1, 24 Apr 2026 | **VERIFIED** |
+| 2501.16496 | Open Problems in Mechanistic Interpretability | Lee Sharkey, Bilal Chughtai, Joshua Batson, Jack Lindsey, Jeff Wu, Lucius Bushnaq, Nicholas Goldowsky-Dill, Stefan Heimersheim, Alejandro Ortega, Joseph Bloom, Stella Biderman, Adria Garriga-Alonso, Arthur Conmy, Neel Nanda, Jessica Rumbelow, Martin Wattenberg, Nandi Schoots, Joseph Miller, Eric J. Michaud, Stephen Casper, Max Tegmark, William Saunders, David Bau, Eric Todd, Atticus Geiger, Mor Geva, Jesse Hoogland, Daniel Murfet, Tom McGrath | none in Comments | v1, 27 Jan 2025 | **VERIFIED** |
+| 2510.00845 | Mechanistic Interpretability as Statistical Estimation: A Variance Analysis | **not captured** | not captured | not captured | **PARTIAL** |
+
+### Discrepancies against the brief
+
+1. **2407.08734 title.** Brief: *"...Metrics Are Not Robust"*. Fetched:
+   *"...Metrics are not Robust"*. Use the fetched form.
+2. **2407.08734 venue.** Brief: "COLM 2024". Comments field: **"CoLM 2024
+   Conference Paper"**. Use CoLM.
+3. **2606.00033 venue.** Brief gave none. **Accepted at ACL 2026 main
+   conference.** Cite the venue.
+4. **2510.00845.** The abs URL served a PDF with no machine-readable text. The
+   title is confirmed from page metadata; **authors, venue and date are not**.
+   Remains PARTIAL and is not citable with an author list until refetched.
+
+### What 2606.00033 does for this paper's framing
+
+Its abstract states, verbatim, that "two papers found conflicting conclusions for
+the same behavior, and a third study revealed that both were partially correct
+but incomparable due to methodological inconsistencies", and calls for auditing
+standards so MI findings can be certified in safety-critical settings.
+
+**That is this paper's premise stated by a different group, and it is a call this
+work answers with a measurement rather than a proposal.** The brief flagged it as
+"you are answering this call, say so". Confirmed, and now with a venue.
+
+### Overlap worth noting in related work
+
+Joseph Miller, Bilal Chughtai and William Saunders are authors of 2407.08734, the
+instrument's paper. Chughtai, Miller and Saunders also appear on 2501.16496, the
+open-problems review, alongside Conmy and Nanda. **The people who built the tool
+this paper stress-tests are also among those calling for the field to address its
+methodological instability.** That is a supportive framing, not an adversarial
+one, and the paper should say so.
+
+| 2504.13151 | MIB: A Mechanistic Interpretability Benchmark | Aaron Mueller, Atticus Geiger, Sarah Wiegreffe, Dana Arad, Ivan Arcuschin, Adam Belfki, Yik Siu Chan, Jaden Fiotto-Kaufman, Tal Haklay, Michael Hanna, Jing Huang, Rohan Gupta, Yaniv Nikankin, Hadas Orgad, Nikhil Prakash, Anja Reusch, Aruna Sankaranarayanan, Shun Shao, Alessandro Stolfo, Martin Tutek, Amir Zur, David Bau, Yonatan Belinkov | **Accepted to ICML 2025** | v1 17 Apr 2025, **v2 9 Jun 2025** | **VERIFIED** |
+
+### "Mueller et al. 2026, non-identifiability" is resolved and DISPUTED
+
+The ledger carried this as ambiguous, possibly `2504.13151` misattributed.
+**Confirmed misattributed.** Aaron Mueller is first author of `2504.13151`, which
+is **MIB: A Mechanistic Interpretability Benchmark**, ICML **2025**, not a 2026
+paper and not about non-identifiability. It is a benchmark for comparing
+circuit-localisation and causal-variable-localisation methods.
+
+**Action.** Delete "Mueller et al. 2026 on non-identifiability" from the
+bibliography. If a non-identifiability claim is to be attributed, it must be
+resolved to a real identifier and fetched. **Do not cite it.**
+
+MIB remains worth citing on its own terms: it establishes that the field needed
+standardised evaluation before methods could be compared, which is adjacent to
+this paper's argument that they cannot yet be certified.
+
+Note also that **Michael Hanna** appears on MIB and is the author associated with
+the greater-than task, ledger entry `2305.00586`, still RECALLED.
+
+### 2510.00845 refetch, 2026-08-11: v2 title confirmed unchanged, authors still not obtainable
+
+Fetched `arxiv.org/abs/2510.00845` and `arxiv.org/abs/2510.00845v2`. **Both serve
+`Content-Type: application/pdf` with no machine-readable text.** Page metadata
+returns the same title for both:
+
+> Mechanistic Interpretability as Statistical Estimation: A Variance Analysis
+
+**This contradicts the earlier ledger note** that a v2 title "adds *of EAP-IG*".
+That note came from a search snippet, not a fetch, and the fetch does not support
+it. The note is superseded, not deleted, per the append-only rule.
+
+**State: PARTIAL.** Title verified twice, from two URLs. **Author list, venue and
+date remain unobtained**, and two fetch routes have now failed. Under the
+project's rule this may not enter a bibliography with an author list.
+
+**Do not route around this with a search snippet.** If the authors are needed,
+open the abs page in a browser, which is the same remedy that worked for EUR-Lex.
+
+### Remaining gaps as of 2026-08-11
+
+| item | state | what is missing |
+|---|---|---|
+| 2510.00845 | PARTIAL | authors, venue, date |
+| 2409.09951 | PARTIAL | authors, venue; abstract confirms the method |
+| 2606.06267 | DISPUTED identifier | authors and findings verified from their repo; **the arXiv ID is contradicted by the authors' own BibTeX** |
+| Mueller et al. 2026 | **DELETE** | misattribution of 2504.13151 |
+| Wang et al., IOI | RECALLED | no identifier resolved |
+| Conmy et al., ACDC | RECALLED | no identifier resolved |
+| Nanda et al., attribution patching | RECALLED | no identifier resolved |
+| Meloux et al. | RECALLED | no identifier resolved |
+| Steegen, Simmons, Simonsohn | RECALLED-plus | DOIs agree across three sources each, none resolved directly |
+
+**Verified and citable today:** 2407.08734, 2606.00033, 2501.16496, 2504.13151,
+2308.14272, 2512.13907. **Six.**
+
+**Not citable today: nine.** The bibliography is not closed and the manuscript's
+related-work section cannot be written from it.
