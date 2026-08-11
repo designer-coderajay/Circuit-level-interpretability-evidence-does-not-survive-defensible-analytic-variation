@@ -448,3 +448,14 @@ that characterises the regulation.
 2. Re-verify all ten strings against it.
 3. Record any that moved, and re-derive `phi`'s addressee constants if so.
 4. Cite the Official Journal, never the Service Desk.
+
+## Closed 2026-08-11: the regulatory chain survives the Omnibus
+
+The action list above is discharged for nine of its ten items. Read from CELEX
+`02024R1689-20260727` in a browser, all nine quoted provisions sit in `▼B`
+blocks, the surviving base text, and none inside any of the 70 `▼M1` amendment
+blocks. Detail and method in `docs/CITATION-LEDGER.md`.
+
+**Consequence.** The claim map's addressees are unchanged, `phi` does not move,
+and no banked result is affected. The manuscript's regulatory section is
+unblocked. Annex III point 2 remains unchecked and is the only outstanding item.

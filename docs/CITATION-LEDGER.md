@@ -178,3 +178,48 @@ read from it on 2026-08-03 and are therefore **pre-Omnibus**. Whether any of the
 ten provisions P1 relies on were amended is **UNKNOWN**, not "unchanged". None of
 them may enter the manuscript until checked against consolidated CELEX
 `02024R1689-20260727`.
+
+### Re-verified against the Official Journal consolidated text, 2026-08-11
+
+**VERIFIED** against CELEX `02024R1689-20260727`, the AI Act consolidated as
+amended by Regulation (EU) 2026/1744, read in a browser at
+`https://eur-lex.europa.eu/legal-content/EN/TXT/HTML/?uri=CELEX%3A02024R1689-20260727`.
+Plain fetch returns an empty body; the document is 390,645 characters and
+`get_page_text` truncates at 50 KB, so the check was made by querying the loaded
+DOM directly.
+
+**Method, so it can be repeated.** EUR-Lex marks consolidated text with `▼M1`
+for passages introduced by the first amending act and `▼B` for surviving base
+text. The document carries **70** such markers, so the Omnibus is not cosmetic.
+For each quoted string the nearest preceding marker was located.
+
+| provision | quoted string present | block |
+|---|---|---|
+| Annex IV 2(b) | yes | **▼B** |
+| Annex IV 2(e) | yes | **▼B** |
+| Annex IV 3 and Article 13(3)(d) | yes | **▼B** |
+| Annex IV 4 | yes | **▼B** |
+| Article 14(4)(b) | yes | **▼B** |
+| Article 14(4)(c) | yes | **▼B** |
+| Article 86(1) | yes | **▼B** |
+| Article 86(3) | yes | **▼B** |
+| Annex III 5(b) | yes | **▼B** |
+
+**Every provision P1 depends on survives the Digital Omnibus verbatim.** None sits
+inside an amended block. The concern raised on 2026-08-08, that the strings were
+read from a Commission rendering of the 13 June 2024 text and might have been
+superseded, is answered: they were not superseded.
+
+`phi_overseer` is built on Annex IV 2(e) and 3 with Article 14(4)(c);
+`phi_affected` on Article 86(1). **None of those moved, so no addressee constant
+changes and no re-run of `phi` is needed.**
+
+**One row not re-checked.** Annex III point 2, critical infrastructure, cited only
+to establish that Article 86's excluded point is not the credit point. Nine of ten
+verified; this is the tenth and it is outstanding.
+
+**Provenance for the manuscript.** Cite the Official Journal consolidated text at
+this CELEX identifier, not the AI Act Service Desk. The Service Desk states it
+reproduces the version of 13 June 2024, which for these nine provisions turns out
+to be the same text, but that is a fact established here rather than an
+assumption a reader should be asked to share.
