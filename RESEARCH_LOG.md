@@ -3256,3 +3256,60 @@ finding survives, but the paper must show that check rather than assert it.
 `F_within(size)` at COARSE, to state the layer-only instability at fixed size.
 Not computed. Until it is, the sentence "the finding survives with size held
 fixed" is INFERRED from the COARSE pooled figure, not measured.
+
+## 2026-08-11. The number that decides the paper: COARSE with size held fixed.
+
+Exploratory, and the most hostile test the data allows. `phi_overseer` at COARSE
+is `layer_band` alone, with **no size term in the claim**, evaluated **within
+each circuit size**. Any instability left cannot be an artefact of the `tau` rule
+selecting different rungs, because size is constant, and cannot be circular,
+because size is not in the key.
+
+| granularity | pooled `F` | size held fixed | 95% CI | bias |
+|---|---|---|---|---|
+| **COARSE** | 0.5733 | **0.2706** | **[0.2550, 0.2859]** | -0.00018 |
+| MEDIUM | 0.7316 | 0.2746 | [0.2589, 0.2901] | -0.00019 |
+
+Bootstrap over specifications, B = 10,000, seed 0. Valid here where it was not
+for stage 3's `alone` family: the smallest size group holds 199 specifications,
+so self-pair inflation is order 1/199 and the measured bias is 0.0002.
+
+**The CI lower bound is 0.2550, above H2's threshold of 0.20.**
+
+Strip every trace of circuit size from the claim, hold size constant, and where
+in the model the behaviour is attributed still flips on **27% of specification
+pairs**, with the interval clear of the pre-registered threshold. The finding is
+not a selection-rule artefact.
+
+### And discovery does beat the null once the comparison is fair
+
+At fixed size, discovered 0.2706 against null 0.3822 at COARSE, 0.2746 against
+0.4230 at MEDIUM. **Discovered circuits are more stable than size-matched random
+ones.** They carry real information. They are simply not stable enough to file.
+
+That is a better paper than "no better than random". It concedes that circuit
+discovery works, and shows that working is not sufficient for the evidentiary
+standard Annex IV assumes.
+
+### The spine, as it now stands
+
+1. Pooled `F = 0.7316` [0.7247, 0.7380]. **H2 confirmed**, threshold 0.20.
+2. Standardising the metric, the largest axis lever, leaves `F = 0.5939`. No
+   axis rescues filability.
+3. Much of the pooled figure is circuit-size variation, and **size is not an axis
+   of the design**; it is an outcome of the `tau` rule. Fixing it drops `F` to
+   0.2746, a larger drop than any pre-registered axis.
+4. Remove size from the claim entirely and hold it fixed: `F = 0.2706`
+   [0.2550, 0.2859]. Still above threshold.
+5. **H3 rejected** on the pre-registered pooled comparison, but the direction of
+   that comparison is a size artefact and the paper reports both readings.
+6. At fixed size discovery beats the null, so the instability is not noise.
+
+Every one of 2 through 6 weakens the headline of 1, and each is reported. A
+paper that reported only 1 would be making a claim its own data does not support.
+
+### Still owed
+
+`J_bar` and pairwise `D` for P0 (stage 2), the EMS cross-check on the balanced
+five-operator block, H4 pending the repair run, and the FINE and `phi_affected`
+null which needs the attention cache the sweep never wrote.
