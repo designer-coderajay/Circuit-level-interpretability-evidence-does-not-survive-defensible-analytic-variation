@@ -165,21 +165,138 @@ def probe(results: Path) -> int:
     return 0
 
 
+def evaluate_cell(pmodel, model, cell, payload, rungs, device, torch, batch_size=8):
+    """Per-example verdicts at the recorded rungs, plus the reproduction gate.
+
+    The dataset is **not regenerated**. The sweep wrote `prompts.json` into every
+    cell and it is read back, so the examples are the same objects rather than
+    the same recipe. One fewer thing that can silently drift.
+    """
+    from auto_circuit.data import load_datasets_from_json
+    from auto_circuit.metrics.prune_metrics.answer_diff import measure_answer_diff
+    from auto_circuit.prune import run_circuits
+    from auto_circuit.types import AblationType, PatchType
+
+    _, ablation, _, _, seed, _ = payload["discovery_key"]
+    _, test_loader = load_datasets_from_json(
+        model=model,
+        path=cell / "prompts.json",
+        device=device,
+        batch_size=batch_size,
+        train_test_size=(128, 128),
+        random_seed=seed,
+    )
+
+    ps = synthesise_prune_scores(pmodel, payload["top_edges"], torch)
+    outs = run_circuits(
+        model=pmodel,
+        dataloader=test_loader,
+        test_edge_counts=list(rungs),
+        prune_scores=ps,
+        patch_type=PatchType.TREE_PATCH,
+        ablation_type=AblationType[ablation],
+    )
+
+    # Gate: the instrument's own reduction, compared against what was banked.
+    recomputed = {int(k): float(v)
+                  for k, v in measure_answer_diff(pmodel, test_loader, outs,
+                                                  prob_func="logits")}
+    banked = {int(k): float(v) for k, v in payload["metric_curves"]["logit_diff"].items()}
+    gate = {
+        int(k): {"recomputed": recomputed[k], "banked": banked.get(k),
+                 "match": banked.get(k) is not None
+                 and abs(recomputed[k] - banked[k]) <= MATCH_ATOL}
+        for k in rungs if k in recomputed
+    }
+
+    # Per-example verdicts. `correct` is the sign of the answer difference, per
+    # DEVIATIONS 2026-08-11: IO logit above subject logit.
+    verdicts: dict[int, dict[int, bool]] = {int(k): {} for k in rungs}
+    for k in rungs:
+        idx = 0
+        for batch in test_loader:
+            logits = outs[k][batch.key]
+            if logits.ndim == 3:
+                logits = logits[:, -1, :]
+            ans = batch.answers if torch.is_tensor(batch.answers) else \
+                torch.stack(list(batch.answers))
+            wrong = batch.wrong_answers if torch.is_tensor(batch.wrong_answers) else \
+                torch.stack(list(batch.wrong_answers))
+            a = logits.gather(1, ans.to(logits.device)).squeeze(1)
+            w = logits.gather(1, wrong.to(logits.device)).squeeze(1)
+            for correct in (a > w).tolist():
+                verdicts[int(k)][idx] = bool(correct)
+                idx += 1
+    return verdicts, gate
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--results", type=Path, default=Path("results/sweep"))
     ap.add_argument("--out", type=Path, default=Path("results/repair"))
     ap.add_argument("--probe", action="store_true")
+    ap.add_argument("--one-cell", action="store_true",
+                    help="evaluate a single cell and print the gate, before committing GPU time")
+    ap.add_argument("--limit", type=int, default=0)
     args = ap.parse_args()
 
     if args.probe:
         return probe(args.results)
 
-    raise SystemExit(
-        "Full repair run not yet enabled. Run --probe first and paste the "
-        "output; the evaluation loop is written against whatever the probe "
-        "confirms, not against assumptions made without a GPU."
-    )
+    import torch as t
+    from auto_circuit.experiment_utils import load_tl_model
+    from auto_circuit.utils.graph_utils import patchable_model
+
+    device = t.device("cuda" if t.cuda.is_available() else "cpu")
+    print(f"device {device}")
+    model = load_tl_model("gpt2", device)
+    pmodel = patchable_model(model, factorized=True, slice_output="last_seq",
+                             separate_qkv=True, device=device)
+
+    args.out.mkdir(parents=True, exist_ok=True)
+    done = mismatched = failed = 0
+    for cell, man, payload, rungs in load_cells(args.results):
+        dest = args.out / cell.name
+        if (dest / "verdicts.json").exists():
+            done += 1
+            continue
+        try:
+            verdicts, gate = evaluate_cell(pmodel, model, cell, payload, rungs,
+                                           device, t)
+        except Exception as exc:  # noqa: BLE001
+            failed += 1
+            print(f"  {cell.name} FAILED {type(exc).__name__}: {exc}")
+            if args.one_cell:
+                raise
+            continue
+
+        ok = all(g["match"] for g in gate.values())
+        mismatched += not ok
+        dest.mkdir(parents=True, exist_ok=True)
+        (dest / "verdicts.json").write_text(json.dumps({
+            "status": "ok" if ok else "mismatch",
+            "discovery_key": payload["discovery_key"],
+            "gate": gate,
+            "verdicts": {str(k): v for k, v in verdicts.items()},
+        }, sort_keys=True))
+        done += 1
+
+        if args.one_cell:
+            print(f"\ncell {cell.name}  rungs {list(rungs)}")
+            for k, g in gate.items():
+                print(f"  rung {k:>6}  recomputed {g['recomputed']:+.6f}  "
+                      f"banked {g['banked']:+.6f}  match {g['match']}")
+            n = len(next(iter(verdicts.values())))
+            print(f"  examples per rung {n}")
+            print("\nGATE PASSED" if ok else "\nGATE FAILED")
+            return 0 if ok else 1
+        if args.limit and done >= args.limit:
+            break
+        if done % 50 == 0:
+            print(f"  {done} cells, {mismatched} mismatched, {failed} failed")
+
+    print(f"\ndone {done}  mismatched {mismatched}  failed {failed}")
+    return 0
 
 
 if __name__ == "__main__":
