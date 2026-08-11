@@ -450,3 +450,124 @@ Constraints on that run, fixed here so they precede it:
 If the repair run cannot reproduce the recorded circuits exactly, H4 is reported
 as not computed rather than computed on approximations, and this entry is
 appended to say so.
+
+### 2026-08-11. The variance decomposition names an estimator but never its response
+
+**Found before any decomposition was computed.** No variance-components code
+exists in `src/` or `tests/`, and no decomposition output has been produced. This
+entry is written first so that its timestamp precedes any number.
+
+**What the plan fixes.** PLAN.md section 6: "Random-effects model, one component
+per axis, with corruption nested within ablation. The design is unbalanced, so
+REML is the primary estimator... The five corruption-dependent operators form a
+balanced sub-block, and EMS is computed there as an independent cross-check."
+Section 3 lists "variance components by axis" as a secondary outcome. Section 6
+adds "Seed variance reported separately from analytic-choice variance. The ratio
+is a headline number."
+
+**What it never fixes: the response variable.** VERIFIED 2026-08-11 by searching
+PLAN.md, DESIGN-DELTAS, RESEARCH_LOG and P1-MEMORY. The estimator is specified in
+four places and the quantity it decomposes in none.
+
+**Why that is not a technicality.** The plan's own language is "claim variance",
+at section 4 ("both the ablation and metric axes would carry zero claim
+variance") and section 11b ("will carry little claim variance"). The claim is
+**categorical**, nine classes at MEDIUM. REML and EMS are Gaussian
+variance-components estimators for a continuous response. **The named estimator
+cannot take the named quantity.** The plan specifies a method that does not apply
+to the outcome it was written about.
+
+**No default is safe.** Choosing the response now, with `F = 0.7316` already
+known, is precisely the analytic freedom this paper documents. Any choice must be
+made explicitly by the research lead, recorded here, and made without any
+decomposition having been seen. What protects it is that no decomposition of any
+kind has been computed.
+
+**The options, stated neutrally.**
+
+1. **REML on a continuous pipeline quantity fixed by the design**, such as the
+   selected circuit size in edges, or normalised recovery at the selected rung.
+   Keeps the pre-registered estimator exactly. Decomposes **structural**
+   variation, not claim variation, so it does not answer which axis drives `F`,
+   and the paper must not imply that it does.
+
+2. **A claim-level decomposition appropriate to a categorical response**, for
+   example the flip rate computed within each axis level and compared with the
+   pooled `F`, bootstrapped over specifications. Answers the question the paper
+   actually asks. **Departs from the named estimator**, so REML and the EMS
+   cross-check are not run and the deviation is on the record.
+
+3. **Both**, with 1 reported as the pre-registered decomposition of structure and
+   2 as a declared deviation answering the claim-level question. Costs the most
+   and concedes the most, in that it states plainly that the pre-registration
+   specified an inapplicable method.
+
+**Consequence for the paper if unresolved.** Section 6's headline seed-variance
+ratio and section 8's promise to "report which analytic axis carries the residual
+variance so that it can be standardised first" both become unreportable. The
+second appears in the drafted abstract for the stable outcome and would have to
+be struck.
+
+#### Resolved 2026-08-11. Option 3, both arms. Definitions fixed here, before computation
+
+Ajay's decision. Two decompositions are reported. **Every definition below is
+committed before any decomposition value has been computed**, which is the only
+thing that makes a choice taken after `F` was known defensible at all.
+
+**Arm A, pre-registered estimator, structural response.**
+
+REML with one component per axis, corruption nested within ablation, plus the EMS
+cross-check on the balanced five-operator block, exactly as PLAN.md section 6
+fixes. Response: **`log10` of the selected circuit size in edges.**
+
+Why that response and not normalised recovery. Recovery at the selected rung is
+**censored by the selection rule**: `select_rung` returns the smallest rung whose
+recovery is at least `1 - tau`, so the recorded value is bounded below by
+construction and its distribution is a truncation artefact, not a measurement.
+Decomposing it would decompose the selection rule. Circuit size carries no such
+censoring. `log10` because `EDGE_COUNT_LADDER` is log spaced and because
+`select_size_bins`, committed under calibration 3, already works in log space, so
+this introduces no new scale choice.
+
+**This arm decomposes structure, not claims.** The paper must not present it as
+explaining `F`, and any sentence implying it does is wrong.
+
+**Arm B, declared deviation, claim response.**
+
+For a set of axes `G`, define the within-group flip rate over the pair population
+that shares `G`:
+
+    F_within(G) = 1 - [ sum_g sum_c n_{g,c}(n_{g,c} - 1) ] / [ sum_g n_g(n_g - 1) ]
+
+where `g` indexes groups formed by the levels of `G`, `c` indexes claim classes,
+`n_{g,c}` counts specifications in group `g` with claim `c`, and `n_g` is the
+group size. With `G` empty this reduces exactly to the pooled `F` of PLAN.md
+section 3, so the family is consistent with the primary outcome by construction.
+
+Two per-axis quantities, for each axis `A`:
+
+- **`F_fixed(A) = F_within({A})`.** The residual flip rate once `A` is
+  standardised. **This is the quantity PLAN.md section 8 asks for** when it
+  promises to report which axis to standardise first: the axis with the lowest
+  `F_fixed` is the one whose standardisation buys the most.
+- **`F_alone(A) = F_within(all axes except A)`.** The flip rate among pairs that
+  differ only in `A`. How much that axis moves the claim by itself.
+
+**Headline ratio, PLAN.md section 6's "seed variance reported separately from
+analytic-choice variance".**
+
+    ratio = F_alone(seed) / F_fixed(seed)
+
+Numerator: pairs identical in every analytic choice, differing only in random
+seed. Denominator: pairs sharing a seed, differing only in analytic choices. A
+ratio near 1 means re-running the same analysis is as unstable as choosing a
+different one, and the regulatory argument weakens sharply. A ratio near 0 means
+the instability is analytic, which is the paper's claim.
+
+**Uncertainty.** Bootstrap over specifications, `B = 10,000`, seed 0, per PLAN.md
+section 6. Never over pairs. The resampling unit does not change between the
+primary outcome and this decomposition.
+
+**Reporting.** Arm A is labelled pre-registered. Arm B is labelled a deviation,
+with this entry cited. Neither is presented as the other, and the paper states
+that the pre-registration named an estimator its own outcome could not take.

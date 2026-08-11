@@ -16,6 +16,8 @@ results/**
 !results/.gitkeep
 !results/**/manifest.json
 !results/**/*.md
+# pooled analysis outputs are small and are the paper's numbers; track them
+!results/analysis/*.json
 
 # model weights / caches
 *.pt

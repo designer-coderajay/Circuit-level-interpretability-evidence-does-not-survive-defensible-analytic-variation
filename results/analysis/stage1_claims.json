@@ -1,0 +1,401 @@
+{
+  "audit": {
+    "cells_failed": 220,
+    "cells_ok": 1320,
+    "specifications_discarded": 8279,
+    "specifications_with_claims": 7561
+  },
+  "discard_rate_by_axis_level": {
+    "ablation": {
+      "BATCH_ALL_TOK_MEAN": {
+        "discarded": 2169,
+        "kept": 711,
+        "rate": 0.753125
+      },
+      "BATCH_TOKENWISE_MEAN": {
+        "discarded": 1604,
+        "kept": 1276,
+        "rate": 0.5569444444444445
+      },
+      "RESAMPLE": {
+        "discarded": 554,
+        "kept": 2326,
+        "rate": 0.19236111111111112
+      },
+      "TOKENWISE_MEAN_CLEAN": {
+        "discarded": 326,
+        "kept": 394,
+        "rate": 0.4527777777777778
+      },
+      "TOKENWISE_MEAN_CLEAN_AND_CORRUPT": {
+        "discarded": 1522,
+        "kept": 1358,
+        "rate": 0.5284722222222222
+      },
+      "TOKENWISE_MEAN_CORRUPT": {
+        "discarded": 1564,
+        "kept": 1316,
+        "rate": 0.5430555555555555
+      },
+      "ZERO": {
+        "discarded": 540,
+        "kept": 180,
+        "rate": 0.75
+      }
+    },
+    "corruption": {
+      "ABC": {
+        "discarded": 2088,
+        "kept": 1512,
+        "rate": 0.58
+      },
+      "IO_FROM_S2": {
+        "discarded": 1731,
+        "kept": 1869,
+        "rate": 0.48083333333333333
+      },
+      "IO_S1_FLIP": {
+        "discarded": 1933,
+        "kept": 1667,
+        "rate": 0.5369444444444444
+      },
+      "RANDOM_NAME_FLIP": {
+        "discarded": 1661,
+        "kept": 1939,
+        "rate": 0.4613888888888889
+      },
+      "n/a": {
+        "discarded": 866,
+        "kept": 574,
+        "rate": 0.6013888888888889
+      }
+    },
+    "discovery_objective": {
+      "INTEGRATED_EDGE_GRADS_PRUNE_ALGO": {
+        "discarded": 1464,
+        "kept": 1176,
+        "rate": 0.5545454545454546
+      },
+      "LOGIT_DIFF_GRAD_PRUNE_ALGO": {
+        "discarded": 1288,
+        "kept": 1352,
+        "rate": 0.48787878787878786
+      },
+      "LOGIT_EXP_GRAD_PRUNE_ALGO": {
+        "discarded": 1341,
+        "kept": 1299,
+        "rate": 0.5079545454545454
+      },
+      "LOGPROB_DIFF_GRAD_PRUNE_ALGO": {
+        "discarded": 1288,
+        "kept": 1352,
+        "rate": 0.48787878787878786
+      },
+      "LOGPROB_GRAD_PRUNE_ALGO": {
+        "discarded": 1509,
+        "kept": 1131,
+        "rate": 0.571590909090909
+      },
+      "PROB_GRAD_PRUNE_ALGO": {
+        "discarded": 1389,
+        "kept": 1251,
+        "rate": 0.5261363636363636
+      }
+    },
+    "metric": {
+      "comprehensiveness": {
+        "discarded": 13,
+        "kept": 3947,
+        "rate": 0.0032828282828282827
+      },
+      "kl_div": {
+        "discarded": 2493,
+        "kept": 1467,
+        "rate": 0.6295454545454545
+      },
+      "logit_diff": {
+        "discarded": 2690,
+        "kept": 1270,
+        "rate": 0.6792929292929293
+      },
+      "sufficiency": {
+        "discarded": 3083,
+        "kept": 877,
+        "rate": 0.7785353535353535
+      }
+    },
+    "prompt_variant": {
+      "ABBA": {
+        "discarded": 4419,
+        "kept": 3501,
+        "rate": 0.5579545454545455
+      },
+      "BABA": {
+        "discarded": 3860,
+        "kept": 4060,
+        "rate": 0.48737373737373735
+      }
+    },
+    "seed": {
+      "0": {
+        "discarded": 1644,
+        "kept": 1524,
+        "rate": 0.5189393939393939
+      },
+      "1": {
+        "discarded": 1627,
+        "kept": 1541,
+        "rate": 0.5135732323232324
+      },
+      "2": {
+        "discarded": 1670,
+        "kept": 1498,
+        "rate": 0.5271464646464646
+      },
+      "3": {
+        "discarded": 1659,
+        "kept": 1509,
+        "rate": 0.5236742424242424
+      },
+      "4": {
+        "discarded": 1679,
+        "kept": 1489,
+        "rate": 0.5299873737373737
+      }
+    },
+    "threshold": {
+      "0.05": {
+        "discarded": 3341,
+        "kept": 1939,
+        "rate": 0.6327651515151516
+      },
+      "0.1": {
+        "discarded": 2916,
+        "kept": 2364,
+        "rate": 0.5522727272727272
+      },
+      "0.2": {
+        "discarded": 2022,
+        "kept": 3258,
+        "rate": 0.38295454545454544
+      }
+    }
+  },
+  "outcomes": {
+    "affected/COARSE": {
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.39504530698817164,
+      "modal_share": 0.7291363576246528,
+      "n_distinct_claims": 2,
+      "n_specifications": 7561,
+      "primary": false,
+      "top_claims": [
+        {
+          "claim": "The system's output in this case was driven principally by other.",
+          "count": 5513,
+          "share": 0.7291363576246528
+        },
+        {
+          "claim": "The system's output in this case was driven principally by IO.",
+          "count": 2048,
+          "share": 0.27086364237534716
+        }
+      ]
+    },
+    "affected/FINE": {
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.6743828851618827,
+      "modal_share": 0.4786403914826081,
+      "n_distinct_claims": 8,
+      "n_specifications": 7561,
+      "primary": false,
+      "top_claims": [
+        {
+          "claim": "The system's output in this case was driven principally by other, through a distributed portion of the model's processing; the next most influential element was object.",
+          "count": 3619,
+          "share": 0.4786403914826081
+        },
+        {
+          "claim": "The system's output in this case was driven principally by IO, through a sparse portion of the model's processing; the next most influential element was other.",
+          "count": 2048,
+          "share": 0.27086364237534716
+        },
+        {
+          "claim": "The system's output in this case was driven principally by other, through a moderate portion of the model's processing; the next most influential element was IO.",
+          "count": 862,
+          "share": 0.11400608385134242
+        },
+        {
+          "claim": "The system's output in this case was driven principally by other, through a sparse portion of the model's processing; the next most influential element was IO.",
+          "count": 747,
+          "share": 0.09879645549530486
+        },
+        {
+          "claim": "The system's output in this case was driven principally by other, through a moderate portion of the model's processing; the next most influential element was object.",
+          "count": 114,
+          "share": 0.015077370718158973
+        }
+      ]
+    },
+    "affected/MEDIUM": {
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.6597319578538994,
+      "modal_share": 0.4875016532204735,
+      "n_distinct_claims": 4,
+      "n_specifications": 7561,
+      "primary": false,
+      "top_claims": [
+        {
+          "claim": "The system's output in this case was driven principally by other, through a distributed portion of the model's processing.",
+          "count": 3686,
+          "share": 0.4875016532204735
+        },
+        {
+          "claim": "The system's output in this case was driven principally by IO, through a sparse portion of the model's processing.",
+          "count": 2048,
+          "share": 0.27086364237534716
+        },
+        {
+          "claim": "The system's output in this case was driven principally by other, through a moderate portion of the model's processing.",
+          "count": 976,
+          "share": 0.12908345456950138
+        },
+        {
+          "claim": "The system's output in this case was driven principally by other, through a sparse portion of the model's processing.",
+          "count": 851,
+          "share": 0.11255124983467796
+        }
+      ]
+    },
+    "overseer/COARSE": {
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.5732696117433587,
+      "modal_share": 0.4787726491204867,
+      "n_distinct_claims": 3,
+      "n_specifications": 7561,
+      "primary": false,
+      "top_claims": [
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the early layers of the model.",
+          "count": 3620,
+          "share": 0.4787726491204867
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model.",
+          "count": 3299,
+          "share": 0.4363179473614601
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the middle layers of the model.",
+          "count": 642,
+          "share": 0.08490940351805316
+        }
+      ]
+    },
+    "overseer/FINE": {
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.7681205559859177,
+      "modal_share": 0.4109244808887713,
+      "n_distinct_claims": 12,
+      "n_specifications": 7561,
+      "primary": false,
+      "top_claims": [
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the early layers of the model, forming a distributed subgraph, attending principally to other.",
+          "count": 3107,
+          "share": 0.4109244808887713
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a sparse subgraph, attending principally to IO.",
+          "count": 1492,
+          "share": 0.19732839571485253
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a sparse subgraph, attending principally to other.",
+          "count": 661,
+          "share": 0.08742229863774632
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a moderate subgraph, attending principally to other.",
+          "count": 657,
+          "share": 0.08689326808623198
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a distributed subgraph, attending principally to other.",
+          "count": 489,
+          "share": 0.06467398492262928
+        }
+      ]
+    },
+    "overseer/MEDIUM": {
+      "bootstrap": {
+        "ci95_high": 0.7380295973699624,
+        "ci95_low": 0.7247002212691276,
+        "n_boot": 10000,
+        "observed": 0.7316107300831544,
+        "resampling_unit": "specification",
+        "seed": 0
+      },
+      "filable": {
+        "0.05": false,
+        "0.1": false,
+        "0.2": false
+      },
+      "flip_rate": 0.7316107300831544,
+      "modal_share": 0.4109244808887713,
+      "n_distinct_claims": 9,
+      "n_specifications": 7561,
+      "primary": true,
+      "top_claims": [
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the early layers of the model, forming a distributed subgraph.",
+          "count": 3107,
+          "share": 0.4109244808887713
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a sparse subgraph.",
+          "count": 2153,
+          "share": 0.28475069435259887
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a moderate subgraph.",
+          "count": 657,
+          "share": 0.08689326808623198
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the late layers of the model, forming a distributed subgraph.",
+          "count": 489,
+          "share": 0.06467398492262928
+        },
+        {
+          "claim": "Technical measure for interpreting outputs: the system's response is attributable principally to components in the early layers of the model, forming a sparse subgraph.",
+          "count": 477,
+          "share": 0.06308689326808624
+        }
+      ]
+    }
+  },
+  "plan": "preregistration/PLAN.md",
+  "primary_outcome": "flip_rate of phi_overseer at MEDIUM",
+  "stage": 1
+}
