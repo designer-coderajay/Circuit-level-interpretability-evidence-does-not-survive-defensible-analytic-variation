@@ -1,0 +1,101 @@
+{
+  "commit": "UNKNOWN",
+  "config": {
+    "axes": {
+      "ablation": [
+        "RESAMPLE",
+        "ZERO",
+        "TOKENWISE_MEAN_CLEAN",
+        "TOKENWISE_MEAN_CORRUPT",
+        "TOKENWISE_MEAN_CLEAN_AND_CORRUPT",
+        "BATCH_TOKENWISE_MEAN",
+        "BATCH_ALL_TOK_MEAN"
+      ],
+      "corruption": [
+        "ABC",
+        "RANDOM_NAME_FLIP",
+        "IO_S1_FLIP",
+        "IO_FROM_S2"
+      ],
+      "discovery_objective": [
+        "PROB_GRAD_PRUNE_ALGO",
+        "LOGIT_EXP_GRAD_PRUNE_ALGO",
+        "LOGPROB_GRAD_PRUNE_ALGO",
+        "LOGPROB_DIFF_GRAD_PRUNE_ALGO",
+        "LOGIT_DIFF_GRAD_PRUNE_ALGO",
+        "LOGIT_MSE_GRAD_PRUNE_ALGO",
+        "INTEGRATED_EDGE_GRADS_PRUNE_ALGO"
+      ],
+      "granularity": [
+        "edge"
+      ],
+      "metric": [
+        "logit_diff",
+        "kl_div",
+        "sufficiency",
+        "comprehensiveness"
+      ],
+      "prompt_variant": [
+        "ABBA",
+        "BABA"
+      ],
+      "seed": [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      "threshold": [
+        0.05,
+        0.1,
+        0.2
+      ]
+    },
+    "confirmatory": true,
+    "model": {
+      "device": "auto",
+      "name": "gpt2"
+    },
+    "model_shape": {
+      "n_blocks": 12,
+      "n_heads_per_block": 12
+    },
+    "name": "confirmatory",
+    "output": {
+      "dir": "results/sweep"
+    },
+    "purpose": "the pre-registered confirmatory grid",
+    "task": {
+      "batch_size": 8,
+      "n_prompts": 256,
+      "name": "ioi"
+    }
+  },
+  "created_utc": "2026-08-07T22:53:21Z",
+  "environment": {
+    "machine": "x86_64",
+    "pkg:auto-circuit": "1.0.1",
+    "pkg:numpy": "1.26.4",
+    "pkg:scipy": "1.16.3",
+    "pkg:statsmodels": "0.14.6",
+    "pkg:torch": "2.11.0+cu128",
+    "pkg:transformer-lens": "2.18.0",
+    "platform": "Linux-6.6.122+-x86_64-with-glibc2.35",
+    "python": "3.12.13"
+  },
+  "kind": "sweep",
+  "notes": "device=cuda | gpu=NVIDIA L4 | n_edges=32491",
+  "peak_rss_mb": 2760.9,
+  "peak_vram_mb": 4253.4,
+  "seeds": {
+    "specification": 3
+  },
+  "spec_id": "a784c83bf4b8b5c8",
+  "status": "ok",
+  "timings_s": {
+    "data_s": 0.478,
+    "discovery_s": 4.012,
+    "evaluation_s": 29.394
+  }
+}

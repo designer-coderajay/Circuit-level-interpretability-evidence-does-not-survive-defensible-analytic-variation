@@ -7,8 +7,12 @@ venv/
 .pytest_cache/
 .DS_Store
 
-# raw sweep outputs are large; keep the tree, not the contents
+# raw sweep outputs are large; keep the tree, not the contents.
+# `!results/**/` is required: a pattern that excludes a directory stops git
+# descending into it, so a negation for a file inside can never fire. Without
+# that line the two negations below are dead and no manifest is ever tracked.
 results/**
+!results/**/
 !results/.gitkeep
 !results/**/manifest.json
 !results/**/*.md

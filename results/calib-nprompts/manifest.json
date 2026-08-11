@@ -1,0 +1,76 @@
+{
+  "commit": "ecf44717e594f18b856ead1df11fd774f436199c-dirty",
+  "config": {
+    "calibration": {
+      "discovery_prompts": [
+        16,
+        32,
+        64,
+        128
+      ],
+      "flatten_threshold": 0.05,
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "top_k_edges": 500
+    },
+    "confirmatory": false,
+    "model": {
+      "device": "auto",
+      "name": "gpt2"
+    },
+    "name": "calib-nprompts",
+    "output": {
+      "dir": "results/calib-nprompts"
+    },
+    "purpose": "select n_prompts by the committed rule; measure nothing else",
+    "specification": {
+      "ablation": "RESAMPLE",
+      "algorithm": "mask_gradient",
+      "answer_function": "avg_diff",
+      "grad_function": "logit",
+      "mask_val": 0.0
+    },
+    "task": {
+      "batch_size": 8,
+      "name": "ioi",
+      "order": "ABBA"
+    }
+  },
+  "created_utc": "2026-08-05T18:28:35Z",
+  "environment": {
+    "machine": "arm64",
+    "pkg:auto-circuit": "1.0.1",
+    "pkg:numpy": "1.26.4",
+    "pkg:scipy": "1.17.1",
+    "pkg:statsmodels": "0.14.6",
+    "pkg:torch": "2.13.0",
+    "pkg:transformer-lens": "2.18.0",
+    "platform": "macOS-26.5.2",
+    "python": "3.11.9"
+  },
+  "kind": "calib-nprompts",
+  "notes": "curve had not flattened by n=128; rule falls back to the largest size tested. State this as a limitation in the abstract.",
+  "peak_rss_mb": 3329.0,
+  "seeds": {
+    "calibration_seeds": 0
+  },
+  "spec_id": "calib-nprompts",
+  "status": "ok",
+  "timings_s": {
+    "import_s": 8.484,
+    "model_load_s": 3.801,
+    "patchable_model_s": 0.068,
+    "size_128_s": 417.297,
+    "size_16_s": 53.603,
+    "size_32_s": 99.944,
+    "size_64_s": 211.97
+  }
+}

@@ -1,0 +1,65 @@
+{
+  "commit": "b6ae3269e1c436d393ad0dd2739daabbb44fc603",
+  "config": {
+    "model": {
+      "device": "auto",
+      "name": "gpt2"
+    },
+    "name": "smoke-ieg",
+    "output": {
+      "dir": "results/smoke-ieg"
+    },
+    "purpose": "measure IEG-50 discovery cost against the EAP baseline, nothing else",
+    "specification": {
+      "ablation": "RESAMPLE",
+      "algorithm": "mask_gradient",
+      "answer_function": "avg_diff",
+      "grad_function": "logit",
+      "integrated_grad_samples": 50,
+      "seed": 0,
+      "test_edge_counts": [
+        10,
+        50,
+        100,
+        200,
+        500
+      ]
+    },
+    "task": {
+      "batch_size": 8,
+      "n_prompts": 32,
+      "name": "ioi",
+      "order": "ABBA"
+    }
+  },
+  "created_utc": "2026-08-04T22:26:03Z",
+  "environment": {
+    "machine": "arm64",
+    "pkg:auto-circuit": "1.0.1",
+    "pkg:numpy": "1.26.4",
+    "pkg:scipy": "1.17.1",
+    "pkg:statsmodels": "0.14.6",
+    "pkg:torch": "2.13.0",
+    "pkg:transformer-lens": "2.18.0",
+    "platform": "macOS-26.5.2",
+    "python": "3.11.9"
+  },
+  "kind": "smoke",
+  "notes": "device=cpu | CPU run. auto-circuit has no MPS support (single device line, 'cuda' if available else 'cpu'), so Apple Silicon lands here. Treat the timing as an upper bound, not as the GPU figure. | n_edges=32491",
+  "peak_rss_mb": 2944.2,
+  "seeds": {
+    "specification": 0
+  },
+  "spec_id": "smoke",
+  "status": "ok",
+  "timings_s": {
+    "data_build_s": 0.015,
+    "discovery_s": 237.751,
+    "discovery_to_eval_ratio": 203.9,
+    "evaluation_per_cut_s": 1.166,
+    "evaluation_s": 5.831,
+    "import_s": 6.635,
+    "model_load_s": 3.431,
+    "patchable_model_s": 0.066
+  }
+}

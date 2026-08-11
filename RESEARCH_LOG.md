@@ -2851,3 +2851,35 @@ instruction I gave. The compute was never the bottleneck.
 - Write the seam smoke test.
 - Pre-registered pooled analysis, refitted on the realised 6-level design, with
   the random-circuit null sized to 1,320 rather than 1,540.
+
+### 2026-08-11, later. No manifest had ever been committed
+
+Copying the results in exposed a `.gitignore` defect present since the file was
+written. The block read:
+
+```
+results/**
+!results/.gitkeep
+!results/**/manifest.json
+```
+
+`results/**` excludes the directories, and git does not descend into an excluded
+directory, so a negation for a file inside it can never fire. **Both negations
+were dead.** `git ls-files results/` returned exactly one entry, `.gitkeep`. The
+manifests from the smoke runs, the calibration pilots and the confirmatory sweep
+were all silently untracked.
+
+Fixed by adding `!results/**/` above the file negations, which re-includes the
+directories so git descends. VERIFIED with `git check-ignore -v`: `manifest.json`
+now matches the negation, `result.json` still matches `results/**`.
+
+**This is the same failure as post-lock DEVIATIONS entry 1 and as D18 shipping
+into the runner.** A comment in a config file stating an intention is not the
+intention being enforced. The comment said "keep the tree, not the contents" and
+the file kept neither. Nothing checked, so nothing complained, and the audit trail
+the whole provenance argument depends on did not exist.
+
+Rule that follows, and it is the third time this rule has been written here in
+five days: **when a document records a constraint, the same commit must add the
+thing that fails when the constraint is violated.** For this one, the check is
+`git ls-files results/ | grep -c manifest.json` in CI.
