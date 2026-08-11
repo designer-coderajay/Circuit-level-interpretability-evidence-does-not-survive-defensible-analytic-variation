@@ -269,3 +269,67 @@ instrument maturity. It does not go in the abstract.
 minutes, proposed in RESEARCH_LOG on 2026-08-07 after the fifth and sixth defects
 of the same shape, was still unwritten when the sweep launched. This is the
 seventh.
+
+### 2026-08-11. Manifests record `commit: UNKNOWN`. Code identity recovered by argument, not by record
+
+**What happened.** All 1,540 manifests carry `"commit": "UNKNOWN"`.
+`src/p1/manifest.py` documents that `git_commit()` returns `"UNKNOWN"` when git is
+unavailable rather than raising. The sweep ran on Colab VMs populated from an
+uploaded tarball rather than a clone, so there was no `.git` directory to read.
+
+Rule 8 requires every reported number to be traceable to a config, a seed and an
+environment hash. Config, seed and environment are present and clean. **The
+commit is not recorded.**
+
+**Verified independently from the results archive, 2026-08-11**, by reading all
+1,540 manifests out of the downloaded `p1_sweep` folder rather than trusting the
+Colab session:
+
+| check | result |
+|---|---|
+| manifests read without error | 1,540 of 1,540 |
+| `status: ok` | 1,320 |
+| `status: failed` | 220 |
+| md5 of sorted failed `discovery_id`s | `ec06e045141548b6ad3186f31ec64247`, matching the digest computed from `enumerate_grid` for `LOGIT_MSE_GRAD_PRUNE_ALGO` |
+| distinct environment fingerprints | **1** |
+| distinct configs | **1**, byte-identical to `configs/sweep.yaml` at HEAD |
+
+The single environment, across three VM recycles and three days:
+
+```
+python 3.12.13 | Linux-6.6.122+-x86_64-with-glibc2.35 | x86_64
+auto-circuit 1.0.1 | torch 2.11.0+cu128 | transformer-lens 2.18.0
+numpy 1.26.4 | scipy 1.16.3 | statsmodels 0.14.6
+```
+
+**No cross-image pooling question arises.** Every cell in the sweep ran in the
+same environment, and that is a record, not an assumption.
+
+**Code identity: INFERRED, argued rather than read.** `git diff --stat
+5371629..HEAD -- src scripts configs preregistration/PLAN.md` is empty. The three
+commits after `5371629` are `d494ff6`, `c8f2d3c` and `d5e76fc`, all markdown only.
+The repository's code has therefore not moved since `5371629`, which is the
+commit the sweep ran.
+
+**The limit of that argument, stated plainly.** It establishes that the
+repository did not change. It does **not** establish that the tarball uploaded to
+Colab was packed from a clean tree at `5371629`. Uncommitted edits at packing time
+would be invisible to this check, and `git status` was not recorded at the moment
+of packing. The config match is real evidence against that, since the manifests'
+config is byte-identical to the committed one, but it covers `configs/` only and
+not `src/` or `scripts/`.
+
+**How to close it.** If `p1.tar.gz` still exists on the research lead's machine,
+compare its `src/` and `scripts/` against git's tree at `5371629`. A match
+upgrades this to VERIFIED in a later append. If the tarball is gone, the claim
+stays INFERRED and the manuscript states the commit as `5371629` citing this
+entry.
+
+**Not rerun.** A rerun costs three days and would not produce a better commit
+record unless the runner changes, which is the real fix.
+
+**Fix owed, and it transfers to P2 and P3.** `scripts/sweep.py` should refuse to
+start when `git_commit()` returns `UNKNOWN`, unless an explicit flag is passed,
+and the flag should itself be recorded in the manifest. A provenance field that
+silently degrades to a placeholder string is worse than one that stops the run.
+This is the same failure as post-lock entry 1: a placeholder read as a fact.
