@@ -362,3 +362,91 @@ The fix owed to `scripts/sweep.py`, refusing to start on an `UNKNOWN` commit
 without an explicit recorded flag, still stands for P2 and P3. Recovering
 provenance after the fact worked here only because the archive happened to
 survive.
+
+### 2026-08-11. H4 is not computable from the banked sweep. Per-example verdicts were never written
+
+**What the plan requires.** PLAN.md section 2 states H4 as
+`F - (1 - agreement_rate) > 0.10`. `agreement_rate` is defined in DESIGN-DELTAS
+D4 and in RESEARCH_LOG for 2026-08-04, adopted from
+`05_Phase_Targeted/per_example_agreement.py` in the 2606.06267 release:
+
+```python
+def agreement_rate(preds_a, preds_b):    # fraction of examples where both agree
+def cohens_kappa(preds_a, preds_b):      # chance-corrected agreement
+```
+
+Two circuits are compared by their **per-example correct/incorrect verdicts**. The
+design note says this is computable "from the `run_circuits` output already
+produced by the sweep, at no extra forward passes".
+
+**It is not, because the sweep did not keep that output.** VERIFIED 2026-08-11 by
+reading `result.json`. Each cell records `metric_curves`, a single scalar per
+edge-count rung per metric, being the batch mean returned by
+`measure_answer_diff`. **Per-example values are reduced to a mean inside the
+measurement call and never written.** There are no `preds_a` and `preds_b` to
+compare, for any pair, anywhere in the results directory.
+
+**Scope.** H4 and the secondary outcomes "agreement rate and Cohen's kappa" in
+PLAN.md section 3. **The primary outcome is unaffected.** `F` is computed from
+claim strings, which are present for all 15,840 specifications. P0, H2 and H3 are
+likewise unaffected.
+
+**How it was missed.** The same failure mode recorded three times already in this
+project: a design document asserted a property of the runner, and nothing checked
+that the runner had it. D4 said the data would be there; the runner was written
+two days later by the same author and reduced it away.
+
+**What a fix costs, INFERRED not measured.** Discovery does not need repeating:
+`top_edges`, the 10,000 ranked edges, is stored per cell, so prune scores are
+already banked. A repair run would evaluate only the **selected** rung per
+specification and emit per-example verdicts. Verdicts depend on
+`(discovery cell, rung)` alone, not on `metric` or `tau` except through rung
+selection, so the distinct work is roughly 1,320 cells times a handful of rungs,
+against the 80 circuit evaluations per cell the full sweep performed. Order of
+one to two hours on an L4 rather than the fifteen the original evaluation took.
+This estimate is inference from the recorded timings and is not measured.
+
+**Decision required from the research lead.** Recorded here as open on
+2026-08-11, resolution to be appended:
+
+1. **Repair run.** Emit per-example verdicts for selected rungs and compute H4 as
+   pre-registered. Preferred on the merits, since it keeps a pre-registered
+   hypothesis testable.
+2. **Report H4 as not computed**, stating why, and drop it from the results.
+   Honest but weak: a hypothesis dropped after the fact invites the reading that
+   it was dropped because of what it would have shown, even though nothing about
+   it has been seen.
+3. **Substitute an equivalence measure computable from banked aggregates.**
+   **Not recommended and arguably disqualifying.** Choosing a measurement after
+   seeing which measurements are available is precisely the analytic freedom this
+   paper exists to document. Doing it in this paper would be indefensible.
+
+**No substitution is made in the interim.** `scripts/analyse.py` stage 1 computes
+the primary outcome and the claim-based secondaries and explicitly excludes H4,
+with this entry cited in its docstring.
+
+#### Resolved 2026-08-11. Option 1, repair run
+
+Ajay's decision, taken before any H4 quantity was computed or seen: **emit the
+per-example verdicts in a repair run and test H4 as pre-registered.**
+
+Constraints on that run, fixed here so they precede it:
+
+1. **Discovery is not repeated.** `top_edges` is read from the banked
+   `result.json`. No prune score is recomputed, so the circuits under test are
+   bit-identical to the ones already reported.
+2. **Only the selected rung is evaluated**, the rung already recorded in each
+   specification's `edges` field. No new rung is introduced and the `tau` rule is
+   not re-run.
+3. **auto-circuit is untouched.** The verdict is read from the existing
+   measurement path; `agreement_rate` and `cohens_kappa` are reproduced verbatim
+   from `05_Phase_Targeted/per_example_agreement.py` and live in `src/p1/`.
+4. **The repair run writes to a separate directory** and does not overwrite any
+   banked result. Its manifests carry their own environment fingerprint, which is
+   expected to differ from the sweep's and must be reported if it does.
+5. **H4's threshold, 0.10, is not revisited.** It was fixed on 2026-08-06 and this
+   entry does not reopen it.
+
+If the repair run cannot reproduce the recorded circuits exactly, H4 is reported
+as not computed rather than computed on approximations, and this entry is
+appended to say so.
