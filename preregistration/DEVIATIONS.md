@@ -713,3 +713,30 @@ synthesised scores reproduce the banked ranking exactly. **The evaluation loop i
 deliberately not written until the probe passes.** Writing it against untested
 assumptions and discovering an attribute name is wrong an hour into a GPU session
 is the failure mode this project has already paid for seven times.
+
+#### Gate result 2026-08-11: 0 mismatches in 1,317 cells
+
+The repair run reached 1,317 of 1,320 cells before being stopped, and the final
+three were completed on resume.
+
+    grep -l '"status": "mismatch"' p1_repair/*/verdicts.json | wc -l   ->   0
+
+**Not one cell failed the reproduction gate.** At every selected rung, the mean
+answer difference recomputed from synthesised prune scores matched the banked
+`metric_curves` value within 1e-3, and on the cell inspected individually it
+matched to all six printed decimals.
+
+Constraint 5, fixed on 2026-08-11 before the run existed, said H4 would be
+reported as not computed if the banked circuits could not be reproduced exactly.
+**That condition is met with nothing to discount.** The per-example verdicts
+decompose figures already reported rather than describing some neighbouring
+circuit.
+
+This also settles the ordering question the run was gated on: discovery was never
+repeated, so the circuits carrying the verdicts are the same objects that
+produced `F = 0.7316`, not a re-derivation of them.
+
+**What it unblocks.** H4 becomes computable as pre-registered, using
+`agreement_rate` and `cohens_kappa` reproduced verbatim in `src/p1/agreement.py`.
+The functional-equivalence measurement that red-team objection F1 demanded now
+exists, so the phantom-specialization reading can be tested rather than conceded.
