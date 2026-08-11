@@ -3379,3 +3379,101 @@ on 4% of their content and the sentences still disagree a quarter of the time.
 
 Still owed: the EMS cross-check on the balanced five-operator block, H4, and the
 FINE and `phi_affected` null.
+
+## 2026-08-11. H4 supported as pre-registered. Kappa says why that is not the whole story.
+
+Repair run complete, 1,317 cells, 0 mismatched, 0 failed, 0 specifications
+without verdicts. 128 examples per circuit, 3,218 distinct verdict vectors.
+
+### The pre-registered result
+
+```
+F (claim instability)     0.7316
+agreement rate            0.6028
+functional instability    0.3972
+gap                       0.3344   95% CI [0.3297, 0.3394]
+threshold                 0.10
+```
+
+**H4 is supported.** The interval lower bound is 0.3297, more than three times the
+threshold fixed on 2026-08-06.
+
+### Cohen's kappa is 0.0146, and it changes the reading
+
+Raw agreement of 0.60 sounds like partial functional equivalence. Kappa says it is
+not. **0.0146 is chance-level agreement.** The 60% is almost entirely explained by
+both circuits being right about the same fraction of the time, not by them being
+right about the same examples.
+
+Kappa by circuit size, with mean accuracy alongside:
+
+| size | circuits | mean accuracy | agreement | kappa |
+|---|---|---|---|---|
+| 10 | 890 | 0.510 | 0.5223 | 0.0438 |
+| 20 | 255 | 0.494 | 0.5139 | 0.0316 |
+| 50 | 250 | 0.552 | 0.5201 | 0.0303 |
+| 100 | 133 | 0.562 | 0.5316 | 0.0467 |
+| 200 | 100 | 0.610 | 0.5577 | 0.0351 |
+| 500 | 113 | 0.765 | 0.7041 | 0.0295 |
+| 1,000 | 158 | 0.846 | 0.7816 | 0.0324 |
+| 2,000 | 165 | 0.877 | 0.8179 | 0.0263 |
+| 5,000 | 345 | 0.921 | 0.8563 | 0.0157 |
+| 10,000 | 809 | 0.947 | 0.9179 | 0.0228 |
+
+**Kappa sits between 0.016 and 0.047 at every size.** Agreement climbs from 0.52
+to 0.92 purely because accuracy climbs from 0.51 to 0.95. Two circuits from
+different specifications agree about *which* examples they get right at chance,
+at every scale.
+
+**This refutes the phantom-specialization objection rather than conceding it.**
+Red-team F1 held that P1's flip rate might be measuring which member of an
+equivalence class the discovery algorithm sampled. If that were so, circuits would
+be functionally interchangeable. They are not. They are structurally near-disjoint
+at `J_bar = 0.1396` **and** functionally uncorrelated at kappa 0.02. Whatever P1
+is measuring, it is not one mechanism wearing different clothes.
+
+### The within-size check, which the pooled gap does not survive
+
+Same trap as H3. Third time in this project that pooling across circuit size has
+manufactured an effect.
+
+| size | `F` | functional instability | gap |
+|---|---|---|---|
+| 10 | 0.4543 | 0.4777 | **-0.0235** |
+| 20 | 0.3380 | 0.4861 | **-0.1480** |
+| 50 | 0.4639 | 0.4799 | **-0.0160** |
+| 100 | 0.5792 | 0.4684 | +0.1109 |
+| 200 | 0.5122 | 0.4423 | -0.0301 below threshold at +0.0699 |
+| 500 | 0.4258 | 0.2959 | +0.1299 |
+| 1,000 | 0.5133 | 0.2184 | +0.2950 |
+| 2,000 | 0.5714 | 0.1821 | +0.3894 |
+| 5,000 | 0.0000 | 0.1437 | **-0.1437** |
+| 10,000 | 0.0000 | 0.0821 | **-0.0821** |
+
+**The gap fails the 0.10 threshold at 6 of 10 sizes and is negative at 5.** At
+both ends of the size range the mechanisms differ *more* than the filings do,
+which is the reverse of H4's statement. The pooled 0.3344 is carried entirely by
+the middle band, 500 to 2,000 edges.
+
+### What the paper must therefore say
+
+1. **H4 is supported on the pre-registered quantity.** That is not withdrawn and
+   the rule was fixed before any verdict existed.
+2. **The supporting gap does not survive holding circuit size fixed**, and the
+   per-size table is reported next to it, not in an appendix.
+3. **"Filings differ where mechanisms do not" is too strong.** The mechanisms
+   differ a great deal: functional instability is 0.40 pooled and 0.48 at the
+   smallest sizes. The defensible sentence is that filings differ *more* than
+   mechanisms across part of the size range, and less at the extremes.
+4. **The strongest claim the data supports is the kappa result**, and it is not
+   the pre-registered one: circuit behaviour is uncorrelated across defensible
+   specifications at every scale tested.
+
+### The methodological point this has now earned
+
+Circuit size is not an axis of the design. It is an outcome of the `tau` rule.
+It has now distorted three separate pooled quantities: `F` itself, the direction
+of the H3 null comparison, and the sign of the H4 gap. **Any pooled statistic in
+this design must be reported with its within-size decomposition.** That belongs in
+the methods section as a general finding about multiverse designs whose
+specifications select objects of different sizes, not as a caveat on three results.

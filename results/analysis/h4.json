@@ -1,0 +1,26 @@
+{
+  "F": 0.7316107300831544,
+  "agreement_rate": 0.6028298159537,
+  "bootstrap": {
+    "n_boot": 10000,
+    "note": "F held fixed; agreement resampled",
+    "resampling_unit": "specification",
+    "seed": 0
+  },
+  "ci_lower_above_threshold": true,
+  "cohens_kappa": 0.014575900165627986,
+  "functional_instability": 0.3971701840463,
+  "gap": 0.33444054603685436,
+  "gap_ci95": [
+    0.3297264531254768,
+    0.3394342094659805
+  ],
+  "hypothesis": "H4: filings differ where mechanisms do not",
+  "n_distinct_verdict_vectors": 3218,
+  "n_examples": 128,
+  "n_specifications": 7561,
+  "rule": "F - (1 - agreement_rate) > 0.1",
+  "specifications_without_verdicts": 0,
+  "supported": true,
+  "threshold": 0.1
+}
