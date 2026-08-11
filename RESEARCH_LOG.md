@@ -2792,3 +2792,62 @@ whichever way its circuits fall on the specification curve.
   2 August 2026 to 2 December 2027 by Regulation (EU) 2026/1744. `docs/ANNEX-IV.md`
   and `preregistration/PLAN.md` still carry the old framing.
 - Results-independent manuscript sections.
+
+## 2026-08-11. Sweep complete. Six arms of seven.
+
+### Result
+
+1,320 `ok`, 220 `failed`, every cell terminal. The failed set is exactly
+`LOGIT_MSE_GRAD_PRUNE_ALGO`, **VERIFIED** by digest rather than sampled: the 220
+failed `discovery_id`s, sorted and hashed, give
+`ec06e045141548b6ad3186f31ec64247`, matching the digest computed independently
+from `enumerate_grid(configs/sweep.yaml)` over that objective's 220 ids.
+
+Realised grid: **6 objectives, 1,320 discovery cells, 15,840 specifications.**
+Discard rate 14.29%. Recorded in DEVIATIONS, 2026-08-11 entry.
+
+Error, identical in all 220: `RuntimeError: Found dtype Long but expected Float`,
+raised inside discovery, `data_s` present and `discovery_s` absent. Cause is
+INFERRED to be the integral `batch.answers` reaching `mse_loss`, the same call
+that has been emitting the D19 shape warning throughout. Not verified until the
+installed source is read.
+
+Ajay's call: methods carries the rate and reason, discussion carries the
+observation about instrument maturity, abstract does not carry it.
+
+### The seventh defect in the same seam
+
+The count now reads: `position_mass` had no producer, `block_index` off by one,
+residual terminals mapped as MLPs, the metric layer absent, segment labels never
+aligned to tokens, `clean_corrupt` passed unconditionally, the corruption
+sentinel passed to the generator, and now an objective that cannot run at all.
+
+**Every one lived where P1 meets auto-circuit. None was reachable by the 266
+tests, because those tests run without torch by design.**
+
+The remedy was written down on 2026-08-07: a smoke test crossing every axis level
+once, seven objectives by seven ablations, about four minutes at EAP prices. It
+was not written, and the sweep launched without it. Had it existed, this arm would
+have failed in minute three rather than after three days of wall clock.
+
+**This is now the single highest-value piece of engineering left in the project,
+and it transfers directly to P2 and P3.** The lesson is not "test more". It is
+that a test written from the same derivation as the code tests nothing, and that
+the only tests which have ever caught anything here are the ones that execute the
+instrument.
+
+### Cost accounting, honestly
+
+Three days of wall clock produced 1,320 usable cells and one finding. Of the
+elapsed time, the fraction lost to environment plumbing rather than computation
+was large: VM recycles, a Drive folder renamed by Drive itself, a tarball upload
+that silently wrote to a different filename, and a deletion caused by an
+instruction I gave. The compute was never the bottleneck.
+
+### Next
+
+- Verify the dtype cause from installed source before any manuscript sentence.
+- Capture `requirements-confirmatory.lock.txt` from the sweep runtime.
+- Write the seam smoke test.
+- Pre-registered pooled analysis, refitted on the realised 6-level design, with
+  the random-circuit null sized to 1,320 rather than 1,540.

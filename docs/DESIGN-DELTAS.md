@@ -710,3 +710,78 @@ objective. The answer is that exclusion is the analytic choice under study: an
 analyst who silences warnings, which is the default posture in most notebooks,
 never sees this and files the circuit anyway. Removing it would assume the
 diligence the paper is testing for.
+
+### D19 update, 2026-08-11. The warning was the visible half of a hard failure
+
+The confirmatory sweep finished at 1,320 `ok` and 220 `failed`. The failed set is
+exactly `LOGIT_MSE_GRAD_PRUNE_ALGO`, **VERIFIED** by md5 over the sorted failed
+`discovery_id`s matching the digest computed independently from
+`enumerate_grid`: `ec06e045141548b6ad3186f31ec64247`.
+
+Every one of the 220 carries the same error:
+
+```
+RuntimeError: Found dtype Long but expected Float
+```
+
+with `data_s` recorded and `discovery_s` absent, so it dies inside discovery.
+
+**The shape warning and the dtype error are the same line.** D19 originally read
+this as a semantic oddity worth reporting. It is worse than that: on the IOI task
+with `auto-circuit==1.0.1`, this objective **does not run at all**. The warning
+was simply the part that printed before the exception.
+
+**Revised significance.** The original framing asked what happens if this arm's
+circuits are outliers on the specification curve. That question does not arise.
+There are no circuits. A competent analyst who selects a discovery objective
+exported by name from the library's public API, on the library's own canonical
+task, obtains nothing.
+
+Per Ajay's decision of 2026-08-11 this is reported as a discard with its rate in
+methods, and as an observation about instrument maturity in discussion. It does
+not go in the abstract.
+
+**Before it is written up**, three things must be verified rather than inferred:
+
+1. The dtype of `batch.answers` at the installed version, read from
+   `mask_gradient.py` in the sweep environment.
+2. Whether the same failure occurs on a task other than IOI, which decides
+   whether the claim is "on this task" or "in general". The paper claims only
+   what is tested.
+3. Whether the behaviour is present in auto-circuit's released source at the
+   version tied to arXiv:2407.08734, so the claim attaches to a citable artifact
+   and not to one Colab image.
+
+Until 1 to 3 are done, the manuscript sentence is "did not execute in our
+environment", which is VERIFIED, and not "is broken", which is not.
+
+#### D19, source read 2026-08-11. Call site VERIFIED, dtype still inferred
+
+Read from `auto_circuit/prune_algos/mask_gradient.py` in the sweep environment,
+`auto-circuit==1.0.1`, `torch==2.11.0+cu128`. Transcribed verbatim:
+
+```python
+elif answer_function == "mse":
+    loss = t.nn.functional.mse_loss(token_vals, batch.answers)
+else:
+    raise ValueError(f"Unknown answer_function: {answer_function}")
+loss.backward()
+```
+
+**VERIFIED.** The `mse` branch computes the loss against `batch.answers` and
+calls `.backward()` on it with no cast, no reshape and no dtype check. The branch
+is reachable only when `answer_function == "mse"`, which among the seven named
+algorithms is unique to `LOGIT_MSE_GRAD_PRUNE_ALGO`. That accounts for the
+failure being confined to exactly one arm.
+
+**Still INFERRED:** that `batch.answers` is an integral tensor. The source above
+does not show its construction. `mse_loss` with an integral target raising
+`Found dtype Long but expected Float` in the backward pass is standard PyTorch
+behaviour and matches the observation exactly, but the dtype has not been read.
+
+Closing it needs one look at where `answers` is built, in `auto_circuit/data.py`.
+**If `answers` holds token ids for every task and not only IOI, the claim widens
+from "did not execute on IOI in our environment" to "the `mse` answer function is
+unreachable for any task whose answers are token ids".** That is a materially
+stronger and materially more contestable sentence, so it is not written until the
+dtype is read.

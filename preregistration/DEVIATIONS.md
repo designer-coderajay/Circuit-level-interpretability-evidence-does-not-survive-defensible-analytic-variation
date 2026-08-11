@@ -195,3 +195,77 @@ several measured costs in `CALIBRATION.md` depend on. A second file,
 committed when the sweep ends. If the pooled manifests carry more than one
 `environment_hash`, the count and the split across cells are reported in the
 paper rather than collapsed.
+
+### 2026-08-11. LOGIT_MSE_GRAD_PRUNE_ALGO does not execute. 220 of 1,540 cells discarded
+
+**What happened.** Every cell of one discovery objective failed, and no cell of
+any other objective failed. The sweep ended at 1,320 `ok` and 220 `failed`.
+
+**VERIFIED, not sampled.** The 220 failed `discovery_id`s were listed from the
+results directory, sorted, and hashed. The digest is
+`ec06e045141548b6ad3186f31ec64247`, identical to the digest computed
+independently over the 220 ids that `enumerate_grid(configs/sweep.yaml)` assigns
+to `LOGIT_MSE_GRAD_PRUNE_ALGO`. The failure set is exactly that arm and contains
+nothing else.
+
+**The error, verbatim from every one of the 220 manifests:**
+
+```
+device=cuda | gpu=NVIDIA L4 | n_edges=32491 |
+RuntimeError: Found dtype Long but expected Float
+```
+
+The manifests record `timings_s: {"data_s": 0.714}` and no `discovery_s`, so the
+failure is inside discovery, before any prune score exists.
+
+**Cause: INFERRED, pending source read.** The same objective has been emitting a
+shape warning from `auto_circuit/prune_algos/mask_gradient.py:105`, at
+`loss = t.nn.functional.mse_loss(token_vals, batch.answers)`, recorded in
+DESIGN-DELTAS D19. `batch.answers` carries token ids, which are integral. MSE
+against an integral target raises this error in the backward pass. That is
+consistent with every observation but the source line has not been read at the
+installed version, so it is inference. Upgrade to VERIFIED by reading
+`mask_gradient.py` in the sweep environment and recording the dtype directly.
+
+**Decision: discard, not repair.** Rule 5. Rule 2 forbids modifying auto-circuit,
+which is the instrument under test and is reproduced verbatim. Casting the target
+would substitute a corrected instrument for the shipped one and hand a reviewer a
+free rejection.
+
+**Effect on the grid.**
+
+| | pre-registered | realised |
+|---|---|---|
+| discovery objectives | 7 | 6 |
+| discovery cells | 1,540 | 1,320 |
+| specifications | 18,480 | 15,840 |
+
+Discard rate **220/1,540 = 14.29% of cells**, and the same fraction of
+specifications, being exactly one of seven objectives.
+
+**Why the exclusion cannot bias any result.** The criterion is non-execution,
+raised by the instrument itself, and it was determined before any circuit from
+that arm existed. No output from the arm was inspected, because none was ever
+produced. This is not a data-dependent exclusion and cannot move the
+specification curve toward any conclusion.
+
+**Effect on the pre-registered analysis.** The objective axis drops from seven
+levels to six. The H1 to H4 decision rules, the `tau` levels, the metric set, the
+recovery convention, the discard rule and the `phi` constants are all unchanged.
+Two items need attention at analysis time and are flagged rather than resolved
+here:
+
+1. Variance decomposition over the objective axis now has six levels. The reduced
+   degrees of freedom are reported, and the REML fit is refitted on the realised
+   design rather than the planned one.
+2. The random-circuit null multiverse must be sized to the realised 1,320 cells,
+   not the planned 1,540.
+
+**Where it is reported.** Decided by Ajay, 2026-08-11: **methods** states the
+discard rate and the reason; **discussion** raises it as an observation about
+instrument maturity. It does not go in the abstract.
+
+**How it was missed.** The seam smoke test that would have caught it in four
+minutes, proposed in RESEARCH_LOG on 2026-08-07 after the fifth and sixth defects
+of the same shape, was still unwritten when the sweep launched. This is the
+seventh.
