@@ -374,3 +374,56 @@ open the abs page in a browser, which is the same remedy that worked for EUR-Lex
 
 **Not citable today: nine.** The bibliography is not closed and the manuscript's
 related-work section cannot be written from it.
+
+## Browser pass, 2026-08-11. Two PARTIALs closed, one RECALLED resolved to a peer-reviewed paper
+
+The abs pages were read in a browser after two plain fetches served an unparseable
+PDF. Fields taken from the page DOM, not from search snippets.
+
+| ID | Exact title as fetched | Authors | Venue | Date | State |
+|---|---|---|---|---|---|
+| 2510.00845 | Mechanistic Interpretability as Statistical Estimation: A Variance Analysis | Maxime Meloux, Francois Portet, Maxime Peyrard | none stated | v1 1 Oct 2025, **last revised 28 May 2026, v4** | **VERIFIED** |
+| 2502.20914 | Everything, Everywhere, All at Once: Is Mechanistic Interpretability Identifiable? | Maxime Meloux, Silviu Maniu, Francois Portet, Maxime Peyrard | **ICLR 2025**, journal-ref field | Submitted 28 Feb 2025 | **VERIFIED** |
+
+### "Meloux et al. 2025 on non-identifiability" is resolved
+
+The brief carried this in its "CHECK BEFORE CITING" list, seen only through
+secondary citation. It is `2502.20914`, and the arXiv record carries a
+**journal-ref naming ICLR 2025**, so it is peer reviewed, not a preprint.
+
+Its abstract states the question directly: "for a given behavior, and under MI's
+criteria, does a unique explanation exist?", drawing the analogy to identifiability
+in statistics, and distinguishing "where-then-what" from "what-then-where"
+strategies.
+
+**This is the foundational citation for P1's premise and it is now verified at a
+top venue.** The paper's opening sentence, that circuits are formally
+non-identifiable, rests on this and may now be written.
+
+### Correction to cite v4, not v1
+
+`2510.00845` was last revised **28 May 2026** and is at **v4**. The earlier ledger
+note guessing at a v2 title containing "of EAP-IG" is superseded: the fetched
+title is unchanged across versions and no such suffix exists in the record. Cite
+v4 and state the version, since a variance analysis may have changed between
+revisions.
+
+### Same group, three relevant papers
+
+Meloux, Portet and Peyrard appear on `2502.20914` (identifiability, ICLR 2025),
+`2510.00845` (variance, v4) and `2512.18792` (*The Dead Salmons of AI
+Interpretability*, 21 Dec 2025, not yet fetched). **One group is building the
+statistical critique of MI that this paper extends into the regulatory setting.**
+Related work should treat them as a programme, not three unrelated citations.
+
+### Running count
+
+**Verified and citable: eight.** 2407.08734, 2606.00033, 2501.16496, 2504.13151,
+2308.14272, 2512.13907, 2510.00845, 2502.20914.
+
+**Still open: six.** 2409.09951 (authors, venue), 2606.06267 (identifier disputed
+by its own authors), Wang et al. IOI, Conmy et al. ACDC, Nanda et al. attribution
+patching, and the Steegen/Simmons/Simonsohn trio at RECALLED-plus.
+
+**Deleted: one.** Mueller et al. 2026 on non-identifiability, a misattribution of
+2504.13151.
