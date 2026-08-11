@@ -333,3 +333,32 @@ start when `git_commit()` returns `UNKNOWN`, unless an explicit flag is passed,
 and the flag should itself be recorded in the manifest. A provenance field that
 silently degrades to a placeholder string is worse than one that stops the run.
 This is the same failure as post-lock entry 1: a placeholder read as a fact.
+
+#### Closed 2026-08-11. Code identity upgraded from INFERRED to VERIFIED
+
+`p1.tar.gz`, the archive uploaded to Colab, was recovered and compared file by
+file against git's tree at `5371629` using git blob hashing, which is content
+addressed and therefore exact.
+
+| scope | files | identical | differ | missing |
+|---|---|---|---|---|
+| `src/`, `scripts/`, `configs/`, `pyproject.toml`, `preregistration/PLAN.md` | 22 | **22** | 0 | 0 |
+
+**Every file that could affect a result is byte-identical to the committed tree.**
+The concern raised in the entry above, that uncommitted edits at packing time
+would be invisible, is answered: there were none.
+
+The archive additionally holds 18 macOS AppleDouble sidecars (`._spec.py` and
+similar), artefacts of `tar` on macOS. They carry resource-fork metadata, no code,
+and cannot be imported by Python, since `._spec` is not a valid module name. They
+are noted for completeness and have no bearing on any result.
+
+**The sweep ran commit `5371629`.** Reported as such in the manuscript, with this
+entry cited for how it was established, because the manifests themselves record
+`UNKNOWN` and a reader is entitled to know that the commit was recovered rather
+than logged.
+
+The fix owed to `scripts/sweep.py`, refusing to start on an `UNKNOWN` commit
+without an explicit recorded flag, still stands for P2 and P3. Recovering
+provenance after the fact worked here only because the archive happened to
+survive.
