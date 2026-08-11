@@ -93,10 +93,35 @@ def arm_b(records: list[dict]) -> dict:
                 reps[name][b] = np.nan
             ratio_reps[b] = np.nan
 
-    def interval(arr: np.ndarray) -> dict:
+    def interval(arr: np.ndarray, observed_value: float | None = None) -> dict:
+        """Interval plus the diagnostics that say whether it may be quoted.
+
+        The pre-registered bootstrap resamples specifications and retains
+        self-pairs, documented in `p1.multiverse`. For the pooled outcome that is
+        an O(1/N) effect at N = 7,561. For a within-group statistic it is
+        O(1/n_g), and the `alone` family has mean group size near two, where it
+        dominates and deflates the replicate distribution.
+
+        `bias` makes that visible instead of leaving it for a reader to find. An
+        interval whose distance from the observed value is a large fraction of
+        its own width is not quotable, and the report says so rather than
+        printing it unqualified.
+        """
         finite = arr[np.isfinite(arr)]
         lo, hi = np.percentile(finite, [2.5, 97.5])
-        return {"ci95_low": float(lo), "ci95_high": float(hi), "n_finite": int(finite.size)}
+        out = {
+            "ci95_low": float(lo),
+            "ci95_high": float(hi),
+            "n_finite": int(finite.size),
+            "bootstrap_mean": float(finite.mean()),
+        }
+        if observed_value is not None:
+            bias = float(finite.mean()) - observed_value
+            width = hi - lo
+            out["bias"] = bias
+            out["bias_over_width"] = float(bias / width) if width > 0 else None
+            out["interval_quotable"] = bool(lo <= observed_value <= hi)
+        return out
 
     out: dict = {
         "definition": "preregistration/DEVIATIONS.md 2026-08-11",
@@ -118,7 +143,12 @@ def arm_b(records: list[dict]) -> dict:
             if observed[key] is None:
                 entry[kind] = None
                 continue
-            entry[kind] = {"observed": observed[key], **interval(reps[key])}
+            entry[kind] = {
+                "observed": observed[key],
+                "n_groups": grouped[key].n_groups,
+                "mean_group_size": n / grouped[key].n_groups,
+                **interval(reps[key], observed[key]),
+            }
         out["by_axis"][axis] = entry
 
     ratio_obs = (
@@ -129,7 +159,7 @@ def arm_b(records: list[dict]) -> dict:
     out["headline_seed_ratio"] = {
         "definition": "F_alone(seed) / F_fixed(seed)",
         "observed": ratio_obs,
-        **interval(ratio_reps),
+        **interval(ratio_reps, ratio_obs),
     }
     return out
 
@@ -209,12 +239,16 @@ def main() -> int:
 
     b = report["arm_b_claim_level"]
     print(f"pooled F {b['pooled_F']:.4f}   n = {b['n_specifications']:,}\n")
-    print(f"{'axis':<22}{'F_fixed':>9}{'F_alone':>9}   standardising this axis")
+    print(f"{'axis':<22}{'F_fixed':>9}{'F_alone':>9}{'grp':>7}   removes    CI")
     for axis, e in b["by_axis"].items():
         fx = e["fixed"]["observed"] if e["fixed"] else float("nan")
         al = e["alone"]["observed"] if e["alone"] else float("nan")
-        drop = b["pooled_F"] - fx
-        print(f"{axis:<22}{fx:>9.4f}{al:>9.4f}   removes {drop:>+.4f}")
+        gs = e["alone"]["mean_group_size"] if e["alone"] else float("nan")
+        ok = "ok" if e["alone"] and e["alone"]["interval_quotable"] else "BIASED"
+        print(
+            f"{axis:<22}{fx:>9.4f}{al:>9.4f}{gs:>7.1f}   "
+            f"{b['pooled_F'] - fx:>+.4f}   alone {ok}"
+        )
     r = b["headline_seed_ratio"]
     print(
         f"\nseed / analytic ratio  {r['observed']:.4f}  "

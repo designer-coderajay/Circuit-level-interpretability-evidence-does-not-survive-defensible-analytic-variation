@@ -2977,3 +2977,82 @@ claims nothing about it.
 `J_bar` and pairwise `D` (stage 2), variance decomposition (stage 3), the
 random-circuit null multiverse and therefore H3 (stage 4), H4 pending the repair
 run.
+
+## 2026-08-11. Stage 3. No axis rescues filability.
+
+Definitions committed at `c8e0051` before any value was computed.
+
+### The result that answers the obvious objection
+
+The objection to `F = 0.7316` is that it pools across evaluation metrics which
+ask different questions. Arm B answers it directly.
+
+| axis standardised | residual `F` | 95% CI | removes |
+|---|---|---|---|
+| **metric** | **0.5939** | [0.5803, 0.6063] | +0.1377 |
+| ablation | 0.7014 | [0.6939, 0.7075] | +0.0302 |
+| discovery objective | 0.7018 | [0.6938, 0.7084] | +0.0298 |
+| threshold `tau` | 0.7070 | [0.6981, 0.7149] | +0.0246 |
+| corruption | 0.7092 | [0.7008, 0.7166] | +0.0224 |
+| prompt variant | 0.7232 | [0.7157, 0.7300] | +0.0084 |
+| seed | 0.7307 | [0.7234, 0.7368] | +0.0009 |
+
+**The metric is the largest single lever and it is not enough.** Standardising it
+completely, which is the most a standards body could demand of that axis, leaves
+`F = 0.594`, still three times H2's threshold and still nowhere near filable at
+any tolerance. Every other axis removes 0.03 or less. There is no axis whose
+standardisation makes the filing reliable.
+
+That is a stronger result than the pooled `F`. It converts "the evidence is
+unstable" into "and here is what fixing the biggest cause buys you, which is not
+enough".
+
+All seven intervals are valid: group sizes 1,512 to 2,520, bootstrap bias below
+0.0006 on every axis.
+
+### `F_alone`, point estimates only
+
+Flip rate among pairs differing in one axis alone. **No intervals: the
+pre-registered bootstrap is invalid here, see DEVIATIONS 2026-08-11.**
+
+    metric 0.6375 | ablation 0.4476 | objective 0.4092 | corruption 0.4049
+    prompt 0.3319 | seed 0.2249 | threshold 0.1057
+
+### Seed, and what the axis actually varies
+
+`F_alone(seed) = 0.2249`, ratio to analytic instability 0.3078, both point
+estimates only.
+
+**`seed` is not re-run noise and the paper must not call it that.** VERIFIED from
+`scripts/sweep.py` lines 236 and 243: the seed is passed to
+`generate_ioi_dataset(n_prompts=..., seed=head.seed)` and to
+`train_test_size(..., random_seed=head.seed)`. It selects **which prompts are
+sampled** and how they are split. Seed variation is therefore sampling
+variability of the evaluation set, not nondeterminism of a fixed computation.
+
+That reading is the honest one and it is also the less convenient one: a reviewer
+who assumed "seed" meant re-running the same analysis would read 0.2249 as
+alarming. It means a different draw from the same task distribution moves the
+claim on 22% of pairs, which is a statement about the task, not about determinism.
+
+### Arm A, REML on `log10(selected edges)`, converged
+
+Structural variance shares: corruption within ablation 0.788, residual 0.115,
+ablation 0.044, threshold 0.041, metric 0.007, objective 0.003, seed 0.0007,
+prompt variant 0.0007.
+
+**Structure and claim disagree, and the disagreement is the interesting part.**
+The metric accounts for 0.7% of the variance in circuit *size* and is the single
+largest driver of variance in the *claim*. The ablation-corruption interaction
+accounts for 79% of size and 3% of claim flipping. **How big the circuit is and
+what you are entitled to say about it are governed by different axes.** A
+standards body that standardised the ablation operator, the obvious target if you
+look at structure, would fix almost none of the filing instability.
+
+State plainly that arm A is the pre-registered estimator on a structural response
+and does not explain `F`. Its value is precisely that it disagrees.
+
+### Still owed
+
+EMS cross-check on the balanced five-operator block, `J_bar` and pairwise `D`
+(stage 2), the random-circuit null and H3 (stage 4), H4 pending the repair run.

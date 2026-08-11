@@ -1,0 +1,238 @@
+{
+  "arm_a_structural_reml": {
+    "caveat": "decomposes structure, not claims; does not explain F",
+    "components": {
+      "ablation": 0.10266921153829431,
+      "corruption_in_ablation": 1.8465145987389182,
+      "metric": 0.015482298503235785,
+      "objective": 0.008227708422109804,
+      "prompt_variant": 0.0015234842044731301,
+      "seed": 0.0016104579182683527,
+      "threshold": 0.09681134782848481
+    },
+    "converged": true,
+    "n": 7561,
+    "residual": 0.270403474358804,
+    "response": "log10(selected circuit size in edges)",
+    "share_of_total": {
+      "ablation": 0.04381501614400512,
+      "corruption_in_ablation": 0.7880168333007045,
+      "metric": 0.006607211146377252,
+      "objective": 0.0035112491071234834,
+      "prompt_variant": 0.0006501606860906839,
+      "residual": 0.11539713237212325,
+      "seed": 0.0006872775063812576,
+      "threshold": 0.04131511973719427
+    },
+    "status": "pre-registered estimator, REML"
+  },
+  "arm_b_claim_level": {
+    "bootstrap": {
+      "degenerate_replicates": 0,
+      "n_boot": 10000,
+      "resampling_unit": "specification",
+      "seed": 0
+    },
+    "by_axis": {
+      "ablation": {
+        "alone": {
+          "bias": -0.12140521420320027,
+          "bias_over_width": -3.7283409838329646,
+          "bootstrap_mean": 0.3261857395824438,
+          "ci95_high": 0.3422176911949715,
+          "ci95_low": 0.3096548932294302,
+          "interval_quotable": false,
+          "mean_group_size": 2.650192779530319,
+          "n_finite": 10000,
+          "n_groups": 2853,
+          "observed": 0.44759095378564406
+        },
+        "fixed": {
+          "bias": -0.00051066718706827,
+          "bias_over_width": -0.03748932410785642,
+          "bootstrap_mean": 0.7008674130156349,
+          "ci95_high": 0.7074885425453544,
+          "ci95_low": 0.6938668729308507,
+          "interval_quotable": true,
+          "mean_group_size": 1080.142857142857,
+          "n_finite": 10000,
+          "n_groups": 7,
+          "observed": 0.7013780802027032
+        }
+      },
+      "corruption": {
+        "alone": {
+          "bias": -0.12315601430187739,
+          "bias_over_width": -4.056859867620965,
+          "bootstrap_mean": 0.2817902471103496,
+          "ci95_high": 0.29678495673628114,
+          "ci95_low": 0.2664274836362554,
+          "interval_quotable": false,
+          "mean_group_size": 2.6235253296321996,
+          "n_finite": 10000,
+          "n_groups": 2882,
+          "observed": 0.404946261412227
+        },
+        "fixed": {
+          "bias": -0.0004057586543410041,
+          "bias_over_width": -0.02565675592495877,
+          "bootstrap_mean": 0.7088048873749173,
+          "ci95_high": 0.7165768558714567,
+          "ci95_low": 0.70076197048502,
+          "interval_quotable": true,
+          "mean_group_size": 1512.2,
+          "n_finite": 10000,
+          "n_groups": 5,
+          "observed": 0.7092106460292583
+        }
+      },
+      "discovery_objective": {
+        "alone": {
+          "bias": -0.07733460379800011,
+          "bias_over_width": -2.560792129587706,
+          "bootstrap_mean": 0.331879321654085,
+          "ci95_high": 0.34700788676330707,
+          "ci95_low": 0.3168084016491244,
+          "interval_quotable": false,
+          "mean_group_size": 4.481920569057499,
+          "n_finite": 10000,
+          "n_groups": 1687,
+          "observed": 0.4092139254520851
+        },
+        "fixed": {
+          "bias": -0.0005741887938979229,
+          "bias_over_width": -0.039354168293858495,
+          "bootstrap_mean": 0.7012399059688627,
+          "ci95_high": 0.7084293858463517,
+          "ci95_low": 0.6938390941748205,
+          "interval_quotable": true,
+          "mean_group_size": 1260.1666666666667,
+          "n_finite": 10000,
+          "n_groups": 6,
+          "observed": 0.7018140947627606
+        }
+      },
+      "metric": {
+        "alone": {
+          "bias": -0.24668232942844048,
+          "bias_over_width": -8.397134840860204,
+          "bootstrap_mean": 0.3908051413366781,
+          "ci95_high": 0.40536505005853835,
+          "ci95_low": 0.3759880858792695,
+          "interval_quotable": false,
+          "mean_group_size": 1.9156321256650621,
+          "n_finite": 10000,
+          "n_groups": 3947,
+          "observed": 0.6374874707651186
+        },
+        "fixed": {
+          "bias": -0.00037392760327203955,
+          "bias_over_width": -0.014399603337918737,
+          "bootstrap_mean": 0.5935173748480238,
+          "ci95_high": 0.6063053565978297,
+          "ci95_low": 0.5803374466146867,
+          "interval_quotable": true,
+          "mean_group_size": 1890.25,
+          "n_finite": 10000,
+          "n_groups": 4,
+          "observed": 0.5938913024512958
+        }
+      },
+      "prompt_variant": {
+        "alone": {
+          "bias": -0.18038599495587718,
+          "bias_over_width": -6.7118149281609005,
+          "bootstrap_mean": 0.15147798489298933,
+          "ci95_high": 0.1649750755057999,
+          "ci95_low": 0.13809918621406334,
+          "interval_quotable": false,
+          "mean_group_size": 1.7242873432155075,
+          "n_finite": 10000,
+          "n_groups": 4385,
+          "observed": 0.3318639798488665
+        },
+        "fixed": {
+          "bias": -0.00020723141902312392,
+          "bias_over_width": -0.014459081402513134,
+          "bootstrap_mean": 0.7229928894174773,
+          "ci95_high": 0.7299925660423009,
+          "ci95_low": 0.7156602987803499,
+          "interval_quotable": true,
+          "mean_group_size": 3780.5,
+          "n_finite": 10000,
+          "n_groups": 2,
+          "observed": 0.7232001208365004
+        }
+      },
+      "seed": {
+        "alone": {
+          "bias": -0.0498921388651897,
+          "bias_over_width": -1.8847031982690874,
+          "bootstrap_mean": 0.17502500485279762,
+          "ci95_high": 0.188371242623112,
+          "ci95_low": 0.1618990962867495,
+          "interval_quotable": false,
+          "mean_group_size": 3.9034589571502325,
+          "n_finite": 10000,
+          "n_groups": 1937,
+          "observed": 0.22491714371798732
+        },
+        "fixed": {
+          "bias": -0.000492789464490162,
+          "bias_over_width": -0.03691899460562858,
+          "bootstrap_mean": 0.7302231372209154,
+          "ci95_high": 0.7367902525673671,
+          "ci95_low": 0.7234423954614471,
+          "interval_quotable": true,
+          "mean_group_size": 1512.2,
+          "n_finite": 10000,
+          "n_groups": 5,
+          "observed": 0.7307159266854055
+        }
+      },
+      "threshold": {
+        "alone": {
+          "bias": -0.03991912190683855,
+          "bias_over_width": -2.094453043507661,
+          "bootstrap_mean": 0.06581621932994453,
+          "ci95_high": 0.07546602525556223,
+          "ci95_low": 0.05640657580618023,
+          "interval_quotable": false,
+          "mean_group_size": 2.3207489257213014,
+          "n_finite": 10000,
+          "n_groups": 3258,
+          "observed": 0.10573534123678308
+        },
+        "fixed": {
+          "bias": -0.00029557650064948593,
+          "bias_over_width": -0.01760383222885892,
+          "bootstrap_mean": 0.7066698190199211,
+          "ci95_high": 0.7148881106650031,
+          "ci95_low": 0.6980976472700537,
+          "interval_quotable": true,
+          "mean_group_size": 2520.3333333333335,
+          "n_finite": 10000,
+          "n_groups": 3,
+          "observed": 0.7069653955205706
+        }
+      }
+    },
+    "definition": "preregistration/DEVIATIONS.md 2026-08-11",
+    "headline_seed_ratio": {
+      "bias": -0.06812408424562047,
+      "bias_over_width": -1.9353109968673854,
+      "bootstrap_mean": 0.23967972227359982,
+      "ci95_high": 0.2574262596217684,
+      "ci95_low": 0.2222256720387441,
+      "definition": "F_alone(seed) / F_fixed(seed)",
+      "interval_quotable": false,
+      "n_finite": 10000,
+      "observed": 0.3078038065192203
+    },
+    "n_specifications": 7561,
+    "pooled_F": 0.7316107300831544,
+    "status": "declared deviation, not pre-registered"
+  },
+  "plan": "preregistration/PLAN.md section 6",
+  "stage": 3
+}

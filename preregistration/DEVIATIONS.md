@@ -571,3 +571,47 @@ primary outcome and this decomposition.
 **Reporting.** Arm A is labelled pre-registered. Arm B is labelled a deviation,
 with this entry cited. Neither is presented as the other, and the paper states
 that the pre-registration named an estimator its own outcome could not take.
+
+### 2026-08-11. The pre-registered bootstrap is not valid for the `alone` family
+
+**What was found.** Running arm B, every `F_alone` observed value fell **outside**
+its own 95% interval, while every `F_fixed` value fell inside. Not a coding
+error: the two families use identical code and differ only in grouping.
+
+**Cause, VERIFIED by measurement.** Mean group size:
+
+| family | mean group size | bias of bootstrap mean | interval usable |
+|---|---|---|---|
+| `fixed` | 1,512 to 2,520 | -0.0002 to -0.0006 | yes |
+| `alone` | 1.7 to 4.5 | large and negative | **no** |
+
+The pre-registered bootstrap resamples specifications with replacement and
+**retains self-pairs**, a choice documented and defended in `p1.multiverse
+.bootstrap_over_specifications`. A specification drawn twice pairs with itself,
+always concordantly, which deflates a flip rate. At `N = 7,561` that is an
+`O(1/N)` effect and invisible. Within a group of two it is `O(1/n_g)` and
+dominant.
+
+A cluster bootstrap resampling groups rather than specifications was tried as a
+diagnostic, `B = 2,000`: it moved the `alone/seed` interval from
+`[0.1619, 0.1884]` to `[0.1753, 0.2209]` against an observed 0.2249. Closer,
+still excluding it, because duplicating a whole group reintroduces self-pairs.
+**The problem is the pair population under any with-replacement scheme at small
+`n_g`, not the resampling unit.**
+
+**Decision, and it is the conservative one.** `F_alone` and the headline seed
+ratio are reported as **point estimates with no interval**. The report records
+`mean_group_size`, `bootstrap_mean`, `bias` and a boolean `interval_quotable` for
+every statistic, so the judgement is in the artifact and not only in prose.
+
+**No bias-corrected estimator is introduced.** Constructing one now, after seeing
+that the naive intervals disagree with the point estimates, would be an analytic
+choice made in response to a result. That is the behaviour this paper documents,
+and the correct move is to report less rather than to invent an estimator that
+happens to fix the number.
+
+**What survives, and it is the part that matters.** PLAN.md section 8 promises to
+"report which analytic axis carries the residual variance so that it can be
+standardised first". That question is answered by `F_fixed`, whose intervals are
+valid, whose bias is under 0.0006 on every axis, and whose group sizes are in the
+thousands. The unquotable family is the complementary view, not the promised one.
