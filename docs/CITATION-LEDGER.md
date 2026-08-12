@@ -556,3 +556,39 @@ Steegen by DOI.
 disputed by its own authors).
 
 **Deleted: two.** Mueller et al. 2026, Nanda et al. attribution patching.
+
+## Simonsohn Publisher Correction read, 2026-08-11. Harmless, with one practical instruction.
+
+| DOI | Title | Authors | Journal | Page | Date | State |
+|---|---|---|---|---|---|---|
+| 10.1038/s41562-020-00974-w | Publisher Correction: Specification curve analysis | Uri Simonsohn, Joseph P. Simmons, Leif D. Nelson | Nature Human Behaviour | 4, 1215 | published 9 Oct 2020, issue Nov 2020 | **VERIFIED** |
+
+**What it corrects, quoted:** in the original version "significant discrepancies
+appeared between the HTML and PDF versions of the article. The HTML version was
+(and remains) correct, but equations in the PDF were missing bidirectional arrows
+over many elements."
+
+**Nothing P1 relies on is affected.** The correction is a rendering fault in the
+PDF, not a change to the method, the figure form or the joint-inference procedure.
+The open question raised in the earlier ledger note is closed.
+
+**One instruction follows.** The PDF equations were wrong on first publication.
+**Read the HTML version when consulting the specification-curve equations**, and
+do not transcribe from an old downloaded PDF.
+
+Also captured: the original article was **published online 27 July 2020**, with an
+issue date of November 2020. Both dates are correct for different purposes; the
+ledger row for `10.1038/s41562-020-0912-z` records the issue date, 2020-11.
+
+### Bibliography status
+
+**Verified: fourteen.** Eleven arXiv records, Simonsohn, Steegen, and this
+correction.
+
+**Open: two.** Simmons `10.1177/0956797611417632`, fetch blocked by an
+interstitial. `2606.06267`, identifier disputed by its own authors.
+
+**Deleted: two.** Mueller et al. 2026, Nanda et al. attribution patching.
+
+Under the skill's rule, **the bibliography may not yet be described as checked**,
+and the two open items must be named wherever the count is reported.
