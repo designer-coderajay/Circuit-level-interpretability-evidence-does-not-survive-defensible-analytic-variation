@@ -3477,3 +3477,58 @@ of the H3 null comparison, and the sign of the H4 gap. **Any pooled statistic in
 this design must be reported with its within-size decomposition.** That belongs in
 the methods section as a general finding about multiverse designs whose
 specifications select objects of different sizes, not as a caveat on three results.
+
+## 2026-08-12. Independent verification of every reported number.
+
+`analysis/verify_all_claims.py`, committed. It does not read the prose or the
+findings document. It recomputes each quantity from `results/sweep` and
+`results/repair` and asserts against what is reported.
+
+**36 checks, 0 failures. 319 tests pass.**
+
+### `F` derived three independent ways
+
+| method | value |
+|---|---|
+| closed form, `1 - sum n_c(n_c-1) / N(N-1)` | 0.731611 |
+| complement of concordance probability | 0.731611, agreeing to 1e-12 |
+| brute-force pairwise over a 1,200-specification subsample, 719,400 pairs | 0.7238 |
+
+The third is a sampling estimate, not an exact recomputation, and agrees within
+sampling error. The first two are algebraically distinct routes to the same
+number and agree to machine precision.
+
+### Internal consistency that could have hidden an error
+
+- `stage1`, `stage3` and `h4` all report `F` from separate scripts. **All three
+  agree to 1e-9.**
+- `gap = F - (1 - agreement_rate)` reproduces `h4.json`'s stored gap to 1e-12.
+- Class shares sum to 1.000000.
+- `pi*` equals the maximum class share exactly.
+- All seven `F_fixed` observed values lie inside their own bootstrap intervals.
+- `J_bar` lies inside its own interval.
+
+### Arithmetic that ties the design to the data
+
+- 1,320 completed cells x 12 specifications = 15,840 pre-registered.
+- 15,840 - 7,561 with claims = 8,279 discarded, a rate of 0.5227.
+- 1,540 / 7 = 220, the size of the non-executing arm, exactly one objective.
+- 7,561 specifications give 28,580,580 unordered pairs, matching stage 2.
+- The closed-form edge count returns **32,491**, equal to what the instrument
+  reports in every manifest, and 12x12+12 = **156** components.
+- `J_rand(200) = 200 / (2 x 32491 - 200) = 0.003087`.
+
+### Bounds worth stating in the paper
+
+`F` is bounded above by `1 - 1/k` for `k` classes. With nine classes the ceiling
+is 0.8889 and the observed 0.7316 is **82.3%** of it. `F` is not near 1 by
+construction, and a reader is entitled to see the bound.
+
+Filability fails arithmetically, not by judgement: `pi* = 0.4109` against a
+requirement of 0.80 at the loosest pre-registered tolerance.
+
+### Rounding
+
+Reported four-decimal figures are correct roundings of the computed values:
+`F` 0.731611 to 0.7316, `pi*` 0.410924 to 0.4109, `J_bar` 0.139591 to 0.1396,
+gap 0.334441 to 0.3344, size-fixed COARSE 0.270551 to 0.2706.
