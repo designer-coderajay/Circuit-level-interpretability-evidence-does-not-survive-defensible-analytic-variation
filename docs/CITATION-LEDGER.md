@@ -476,3 +476,83 @@ RECALLED-plus.
 **Deleted: two.** "Mueller et al. 2026 on non-identifiability", a misattribution
 of 2504.13151. "Nanda et al., attribution patching", a misattribution of
 2310.10348.
+
+## 2409.09951 closed, 2026-08-11. Title case and venue both wrong in the brief.
+
+| ID | Exact title as fetched | Authors | Venue | Date | State |
+|---|---|---|---|---|---|
+| 2409.09951 | **Optimal ablation for interpretability** | **Maximilian Li, Lucas Janson** | **none on the arXiv record** | Submitted 16 Sep 2024, v1 | **VERIFIED** |
+
+Two corrections against the brief:
+
+1. **Title case.** Brief: *Optimal Ablation for Interpretability*. Record:
+   *Optimal ablation for interpretability*, sentence case. Use the record.
+2. **Venue.** Brief asserts **NeurIPS 2024**. The record has no Comments field and
+   no journal-ref. **The venue is unsupported and must not be printed** unless
+   verified against the proceedings.
+
+Authors were never in the brief at all and are Maximilian Li and Lucas Janson.
+
+### Why this one matters beyond bookkeeping
+
+The brief's specification space lists the ablation axis as
+`{zero, mean, resample, optimal}`. **Optimal ablation comes from this paper and is
+not implemented in auto-circuit**, so it never entered the realised design. The
+paper should cite `2409.09951` when explaining which defensible operators exist in
+the literature but were out of reach of the instrument, and say plainly that the
+axis is bounded by what the tool ships, not by what the field has proposed.
+
+That is a limitation worth stating: **the multiverse is as wide as the library,
+and the library is narrower than the literature.**
+
+## Method citations resolved by DOI, 2026-08-11
+
+DOIs resolved through `doi.org` and read from the publisher landing page metadata,
+which is what "resolve the DOI directly" required and what the RECALLED-plus state
+was waiting on.
+
+| DOI | Exact title | Authors | Journal | Vol/Issue/Pages | Date | State |
+|---|---|---|---|---|---|---|
+| 10.1038/s41562-020-0912-z | Specification curve analysis | Uri Simonsohn, Joseph P. Simmons, Leif D. Nelson | Nature Human Behaviour | 4(11), 1208-1214 | 2020-11 | **VERIFIED** |
+| 10.1177/1745691616658637 | Increasing Transparency Through a Multiverse Analysis | Sara Steegen, Francis Tuerlinckx, Andrew Gelman, Wolf Vanpaemel | Perspectives on Psychological Science | volume and pages not in page metadata | 2016-09 | **VERIFIED** |
+| 10.1177/0956797611417632 | *not read* | *not read* | *not read* | | | **RECALLED-plus, fetch blocked** |
+
+### Simonsohn: author order corrected
+
+The ledger previously recorded this as "Simonsohn, U., Simmons, J. P., and
+Nelson, L. D." from converging secondary sources. **The publisher metadata
+confirms that order exactly.** Volume, issue and pages also confirmed:
+4(11), 1208-1214.
+
+The earlier note flagged a Publisher Correction, DOI 10.1038/s41562-020-00974-w,
+and asked whether it affects anything P1 relies on. **Still unchecked.** P1 uses
+this paper for Figure 1's form and for the joint-inference framing, so the
+correction should be read before the figure is drawn.
+
+### Steegen: verified, with two fields still missing
+
+Title, all four authors and journal confirmed. **Volume and pages were not in the
+landing page metadata**; the ledger previously recorded 11(5), 702-712 from
+secondary sources and those two fields remain unconfirmed at that level.
+
+### Simmons: fetch blocked, state unchanged
+
+`10.1177/0956797611417632` resolved to the Sage landing page, which served an
+interrogation interstitial rather than the article. Two attempts, six seconds
+apart. **No attempt was made to route around it**, per the project rule and the
+skill's failure handling.
+
+State stays **RECALLED-plus**: the DOI, title, authors, journal, volume and pages
+agree across three independent secondary sources, but the DOI has still not been
+resolved to a readable record. **Do not upgrade it on the strength of the other
+two resolving.**
+
+### Running count
+
+**Verified and citable: thirteen.** Eleven arXiv records plus Simonsohn and
+Steegen by DOI.
+
+**Still open: two.** Simmons (fetch blocked) and `2606.06267` (identifier
+disputed by its own authors).
+
+**Deleted: two.** Mueller et al. 2026, Nanda et al. attribution patching.
