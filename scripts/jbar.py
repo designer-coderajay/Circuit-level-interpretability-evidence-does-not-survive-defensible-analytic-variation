@@ -57,6 +57,15 @@ def build_circuits(results: Path, cache: Path) -> tuple[list[int], np.ndarray, n
         store = np.load(cache, allow_pickle=True)
         return list(store["masks"]), store["w"], store["k"]
 
+    # The sequential GPT-2 namespace is used as the id space regardless of which
+    # model produced the circuits. That is safe for GPT-NeoX models only because
+    # their namespace is a strict subset: every Pythia edge name has a GPT-2 id,
+    # and Jaccard is computed from set intersection and union of the edges that
+    # actually appear, so a wider bitmask changes nothing. VERIFIED in
+    # tests/test_graph.py::test_parallel_mlp_matches_pythia_160m.
+    #
+    # An architecture whose namespace is NOT a subset would raise KeyError below
+    # rather than mis-map silently, which is the behaviour we want.
     edge_id = {name: i for i, name in enumerate(enumerate_edges())}
     seen: dict[tuple[str, int], int] = {}
     masks: list[int] = []

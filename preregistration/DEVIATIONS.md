@@ -779,3 +779,77 @@ with the modal claim gives a binary strip with no meaningful ascending order.
 
 **Reported as a deviation**, with the pre-registered wording quoted beside it, so
 a reader can see both what was promised and what was drawn.
+
+---
+
+### 2026-08-12. Replication grid: dataset size inherited, seeds reduced. Both declared at lock time
+
+These are not post-hoc deviations from `PLAN-REPLICATION.md`. They are choices
+`PLAN-REPLICATION.md` makes deliberately and requires to be recorded here at lock
+time, because both depart from the confirmatory design and neither is neutral.
+
+**Scope.** Applies to `configs/replication_pythia.yaml` only. `PLAN.md`,
+`configs/sweep.yaml` and every confirmatory number are untouched.
+
+#### 1. `n_prompts: 256` is inherited from GPT-2 small, not re-calibrated
+
+`CALIBRATION.md` step 1 selected 256 for GPT-2 small by a committed rule: `J_seed`
+rose 0.5678 / 0.6386 / 0.7428 / 0.8089 across `n` in {16, 32, 64, 128}, no delta
+fell below 0.05, so the curve had not flattened and the rule fell back to the
+largest size tested.
+
+**That rule was not re-run for Pythia-160m.** Re-running it costs a session, and
+more importantly it would make the two runs differ on a second dimension.
+A difference in `F` would then be confounded with a difference in evaluation-set
+size, and the replication would answer a question nobody asked.
+
+**The cost of inheriting, stated rather than waved away.** If 256 is below the
+flattening point for Pythia-160m, seed variance on this model is inflated
+relative to what a calibrated size would give, which would inflate `F`. The
+direction of the bias is therefore known and it is *against* the null. If the
+replication holds, this caveat does not rescue it; if the replication fails, the
+caveat did not cause the failure. Named as the first suspect in
+`PLAN-REPLICATION.md` section 5.3 if the claim yield diverges sharply from the
+confirmatory 47.7 percent.
+
+#### 2. `seed` drops from five levels to three
+
+Runtime. The full grid is about 26 h at GPT-2 per-cell costs and this is the
+second multi-day run in a week.
+
+**Why seeds and not an axis that enters discovery.** Reducing an axis to a single
+level removes it from the specification space, and `F` over six axes is not
+comparable to `F` over seven. Three levels keeps the axis and keeps a seed
+variance component estimable.
+
+**What it costs.** The seed variance component from this run is noisier than the
+confirmatory one and is reported with that caveat attached. It is secondary and
+is not the primary outcome.
+
+**Rejected alternative, recorded so the choice is auditable.** Dropping
+`INTEGRATED_EDGE_GRADS` would have saved 47 percent of runtime for one of seven
+objective levels, IEG-50 costing about 199 s per cell against EAP's 45 s. It is
+the only non-EAP method in the grid, and removing it would leave the objective
+axis as six variants of one attribution family, which is the axis the paper's
+argument leans on. Rejected.
+
+#### 3. `LOGIT_MSE_GRAD_PRUNE_ALGO` is retained despite not executing
+
+Not a deviation from the confirmatory grid, which also contains it, but worth
+recording because the obvious reading of the 2026-08-11 entry is that it should
+now be dropped.
+
+It fails fast, so 132 cells cost an estimated seven minutes. Running it on a
+second model separates a library-level failure from a model-level one. Both
+outcomes are reportable and the discard rate is reported per axis level either
+way.
+
+#### 4. What was added to the code, and what it does not touch
+
+`enumerate_edges` and `EdgeComponentIndex` gained a `parallel_mlp` flag,
+committed at `0cd6856` with tests asserting 32,347, the subset relation, the
+shape of the 144-edge deficit, and that the default has not moved.
+
+Additive, in `src/p1/`, defaulting to GPT-2 behaviour. **`auto-circuit` is
+untouched.** No committed GPT-2 number changes, which the default guard asserts
+rather than claims.

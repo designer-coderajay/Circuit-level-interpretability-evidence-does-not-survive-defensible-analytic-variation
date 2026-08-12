@@ -1,92 +1,118 @@
 # Next session
 
-Written 2026-08-11 at the end of the analysis phase. Read `docs/FINDINGS.md`
-first; it is the complete result and the source for the results section.
+Written 2026-08-12 after the Pythia-160m transfer probe. Read
+`RESEARCH_LOG.md` from the 2026-08-12 entry down; it has the probe result, Gate P
+and the thresholds as committed.
 
 ## State
 
-**The science is finished.** All four pre-registered outcomes are settled, the
-red team is run and answered, and every number traces to a committed script, a
-config, a seed and a single environment fingerprint.
+**The paper is finished and submittable as it stands.** 12 pages, 7 tables, 1
+figure, 15 references all cited and resolving, 347 of 347 numbers traced to
+`results/analysis/*.json`, 36 of 36 claim checks, 321 tests, 0 LaTeX errors.
+Nothing below is required to submit. All of it is to answer one reviewer
+objection: one model, one task.
 
-| | outcome | status |
-|---|---|---|
-| P0 | `J_bar` = 0.1396 [0.1377, 0.1418] | reported, premise holds |
-| H2 | `F` = 0.7316 [0.7247, 0.7380] | **confirmed** |
-| H3 | pooled separated; direction is a size artefact | **rejected, both readings reported** |
-| H4 | gap 0.3344 [0.3297, 0.3394]; kappa 0.0146 | **supported, with the within-size reversal reported** |
+**Second-model transfer is established.** Three conditions, all met:
 
-**What is not finished is the bibliography**, and it is the only thing blocking
-the manuscript.
+| condition | result |
+|---|---|
+| edge namespace | 32,347 against 32,491. Deficit is `n_blocks * n_heads`, all `A{b}.{h}->MLP {b}`. `parallel_mlp` flag committed at `0cd6856` |
+| tokenizer | no IOI name splits under Pythia's tokenizer |
+| task performance | Gate P passed: IO preferred 0.961, mean logit diff 117% of GPT-2 small |
+
+## Housekeeping before anything else
+
+1. **Clear the git locks** if not already done. `.git/HEAD.lock`,
+   `.git/index.lock`, `.git/objects/*/tmp_obj_*`. Left by a commit run through
+   the Cowork sandbox mount, which cannot unlink inside `.git`. Do not run git
+   write operations through that mount.
+
+2. **Copy `requirements-confirmatory.lock.txt` into the repo.** 719 lines, still
+   only on Drive. It is the exact environment all 1,540 confirmatory cells ran
+   in. It has been on the non-blocking list since 08-11 and it cost time on
+   08-12 when a fresh Colab image needed the pins rederived. It is blocking now.
+
+   The rebuild that worked, for reference:
+   `auto-circuit==1.0.1 transformer-lens==2.18.0`, then
+   `numpy==1.26.4 pandas==2.2.3`, then restart the runtime. Colab's current pandas
+   is a numpy-2 build and pip no longer downgrades it alongside numpy.
+
+## The one rule that governs this session
+
+**No discovery cell runs until the reduced grid is pre-registered.** Rule 6. The
+plan is committed with a timestamp first, results are looked at second.
 
 ## Do these in order
 
-### 1. Close the bibliography. Blocking.
+### 1. Redo the grid arithmetic from `configs/sweep.yaml`
 
-Six entries are VERIFIED and citable: `2407.08734`, `2606.00033`, `2501.16496`,
-`2504.13151`, `2308.14272`, `2512.13907`.
+The earlier "252 cells, about 18 hours" estimate is **not trustworthy and must
+not be reused.** Two time estimates were wrong this week, both by extrapolating
+from an inner loop rather than timing something end to end.
 
-Nine are not. See the "Remaining gaps" table at the end of
-`docs/CITATION-LEDGER.md`. The work, in order of risk:
+The correction that matters: **metric and threshold are applied post hoc to
+banked rankings.** That is how 1,540 discovery cells became 18,480
+specifications. They cost nothing in GPU time. Discovery cost is
 
-- **Delete "Mueller et al. 2026 on non-identifiability."** It is a misattribution
-  of `2504.13151`, which is MIB, ICML 2025, a benchmark paper. This is the one
-  that would have ended the paper.
-- **`2606.06267`.** Authors, venue and findings verified from their own
-  replication repository, but their BibTeX carries `note = {arXiv preprint, link
-  to be added}`, so **the identifier is not confirmed by the authors**. Either it
-  has resolved since, or cite the repository and author list without the ID.
-- **`2510.00845` and `2409.09951`.** Both PARTIAL. Two fetch routes failed for
-  the first. Use a browser on the abs pages, as was done for EUR-Lex.
-- **Seven name-only references.** Wang (IOI), Conmy (ACDC), Nanda (attribution
-  patching), Meloux, Steegen, Simmons, Simonsohn. Resolve each to an identifier
-  and fetch it. Steegen, Simmons and Simonsohn are RECALLED-plus: their DOIs
-  agree across three independent sources but have never been resolved directly.
+    objectives x ablation-corruption x prompt_variant x seed
 
-### 2. Figure 1, the specification curve
+so seeds are the cheap lever and every axis that enters discovery is expensive.
+`LOGIT_MSE_GRAD_PRUNE_ALGO` does not execute and contributes nothing, so six
+objectives, not seven. IEG-50 runs at roughly 200 s against EAP's 45 s on an L4,
+measured for GPT-2 small; Pythia-160m is 1.3x the parameters and the scaling is
+**INFERRED, not measured**. Time one cell end to end before committing a budget.
 
-Pre-registered in PLAN.md section 6 and never produced. Needs a decision first:
-the outcome is categorical, so "effects sorted ascending" has no direct reading.
-The defensible version sorts specifications by claim class, colours the band by
-class, and puts the dot matrix of active choices beneath. Decide, record the
-decision, then draw.
+### 2. Decide the grid. Research lead's call, not the implementer's
 
-### 3. Write the manuscript
+The live question is how far seeds drop. Reducing an axis to a single level
+removes it from the space, which changes what `F` means and makes the replication
+`F` non-comparable to the headline 0.7316. That is a design consequence, not a
+budget one, and it should be decided knowingly rather than fall out of a runtime
+target.
 
-`docs/FINDINGS.md` has every number and, more importantly, a list of five things
-the paper **must not claim**. `docs/BRIEF-AUDIT.md` records where the 3 August
-design and the executed work diverge, so no sentence written from the brief goes
-in uncorrected.
+Both outcomes must be writeable before the run. Rule 6 of the programme brief:
+draft both abstracts. If Pythia's `F` is comparable, the finding generalises
+across architecture family. If it is much lower, the paper reports that circuit
+multiplicity is model-dependent, which is a result and not a failure. If only one
+direction is writeable, the grid is wrong.
 
-Structural points that are settled and should not be relitigated:
+### 3. Pre-register, then run
 
-- Lead with the claim-flip result, not circuit instability. Circuit instability
-  at `J_bar` = 0.1396 is close to what the prior literature already reports.
-- Report every pooled figure with its within-size decomposition. Circuit size is
-  an outcome of the `tau` rule, not an axis, and it has distorted three separate
-  pooled quantities.
-- Scale limitation in the abstract, not section 7. One model, one task.
-- The `LOGIT_MSE` arm goes in methods as a discard with its rate, and in
-  discussion as an observation about instrument maturity. Not the abstract.
-- Apply the humanizer skill before finalising.
+Use the `preregistration` skill. The plan must fix, before any cell runs: the
+grid, the seeds, the dataset size and whether it is re-calibrated or inherited
+from GPT-2 (inherited needs a `DEVIATIONS.md` entry), the primary outcome, and
+what counts as replication rather than refutation.
 
-## Open engineering, none of it blocking
+`n_prompts: 256` was selected for GPT-2 by the committed calibration rule.
+Re-running that rule for Pythia costs time. Inheriting it is defensible and must
+be declared, not assumed.
 
-- The seam smoke test over every axis level. Seven defects have lived in the P1
-  to auto-circuit seam and none was caught by the torch-free test suite.
-- `requirements-confirmatory.lock.txt`, 719 lines, still on Drive, not in the repo.
+### 4. Only then, fold into the paper
+
+The replication is a section, not a rewrite. The abstract's scale limitation
+softens from "one model and one task" to whatever was actually shown, and not one
+word further.
+
+## What the replication must not be written as
+
+It measures specification instability on a second model. It does **not** measure
+mechanism equivalence across models. Gate P establishes that Pythia-160m performs
+IOI. It establishes nothing about whether it does so with an IOI-like circuit,
+and no sentence should imply otherwise.
+
+## Still open, still non-blocking
+
+- Seam smoke test over every axis level. Seven defects have lived in the P1 to
+  auto-circuit seam; none was caught by the torch-free suite.
 - EMS cross-check on the balanced five-operator block.
-- FINE and `phi_affected` null, which needs an attention cache the sweep never wrote.
+- FINE and `phi_affected` null, needs an attention cache the sweep never wrote.
 - Annex III point 2, the one provision of ten not re-checked against the
   consolidated text.
-- `scripts/repair.py` reloads every `result.json` before its skip check, so
-  resuming is slower than it needs to be.
+- `scripts/repair.py` reloads every `result.json` before its skip check.
 
 ## The rule that earned its place this week
 
 A constraint written in a design document is not a constraint enforced by
-anything. Seven defects, a dead `.gitignore` negation that meant no manifest was
-ever tracked, an estimator named without a response variable, and a citation that
-would have been fabricated all survived because they were written down and never
-checked. **The commit that records a constraint should add the thing that fails
-when it is violated.**
+anything. The 32,347 figure lives in an assertion in `tests/test_graph.py`, not
+in a comment, because that is the only version of it that fails when it is
+violated.

@@ -1,0 +1,104 @@
+# The second-model replication.
+#
+# Fixed by preregistration/PLAN-REPLICATION.md before any cell ran. Nothing here
+# may change after the prereg-p1-replication tag without an entry in
+# preregistration/DEVIATIONS.md.
+#
+#   discovery cells   7 objectives x 22 ablation-corruption x 2 prompt x 3 seed
+#                   = 924
+#   specifications    924 x 4 metrics x 3 tau
+#                   = 11,088
+#
+# Every axis is byte-identical to configs/sweep.yaml except `seed`, which drops
+# from five levels to three, and `model`. See PLAN-REPLICATION.md section 3.1 for
+# why the reduction came from seeds and not from an axis that enters discovery.
+#
+# Budget: 15.7 h INFERRED from GPT-2 small per-cell costs on an L4, 45 s for EAP
+# and 199 s for IEG-50. Not measured on this model. Four cells are timed end to
+# end before launch and the estimate is corrected in DEVIATIONS, never by editing
+# this file.
+
+name: replication_pythia
+purpose: second-model replication of the confirmatory grid
+# This is a pre-registered confirmatory run against its own locked plan, which is
+# what the flag guards. It is not the confirmatory run of PLAN.md.
+confirmatory: true
+
+model:
+  name: pythia-160m
+  device: auto
+
+model_shape:
+  # Same as GPT-2 small: 12 * 12 + 12 = 156 components. The component population
+  # is what phi reads, and it is architecture-independent here, which is why the
+  # claim map transfers verbatim rather than being reimplemented.
+  n_blocks: 12
+  n_heads_per_block: 12
+  # GPT-NeoX reads the residual stream once for attention and MLP together, so
+  # MLP b does not receive block b's heads. 32,347 edges against GPT-2 small's
+  # 32,491, a deficit of exactly n_blocks * n_heads.
+  #
+  # VERIFIED 2026-08-12 against the instrument. Consumed by the analysis layer
+  # (EdgeComponentIndex, the null multiverse, the J_rand reference line), not by
+  # scripts/sweep.py, which reads the live graph from auto-circuit.
+  parallel_mlp: true
+
+task:
+  name: ioi
+  # INHERITED from configs/sweep.yaml, not re-derived for this model. The
+  # calibration rule in CALIBRATION.md selected 256 for GPT-2 small.
+  # Re-calibrating here would make the two runs differ on a second dimension and
+  # would confound a difference in F with a difference in evaluation-set size.
+  # Declared as a deviation at lock time. See PLAN-REPLICATION.md section 3.3.
+  n_prompts: 256
+  batch_size: 8
+
+axes:
+  # Identical to configs/sweep.yaml. LOGIT_MSE_GRAD_PRUNE_ALGO is retained
+  # despite not executing on GPT-2 small: it fails fast, so it costs under seven
+  # minutes, and running it distinguishes a library-level failure from a
+  # model-level one. See PLAN-REPLICATION.md section 3.2.
+  discovery_objective:
+    - PROB_GRAD_PRUNE_ALGO
+    - LOGIT_EXP_GRAD_PRUNE_ALGO
+    - LOGPROB_GRAD_PRUNE_ALGO
+    - LOGPROB_DIFF_GRAD_PRUNE_ALGO
+    - LOGIT_DIFF_GRAD_PRUNE_ALGO
+    - LOGIT_MSE_GRAD_PRUNE_ALGO
+    - INTEGRATED_EDGE_GRADS_PRUNE_ALGO
+
+  ablation:
+    - RESAMPLE
+    - ZERO
+    - TOKENWISE_MEAN_CLEAN
+    - TOKENWISE_MEAN_CORRUPT
+    - TOKENWISE_MEAN_CLEAN_AND_CORRUPT
+    - BATCH_TOKENWISE_MEAN
+    - BATCH_ALL_TOK_MEAN
+
+  corruption:
+    - ABC
+    - RANDOM_NAME_FLIP
+    - IO_S1_FLIP
+    - IO_FROM_S2
+
+  metric:
+    - logit_diff
+    - kl_div
+    - sufficiency
+    - comprehensiveness
+
+  threshold: [0.05, 0.10, 0.20]
+
+  prompt_variant: [ABBA, BABA]
+
+  # THE ONLY REDUCTION. Five levels to three. Seed selects which prompts are
+  # sampled, so this is evaluation-set variability, not nondeterminism. The seed
+  # variance component is estimable from three levels but less precisely than
+  # from five, and must be reported with that stated.
+  seed: [0, 1, 2]
+
+  granularity: [edge]
+
+output:
+  dir: results/replication_pythia

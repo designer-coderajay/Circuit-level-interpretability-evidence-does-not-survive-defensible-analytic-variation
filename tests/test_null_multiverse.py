@@ -114,3 +114,26 @@ def test_component_ids_match_the_unique_based_definition(index):
         want = np.unique(index.table[idx].ravel())
         want = want[want != DROPPED]
         assert np.array_equal(index.component_ids(idx), want)
+
+
+def test_edge_component_index_accepts_parallel_mlp():
+    """The null must draw from the namespace the circuits actually came from.
+
+    Component population is architecture-independent, so only the edge table
+    changes. Asserted separately so a regression says which half moved.
+    """
+    from p1.null_multiverse import EdgeComponentIndex
+
+    seq = EdgeComponentIndex()
+    par = EdgeComponentIndex(parallel_mlp=True)
+
+    assert len(seq.edges) == 32_491
+    assert len(par.edges) == 32_347
+    assert par.table.shape[0] == 32_347
+
+    # Same components, same ids, same full-model denominator.
+    assert par.n_components_full_model == seq.n_components_full_model == 156
+    assert par.components == seq.components
+
+    # Default unchanged, because every committed GPT-2 number depends on it.
+    assert EdgeComponentIndex().parallel_mlp is False

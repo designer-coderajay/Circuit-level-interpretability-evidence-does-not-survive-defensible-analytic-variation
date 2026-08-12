@@ -3686,3 +3686,70 @@ seed, so reducing seeds from five is a far cheaper lever than reducing any axis
 that enters discovery. Dropping an axis to a single level removes it from the
 space and makes the resulting `F` non-comparable to the headline number, which is
 a design consequence, not a budget one, and is the research lead's call.
+
+## 2026-08-12. Replication grid locked. 924 cells, three seeds, seven objectives
+
+Decisions taken by Ajay: three seeds, `LOGIT_MSE` retained.
+
+`preregistration/PLAN-REPLICATION.md` and `configs/replication_pythia.yaml`
+written and committed **before any discovery cell runs**. Grid validated against
+`p1.spec.enumerate_grid`: 924 discovery cells, 11,088 specifications, and `seed`
+is the only axis differing from `configs/sweep.yaml`.
+
+### Two estimates corrected, both from the repo's own measured numbers
+
+**The "252 cells" figure was wrong** and is withdrawn. The block is 22
+ablation-corruption x 2 prompt variants = 44 cells per objective per seed. No
+reduction lands on 252.
+
+**The "1.3x slower on Pythia" figure is probably wrong in the other direction.**
+`PLAN.md` records a measured finding: the L4 is only 1.33x the T4 and peak VRAM is
+byte-identical, because `patchable_model` runs many small hooked operations and
+cost is bound by kernel launch and Python overhead rather than arithmetic
+throughput. Pythia-160m has the same 12 x 12 structure, so hook count is
+essentially unchanged. **INFERRED: per-cell cost close to GPT-2 small's, not 1.3x
+it.** Still inference. Four cells are timed end to end before launch, because two
+time estimates were wrong this week and both were extrapolated from an inner loop
+rather than timed end to end.
+
+### Budget from measured per-cell costs
+
+| seeds | cells | working | specs | hours |
+|---|---|---|---|---|
+| 1 | 308 | 264 | 3,168 | 5.2 |
+| 2 | 616 | 528 | 6,336 | 10.4 |
+| **3** | **924** | **792** | **9,504** | **15.7** |
+| 5 | 1,540 | 1,320 | 15,840 | 26.1 |
+
+Metric and threshold are applied post hoc to banked rankings and cost no GPU
+time, which is how 1,540 confirmatory cells became 18,480 specifications. Every
+row above already carries all four metrics and all three tolerances. Seed is
+therefore the only lever that does not remove an axis from the space.
+
+IEG-50 is 47 percent of the runtime for one of seven objective levels, at about
+199 s per cell against EAP's 45 s. Dropping it was considered and rejected: it is
+the only non-EAP method in the grid.
+
+### Code, additive only
+
+`EdgeComponentIndex(parallel_mlp=...)` threads the flag to the null, which is the
+one place in the analysis layer that must know which architecture produced the
+circuits. `scripts/jbar.py` needed no change and now says why in a comment: the
+Pythia namespace is a strict subset, so GPT-2 edge ids are safe, and a
+non-subset architecture raises `KeyError` rather than mis-mapping silently.
+322 tests pass, run this session.
+
+### What the plan fixes that is easiest to rationalise later
+
+Replication is defined before the data are seen: `F > 0.20` with the CI lower
+bound above it, filability failing at all three tolerances, and the conclusion
+holding at both COARSE and MEDIUM. The GPT-2-versus-Pythia comparison is
+**descriptive only and carries no p-value**, because the two grids share the claim
+map, the task, the templates and six of seven axes, so they are not independent
+samples of anything. Rule 3.
+
+Three conditions that would make the comparison uninterpretable are named in
+advance: claim yield below 20 percent, a materially different class count moving
+the `1 - 1/k` ceiling, and any objective beyond `LOGIT_MSE` failing to execute.
+`F` is reported as a fraction of its ceiling alongside the raw value in every
+case, not only if the third triggers.

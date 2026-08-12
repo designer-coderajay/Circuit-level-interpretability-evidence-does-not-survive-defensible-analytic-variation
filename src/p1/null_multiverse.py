@@ -39,10 +39,20 @@ DROPPED = -1
 class EdgeComponentIndex:
     """Precomputed edge endpoint to component mapping over the full namespace."""
 
-    def __init__(self, n_blocks: int = 12, n_heads: int = 12):
-        self.edges = enumerate_edges(n_blocks, n_heads)
+    def __init__(
+        self, n_blocks: int = 12, n_heads: int = 12, parallel_mlp: bool = False
+    ):
+        """`parallel_mlp` selects the GPT-NeoX edge namespace. See `p1.graph`.
+
+        The null draws from the edge population, so it is the one place in the
+        analysis layer that has to know which architecture produced the circuits.
+        The component population is identical either way, which is why nothing
+        downstream of `_component_id` changes.
+        """
+        self.edges = enumerate_edges(n_blocks, n_heads, parallel_mlp=parallel_mlp)
         self.n_blocks = n_blocks
         self.n_heads = n_heads
+        self.parallel_mlp = parallel_mlp
         self.n_components_full_model = n_blocks * n_heads + n_blocks
 
         # Component id space: attention head (b, h) -> b * n_heads + h,
