@@ -55,6 +55,7 @@ __all__ = [
     "PromptPair",
     "generate_ioi_dataset",
     "write_dataset_json",
+    "align_answer_tokenisation",
 ]
 
 Order = Literal["ABBA", "BABA"]
@@ -293,3 +294,86 @@ def write_dataset_json(dataset: dict, path: Path) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(dataset, indent=2, sort_keys=True), encoding="utf-8")
     return path
+
+
+def align_answer_tokenisation(model, names: Sequence[str] = EXAMPLE_NAMES) -> dict:
+    """Make `load_datasets_from_json` tokenise answers the way it does on GPT-2.
+
+    Why this exists
+    ---------------
+
+    `auto_circuit.data.load_datasets_from_json` tokenises answers with the raw
+    HuggingFace tokenizer, `tokenizer(a, return_tensors="pt")`, not with
+    `model.to_tokens`. It then compares dimensions downstream:
+    `auto_circuit.utils.tensor_ops.indices_vals` asserts
+    `vals.ndim == indices.ndim`, where `vals` is the sliced logits at two
+    dimensions. So an answer must tokenise to exactly one token or the run dies
+    with a bare `AssertionError` carrying no message.
+
+    The same function prepends BOS to prompts **as a string**,
+    `tokenizer.bos_token + p`, and then tokenises. A tokenizer that also inserts
+    BOS itself therefore produces two.
+
+    **VERIFIED 2026-08-12 on an L4**, identical dataset, identical loader call:
+
+        gpt2          clean (8, 16)  answers (8, 1)     first3 [50256, 6423, 3271]
+        pythia-160m   clean (8, 17)  answers (8, 1, 2)  first3 [0, 0, 5872]
+        pythia fixed  clean (8, 16)  answers (8, 1)     first3 [0, 5872, 5119]
+
+    Two defects, not one. The answer shape is what raises; the doubled BOS on
+    every prompt is silent and would have corrupted the run without stopping it.
+
+    What this does not do
+    ---------------------
+
+    **`auto-circuit` is not modified.** This configures the model object handed
+    to it so the instrument receives input in the form it was written for. The
+    alternative is not "unmodified instrument", it is "instrument fed doubled BOS
+    and three-dimensional answers", which is not what it consumes on GPT-2 and
+    would make the two runs incomparable.
+
+    Keyed on behaviour, not on a flag
+    ---------------------------------
+
+    `add_bos_token` reads `True` on **both** tokenizers, so it does not explain
+    the difference and a fix conditioned on it would change GPT-2 as well. The
+    two fast tokenizers differ in their post-processors; **why GPT-2 does not
+    double under the same flag is not explained here, and is not guessed at.**
+
+    So the condition is the measurement: tokenise the answer strings, and act
+    only if one of them is not a single token. On GPT-2 nothing happens and
+    `changed` is False, which the confirmatory reproduction depends on.
+
+    Raises
+    ------
+    RuntimeError
+        If any answer still fails to tokenise to one token afterwards. Loud
+        failure, because the alternative is a silent three-dimensional tensor
+        that raises 32,000 edges later with no message.
+    """
+    tok = model.tokenizer
+
+    def widths() -> dict[str, int]:
+        return {n: len(tok(" " + n)["input_ids"]) for n in names}
+
+    before = widths()
+    changed = False
+    if max(before.values()) > 1:
+        tok.add_bos_token = False
+        changed = True
+
+    after = widths()
+    bad = sorted(n for n, w in after.items() if w != 1)
+    if bad:
+        raise RuntimeError(
+            "answer strings must tokenise to exactly one token for "
+            "auto-circuit's answer handling; these do not: "
+            + ", ".join(f"{n!r}={after[n]}" for n in bad)
+        )
+
+    return {
+        "changed": changed,
+        "max_width_before": max(before.values()),
+        "max_width_after": max(after.values()),
+        "n_names": len(names),
+    }

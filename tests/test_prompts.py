@@ -345,3 +345,84 @@ def test_corruption_changes_the_dataset():
     assert len(set(seen.values())) == len(CORRUPTION_LEVELS), (
         "two corruption levels produced identical corrupt prompts"
     )
+
+
+# --- align_answer_tokenisation -------------------------------------------
+#
+# Fakes rather than real tokenizers, so these run in the torch-free environment.
+# The behaviour being modelled is VERIFIED on the real thing, 2026-08-12: GPT-2
+# yields one token per answer, Pythia-160m yields two until `add_bos_token` is
+# cleared, and both report the flag as True beforehand.
+
+
+class _FakeTokenizer:
+    """Minimal stand-in. `add_bos_token` prepends a BOS id, as Pythia's does."""
+
+    def __init__(self, add_bos_token: bool, honours_flag: bool = True,
+                 width: int = 1):
+        self.add_bos_token = add_bos_token
+        self._honours_flag = honours_flag
+        self._width = width
+
+    def __call__(self, text: str):
+        ids = list(range(self._width))
+        if self.add_bos_token and self._honours_flag:
+            ids = [0] + ids
+        return {"input_ids": ids}
+
+
+class _FakeModel:
+    def __init__(self, tokenizer):
+        self.tokenizer = tokenizer
+
+
+def test_alignment_is_a_no_op_when_answers_are_already_single_tokens():
+    """The GPT-2 case. Every confirmatory number depends on nothing happening.
+
+    Note the flag is True here and is still not touched, because the condition
+    is the measured width and not the flag.
+    """
+    from p1.prompts import align_answer_tokenisation
+
+    tok = _FakeTokenizer(add_bos_token=True, honours_flag=False)
+    info = align_answer_tokenisation(_FakeModel(tok), names=("John", "Mary"))
+
+    assert info["changed"] is False
+    assert info["max_width_before"] == 1
+    assert tok.add_bos_token is True
+
+
+def test_alignment_clears_the_flag_when_a_bos_is_being_prepended():
+    """The Pythia case: two tokens becomes one, and the flag is cleared."""
+    from p1.prompts import align_answer_tokenisation
+
+    tok = _FakeTokenizer(add_bos_token=True)
+    info = align_answer_tokenisation(_FakeModel(tok), names=("John", "Mary"))
+
+    assert info["changed"] is True
+    assert info["max_width_before"] == 2
+    assert info["max_width_after"] == 1
+    assert tok.add_bos_token is False
+
+
+def test_alignment_raises_loudly_when_a_name_is_genuinely_multi_token():
+    """A model whose tokenizer splits the names cannot run this dataset.
+
+    It must say so here rather than 32,000 edges later as a bare AssertionError
+    inside the instrument, which is what actually happened on 2026-08-12.
+    """
+    import pytest
+
+    from p1.prompts import align_answer_tokenisation
+
+    tok = _FakeTokenizer(add_bos_token=False, width=2)
+    with pytest.raises(RuntimeError, match="exactly one token"):
+        align_answer_tokenisation(_FakeModel(tok), names=("John", "Mary"))
+
+
+def test_alignment_defaults_to_the_p1_name_set():
+    from p1.prompts import EXAMPLE_NAMES, align_answer_tokenisation
+
+    tok = _FakeTokenizer(add_bos_token=True)
+    info = align_answer_tokenisation(_FakeModel(tok))
+    assert info["n_names"] == len(EXAMPLE_NAMES)

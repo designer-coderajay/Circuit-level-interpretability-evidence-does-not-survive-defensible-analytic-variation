@@ -853,3 +853,118 @@ shape of the 144-edge deficit, and that the default has not moved.
 Additive, in `src/p1/`, defaulting to GPT-2 behaviour. **`auto-circuit` is
 untouched.** No committed GPT-2 number changes, which the default guard asserts
 rather than claims.
+
+---
+
+### 2026-08-12. Post-lock. Answer tokenisation on Pythia: two defects, 924 of 924 cells failed
+
+**Post-lock.** `prereg-p1-replication` was tagged at `e1fdd6e` before any cell
+ran. This change comes after and is reported as a deviation, not folded in
+silently.
+
+#### What happened
+
+The 924-cell run was launched and every cell failed in about one second.
+Manifests recorded `data_s 0.069`, no `discovery_s`, and
+`AssertionError: ` with no message. 228 manifests, 228 failures, 0 ok.
+
+Traced to `auto_circuit/utils/tensor_ops.py`:
+
+```python
+def indices_vals(vals, indices):
+    assert vals.ndim == indices.ndim
+```
+
+`vals` is the sliced logits at two dimensions. `answers` arrived at three.
+
+#### Root cause: the loader does not tokenise the way the probe did
+
+`auto_circuit.data.load_datasets_from_json` tokenises answers with the **raw
+HuggingFace tokenizer**, `tokenizer(a, return_tensors="pt")`, not with
+`model.to_tokens`. The 2026-08-12 transfer probe checked
+`model.to_tokens(" " + name, prepend_bos=False)` and reported every IOI name as a
+single token. **That check passed for a reason that did not transfer**, because
+it exercised a different call path from the one the instrument uses.
+
+Twenty lines above the answer tokenisation, the same function does:
+
+```python
+if prepend_bos:
+    clean_prompts = [tokenizer.bos_token + p for p in clean_prompts]
+...
+clean_prompts = tokenizer(clean_prompts, padding=pad, return_tensors="pt")
+```
+
+BOS is prepended **as a string**, and then the tokenizer is invoked. A tokenizer
+that also inserts BOS produces two.
+
+#### Two defects, and only one of them was loud
+
+**VERIFIED 2026-08-12 on an L4**, identical dataset, identical loader call, all
+three rows measured in one session:
+
+| model | `add_bos_token` | `clean` | `answers` | first 3 clean ids |
+|---|---|---|---|---|
+| gpt2 | True | (8, 16) | (8, 1) | 50256, 6423, 3271 |
+| pythia-160m | True | (8, 17) | **(8, 1, 2)** | **0, 0**, 5872 |
+| pythia-160m, adjusted | True | (8, 16) | (8, 1) | 0, 5872, 5119 |
+
+1. **Answers tokenised to two tokens.** Loud. This is what raised.
+2. **Every prompt received a doubled BOS**, `[0, 0, ...]` against GPT-2's single
+   `[50256, ...]`, and one extra position, 17 against 16. **Silent.** It would
+   have run to completion and produced 9,504 specifications computed on prompts
+   that differ structurally from the GPT-2 run.
+
+The assertion did the study a favour. Defect 2 alone would have yielded a
+publishable-looking `F` from a corrupted comparison.
+
+#### The fix, and what it is not
+
+`p1.prompts.align_answer_tokenisation(model)`, called once in `scripts/sweep.py`
+after `load_tl_model`.
+
+**`auto-circuit` is not modified.** The instrument is untouched. What changes is
+the configuration of the model object handed to it, so that it receives input in
+the form it consumes on GPT-2. The alternative is not an unmodified instrument;
+it is an instrument fed doubled BOS and three-dimensional answers, which is not
+what it consumes on GPT-2 and would make the two runs incomparable. Reproducing
+the instrument verbatim includes reproducing how it prepares its input, which is
+a rule this repository already adopted on 2026-08-04 after the `load_tl_model`
+defect.
+
+**Keyed on behaviour, not on a flag, and the reason is an admission.**
+`add_bos_token` reads `True` on **both** tokenizers. It therefore does not
+explain the difference, and a fix conditioned on it would also alter GPT-2 and
+put every confirmatory number at risk. **Why GPT-2 does not double under the same
+flag is not explained and is not guessed at**; the two fast tokenizers differ in
+their post-processors and that was not run down. The condition used instead is
+the measured token width of the answer strings. On GPT-2 the function is a no-op
+and reports `changed: False`, which four tests assert.
+
+**Fails loudly.** If any answer still fails to tokenise to one token, it raises
+`RuntimeError` naming the offending strings. A model whose tokenizer genuinely
+splits the IOI names cannot run this dataset, and it must say so at load rather
+than 32,000 edges later with no message.
+
+**Second guard.** `scripts/sweep.py` now checks `answers.ndim == 2` on the first
+batch of every cell and raises with the observed shape. Cheap, and it catches the
+invariant at the point where it is readable.
+
+**Recorded per cell.** Manifest notes carry `tokenizer_bos_adjusted=<bool>`, so
+the adjustment is visible in the results tree rather than only in this file.
+
+#### Effect on the confirmatory run: none, and it is asserted rather than claimed
+
+`align_answer_tokenisation` takes no action when answers are already single
+tokens. `tests/test_prompts.py` asserts the no-op case leaves the flag untouched
+even when it reads `True`, which is the GPT-2 configuration. No confirmatory
+number is recomputed and none can change.
+
+#### The rule this cost, for the third time
+
+`RESEARCH_LOG.md` 2026-08-08 records that the P1 to auto-circuit seam has carried
+seven defects and that a smoke test exercising every axis level once, about four
+minutes of GPU time, does not exist. It was listed as non-blocking on 08-11 and
+again twice on 08-12. **This is the eighth defect and the first to reach a
+launched run.** The smoke test is now a precondition of relaunch, not an item on
+a list.

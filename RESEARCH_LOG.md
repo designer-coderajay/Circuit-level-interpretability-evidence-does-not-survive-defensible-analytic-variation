@@ -3753,3 +3753,117 @@ advance: claim yield below 20 percent, a materially different class count moving
 the `1 - 1/k` ceiling, and any objective beyond `LOGIT_MSE` failing to execute.
 `F` is reported as a fraction of its ceiling alongside the raw value in every
 case, not only if the third triggers.
+
+### Replication launch. Code identity is a record this time, not an argument
+
+`DEVIATIONS.md`, 2026-08-11, records that the confirmatory sweep's manifests
+carry `commit: UNKNOWN`, because the sweep ran from a tarball rather than a clone
+and there was no `.git` to read. Code identity had to be established after the
+fact by arguing from an empty `git diff --stat 5371629..HEAD`, and that argument
+establishes only that the repository did not change, **not** that the tarball
+matched it.
+
+Closed for this run. The archive was cut from the tag rather than the working
+tree, and the hash was checked on both ends before a cell ran:
+
+```
+git archive --format=tar.gz -o ~/Desktop/p1_replication.tar.gz prereg-p1-replication
+tag prereg-p1-replication = e1fdd6e2835c99f8dc1866cb00ba60db804dd97d
+md5 (Mac)   23baf309b07059dacbe447256d8d70fc
+md5 (Colab) 23baf309b07059dacbe447256d8d70fc
+```
+
+`git archive` from a tag emits the tagged tree and nothing else, so the tarball
+identity is provable rather than inferred. **VERIFIED 2026-08-12.**
+
+### Environment. Identical to the confirmatory sweep on every fingerprinted package
+
+```
+auto-circuit 1.0.1 | torch 2.11.0+cu128 | transformer-lens 2.18.0 | numpy 1.26.4
+```
+
+All four match the single environment fingerprint recorded across all 1,540
+confirmatory cells. pandas differs, 2.2.3 here against 2.0.3 then, and pandas is
+neither in `src/p1/manifest.py`'s fingerprint nor on the sweep path.
+
+**Consequence, and it is worth more than it cost:** a difference in `F` between
+the two runs cannot be attributed to a library version change. That confound is
+removed by observation rather than by assumption, and it was free.
+
+### Launch state
+
+Dry run: `specifications 11,088`, `discovery cells 924`, `already complete 0`,
+`to run 924`. Device NVIDIA L4. Output written to Drive, so a recycled VM costs
+the cell in flight.
+
+Checkpoint 1 per `PLAN-REPLICATION.md` section 8: the opening cells are all
+`PROB_GRAD`, which is EAP, costing 45 s per cell on GPT-2 small. **Cut line is
+67.5 s per EAP cell**, the 1.5x rule. Above it, seeds drop from three to two and
+the measured rate that triggered the cut is recorded here.
+
+## 2026-08-12. Launch failed at 228 of 228 cells. Answer tokenisation. Eighth seam defect
+
+Run launched, every cell failed in about a second, `ok 0 failed 228`. Stopped.
+
+`AssertionError` with no message from `auto_circuit/utils/tensor_ops.py`,
+`assert vals.ndim == indices.ndim`: sliced logits at 2-D against answers at 3-D.
+
+**Cause.** `load_datasets_from_json` tokenises answers with the raw HuggingFace
+tokenizer, not with `model.to_tokens`. The transfer probe earlier the same day
+checked `to_tokens(" " + name, prepend_bos=False)` and reported single tokens.
+**The check passed for a reason that did not transfer**, because it exercised a
+different call path from the one the instrument uses.
+
+**Two defects, one silent.** VERIFIED in a single session, same dataset, same
+loader call:
+
+| model | clean | answers | first 3 clean ids |
+|---|---|---|---|
+| gpt2 | (8, 16) | (8, 1) | 50256, 6423, 3271 |
+| pythia-160m | (8, 17) | (8, 1, 2) | **0, 0**, 5872 |
+| pythia-160m adjusted | (8, 16) | (8, 1) | 0, 5872, 5119 |
+
+The answer shape is what raised. **Every prompt was also getting a doubled BOS**,
+and that one would not have raised at all. It would have produced 9,504
+specifications on prompts structurally unlike the GPT-2 run and a comparison that
+looked fine. The assertion did the study a favour.
+
+**Fix.** `p1.prompts.align_answer_tokenisation`, called once after
+`load_tl_model`. Keyed on measured token width, **not** on `add_bos_token`, which
+reads `True` on both tokenizers and so explains nothing. Why GPT-2 does not
+double under the same flag was not run down and is recorded as unexplained rather
+than guessed at. No-op on GPT-2, asserted by test. `auto-circuit` untouched.
+Second guard added: `answers.ndim == 2` checked on the first batch of every cell.
+Manifests carry `tokenizer_bos_adjusted`. 326 tests pass.
+
+### What this says about the probe discipline
+
+Both the transfer probe and Gate P were run on `to_tokens`. Both passed. Both
+were measuring something adjacent to what the sweep does. **A probe that does not
+call the same function the instrument calls is not a probe of the instrument.**
+The 2026-08-04 rule, "reproducing the instrument verbatim includes reproducing
+how it prepares its input", was written about `load_tl_model` and applies here
+unchanged. It was not applied.
+
+Gate P's conclusion is unaffected: it measured behaviour through the model's own
+forward pass, and IOI performance does not depend on how answers are batched.
+The transfer probe's edge count is unaffected: 32,347 came from the instrument.
+
+### Revision to the relaunch precondition, stated rather than quietly dropped
+
+The DEVIATIONS entry says the 49-cell seam smoke test is now a precondition of
+relaunch. **Revised, with the reasoning, because it was written in irritation
+rather than from an argument.**
+
+This defect is model-global: it broke every cell identically, so one successful
+cell disproves it. The axis-specific seam defects were found during the
+confirmatory run and are exercised by it. A 49-cell sweep is not proportionate to
+the remaining risk.
+
+The remaining risk that **is** worth buying out is ordering.
+`INTEGRATED_EDGE_GRADS` runs last, so a failure specific to it surfaces after
+about thirteen hours. Precondition for relaunch is therefore one EAP discovery
+and one IEG-50 discovery, run directly, before the grid starts.
+
+The 49-cell seam test remains worth building and stays on the open list, now with
+an eighth defect behind it.

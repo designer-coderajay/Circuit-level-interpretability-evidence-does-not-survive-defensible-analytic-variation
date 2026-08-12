@@ -178,7 +178,11 @@ def main() -> int:
     from p1.features import components_from_nodes, features_from_circuit
     from p1.manifest import Manifest
     from p1.metrics import DegenerateMetric, normalised_recovery, select_rung
-    from p1.prompts import generate_ioi_dataset, write_dataset_json
+    from p1.prompts import (
+        align_answer_tokenisation,
+        generate_ioi_dataset,
+        write_dataset_json,
+    )
 
     dev = cfg["model"]["device"]
     if dev == "auto":
@@ -188,6 +192,20 @@ def main() -> int:
     print(f"device           {gpu}")
 
     model = load_tl_model(cfg["model"]["name"], device)
+
+    # `load_datasets_from_json` tokenises answers with the raw HuggingFace
+    # tokenizer and requires exactly one token per answer, and it prepends BOS to
+    # prompts as a string before tokenising. A tokenizer that inserts BOS itself
+    # therefore produces three-dimensional answers and doubled BOS on every
+    # prompt. On GPT-2 this is a no-op and `changed` is False.
+    #
+    # Keyed on the measured token width, not on `add_bos_token`, which reads True
+    # on both tokenizers and so does not explain the difference. See
+    # `p1.prompts.align_answer_tokenisation` and DEVIATIONS 2026-08-12.
+    align = align_answer_tokenisation(model)
+    print(f"answer tokens    {align['max_width_before']} -> "
+          f"{align['max_width_after']}   tokenizer adjusted: {align['changed']}")
+
     pmodel = patchable_model(
         model, factorized=True, slice_output="last_seq",
         separate_qkv=True, device=device,
@@ -207,7 +225,8 @@ def main() -> int:
         cell_dir = out_dir / cell_id
         cell_dir.mkdir(parents=True, exist_ok=True)
         timings: dict[str, float] = {}
-        notes = [f"device={dev}", f"gpu={gpu}", f"n_edges={n_edges}"]
+        notes = [f"device={dev}", f"gpu={gpu}", f"n_edges={n_edges}",
+                 f"tokenizer_bos_adjusted={align['changed']}"]
         status = "ok"
         payload: dict = {}
 
@@ -243,6 +262,20 @@ def main() -> int:
                 train_test_size=(n_disc, n_disc), random_seed=head.seed,
             )
             timings["data_s"] = round(time.perf_counter() - t0, 3)
+
+            # The invariant that broke on 2026-08-12, asserted where it is cheap
+            # to read rather than left to surface as a bare AssertionError deep
+            # inside `indices_vals`. `answers` must be two-dimensional, matching
+            # the sliced logits; a third dimension means answers tokenised to
+            # more than one token. See DEVIATIONS 2026-08-12.
+            probe_batch = next(iter(train_loader))
+            if probe_batch.answers.ndim != 2:
+                raise RuntimeError(
+                    "answers must be 2-D to match the sliced logits; got shape "
+                    f"{tuple(probe_batch.answers.shape)}. Answer strings are "
+                    "tokenising to more than one token."
+                )
+            del probe_batch
 
             # ---- discovery -------------------------------------------------
             params = dict(DISCOVERY_OBJECTIVE_PARAMS[head.discovery_objective])
