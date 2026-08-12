@@ -76,8 +76,26 @@ def parse_node(name: str) -> Node:
     raise ValueError(f"unrecognised node name: {name!r}")
 
 
-def enumerate_edges(n_blocks: int = 12, n_heads: int = 12) -> tuple[str, ...]:
-    """Every edge name in the patchable graph, in a deterministic order."""
+def enumerate_edges(
+    n_blocks: int = 12, n_heads: int = 12, parallel_mlp: bool = False
+) -> tuple[str, ...]:
+    """Every edge name in the patchable graph, in a deterministic order.
+
+    `parallel_mlp` selects the GPT-NeoX residual layout, in which MLP `b` reads
+    the residual stream *before* block `b`'s attention writes to it, so it does
+    not receive that block's heads. GPT-2 is sequential and is the default.
+
+    The flag exists because the P1 harness was written against GPT-2 small and
+    the second-model replication uses Pythia-160m, which has the same block and
+    head counts but not the same edge namespace. Defaulting to False keeps every
+    committed GPT-2 number byte-identical.
+
+    VERIFIED 2026-08-12 on a Colab CPU runtime, `auto-circuit` 1.0.1: Pythia-160m
+    under `patchable_model(factorized=True, separate_qkv=True)` reports 32,347
+    edges against GPT-2 small's 32,491. The 144-edge deficit is `n_blocks *
+    n_heads`, and every absent edge has the form `A{b}.{h}->MLP {b}`. The count
+    is predicted by the ordering below, not fitted to the observation.
+    """
     edges: list[str] = []
     sources: list[str] = ["Resid Start"]
     for b in range(n_blocks):
@@ -85,8 +103,12 @@ def enumerate_edges(n_blocks: int = 12, n_heads: int = 12) -> tuple[str, ...]:
         for h in heads:
             for slot in ("Q", "K", "V"):
                 edges.extend(f"{s}->{h}.{slot}" for s in sources)
-        sources.extend(heads)
-        edges.extend(f"{s}->MLP {b}" for s in sources)
+        if parallel_mlp:
+            edges.extend(f"{s}->MLP {b}" for s in sources)
+            sources.extend(heads)
+        else:
+            sources.extend(heads)
+            edges.extend(f"{s}->MLP {b}" for s in sources)
         sources.append(f"MLP {b}")
     edges.extend(f"{s}->Resid End" for s in sources)
     return tuple(edges)

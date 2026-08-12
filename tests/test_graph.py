@@ -35,6 +35,39 @@ def test_edges_are_distinct():
     assert len(set(edges)) == len(edges)
 
 
+def test_parallel_mlp_matches_pythia_160m():
+    """32,347 is what auto-circuit reports for Pythia-160m.
+
+    VERIFIED 2026-08-12 on a Colab CPU runtime, auto-circuit 1.0.1,
+    transformer-lens 2.18.0. Same block and head counts as GPT-2 small, 144
+    fewer edges, because GPT-NeoX runs attention and MLP in parallel off the
+    same residual read.
+
+    Asserted as three separate facts so a regression says which one broke: the
+    count, the containment, and the shape of what is absent.
+    """
+    seq = set(enumerate_edges())
+    par = set(enumerate_edges(parallel_mlp=True))
+
+    assert len(par) == 32_347
+    assert par < seq
+
+    missing = seq - par
+    assert len(missing) == 12 * 12
+    for name in missing:
+        src, _, dest = name.partition("->")
+        assert dest.startswith("MLP ")
+        assert parse_node(src).head_idx is not None
+        # The head is in the same block as the MLP it does not reach.
+        assert dest == f"MLP {src.split('.')[0][1:]}", name
+
+
+def test_parallel_mlp_defaults_off():
+    """Every committed GPT-2 number depends on this default not moving."""
+    assert enumerate_edges() == enumerate_edges(parallel_mlp=False)
+    assert len(enumerate_edges()) == 32_491
+
+
 def test_no_edge_points_backwards():
     """Every source must precede its destination in computation order."""
     for name in enumerate_edges():

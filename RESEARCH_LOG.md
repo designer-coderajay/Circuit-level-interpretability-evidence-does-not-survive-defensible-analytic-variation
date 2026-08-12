@@ -3532,3 +3532,157 @@ requirement of 0.80 at the loosest pre-registered tolerance.
 Reported four-decimal figures are correct roundings of the computed values:
 `F` 0.731611 to 0.7316, `pi*` 0.410924 to 0.4109, `J_bar` 0.139591 to 0.1396,
 gap 0.334441 to 0.3344, size-fixed COARSE 0.270551 to 0.2706.
+
+---
+
+## 2026-08-12. Pythia-160m transfer probe. Edge namespace differs by 144, explained
+
+### Why a probe at all
+
+The paper's stated limitation is one model, one task. The second-model candidate
+had to satisfy a hard constraint: **the same 32,491-edge namespace, or the harness
+does not transfer.** Closed-form edge counts over candidate architectures:
+
+| model | blocks x heads | edges | 1,320-cell budget |
+|---|---|---|---|
+| GPT-2 small | 12 x 12 | 32,491 | 19.4 h, measured |
+| GPT-2 medium / Pythia-410m | 24 x 16 | 231,877 | ~12 days, INFERRED |
+| GPT-2 large | 36 x 20 | 810,703 | over a year, INFERRED |
+| **Pythia-160m** | **12 x 12** | **predicted 32,491** | **feasible** |
+
+Pythia-160m was selected on that arithmetic. Two risks were stated before running
+anything, and refused rather than assumed away: GPT-NeoX runs attention and MLP in
+parallel, which would break the edge formula; and a different tokenizer might
+split IOI names, which would break the dataset generator's validity check.
+
+### Probe result, VERIFIED
+
+Colab CPU runtime, `auto-circuit` 1.0.1, `transformer-lens` 2.18.0:
+
+```
+blocks 12 heads 12 edges 32347
+multi-token names: none
+```
+
+**32,347, not 32,491. Deficit 144 = n_blocks x n_heads.** The parallel-residual
+risk is real. Confirmed by reconstruction rather than by inspection: adding a
+`parallel_mlp` ordering to `enumerate_edges`, in which MLP `b` reads the residual
+stream before block `b`'s attention writes to it, predicts 32,347 exactly. The
+parallel namespace is a strict subset of the sequential one, and all 144 absent
+edges have the form `A{b}.{h}->MLP {b}`. The count is predicted by the ordering,
+not fitted to the observation, which is the same standard the GPT-2 count met.
+
+Tokenizer risk did not materialise. No IOI name splits under Pythia's tokenizer,
+so `p1.prompts` transfers unchanged.
+
+**What this does not threaten.** The component namespace is unchanged: 12 x 12 + 12
+= 156. `phi` reads components, not edges, so the claim map transfers verbatim and
+does not become a second instrument. Only the null multiverse, which draws from
+the edge population, needs the flag.
+
+### Committed
+
+`enumerate_edges(parallel_mlp=False)` by default, so every GPT-2 number is
+byte-identical. Two tests added: the Pythia count with its containment and the
+shape of the deficit, and a guard that the default has not moved. 321 tests pass,
+run this session.
+
+Per the standing rule that a commit recording a constraint should add the thing
+that fails when it is violated: the 32,347 figure lives in an assertion, not in a
+comment.
+
+### Environment note, and a cost that should not recur
+
+The probe cost three attempts. First failed because a heredoc was pasted into a
+Colab `!` cell, which the magic cannot parse. Second failed on
+`numpy.dtype size changed, Expected 96 ... got 88`: `transformer-lens` 2.18.0
+pins numpy down to 1.26.4, as recorded on 2026-08-04, but Colab's image has moved
+and its pandas is now a numpy-2 build, so pip no longer downgrades pandas
+alongside. Resolved by pinning `pandas==2.2.3` with `numpy==1.26.4` and restarting
+the runtime.
+
+This is the third VM rebuild to cost time and the second to cost it a new way.
+`requirements-confirmatory.lock.txt`, 719 lines, is the exact environment all
+1,540 confirmatory cells ran in and is **still on Drive, not in the repo**. It has
+been on the non-blocking list since 08-11. It is now blocking and should be copied
+in at the next Drive mount.
+
+### Open, before any replication cell runs
+
+**Kill gate, not yet run: does Pythia-160m perform IOI at all?** Circuit discovery
+on a model that cannot do the task measures nothing. No number below is meaningful
+until the clean-prompt logit difference is measured and compared against a
+pre-committed floor. Rule 9 applies: if the gate fails, the replication stops and
+is reported as attempted, not quietly reallocated to another model.
+
+Pre-registration for the reduced grid is written **after** the gate and **before**
+any discovery cell, per rule 6.
+
+### Gate P. Does Pythia-160m perform IOI? PASSED
+
+Thresholds were committed in writing before the cell ran, and are recorded here
+in the form they were committed rather than reconstructed afterwards.
+
+**Gate P.** Pythia-160m passes iff, on 128 ABBA clean prompts at seed 0:
+(1) IO logit exceeds S logit on at least **80%** of prompts, and
+(2) mean (IO - S) logit difference is at least **50%** of GPT-2 small's, measured
+in the same cell on the same prompts. Both must hold.
+
+The 80% and 50% figures are judgement, not derived from literature, and were
+stated as such when committed. An absolute nat threshold was rejected because
+logit differences are not comparable across tokenizers and vocabularies, so the
+reference is the model the paper actually studies.
+
+VERIFIED 2026-08-12, Colab CPU, `load_tl_model`, 256 forwards:
+
+| model | mean logit diff | IO preferred |
+|---|---|---|
+| gpt2 | +3.0061 | 0.977 |
+| pythia-160m | **+3.5158** | **0.961** |
+
+Criterion 1: 0.961 >= 0.80. Criterion 2: ratio **1.1696**, so 117% of GPT-2
+small against a floor of 50%. Neither is a near miss, so no threshold is under
+pressure to be revisited after the fact.
+
+**Observation, not a finding.** Pythia-160m has the higher mean and the lower
+accuracy. A mean that rises while the hit rate falls is a heavier tail, not
+uniformly stronger performance. Immaterial to the gate. The mean must not be
+reported in the paper without the accuracy beside it.
+
+**What the gate does not establish.** That Pythia-160m implements IOI with an
+IOI-like circuit. It establishes only that the behaviour is present, which is the
+precondition for discovery on it to measure anything. The replication measures
+specification instability, not mechanism equivalence across models, and must not
+be written as though it measures the latter.
+
+**Coherence check, RECALLED and not verified.** GPT-2 small's +3.0061 is in the
+neighbourhood of the IOI logit differences reported in the original literature.
+Different templates and a different prompt set, so this is a smell test that
+nothing is grossly wrong, not evidence, and no number from it enters the paper.
+
+**Caveat on the prompt set.** Regenerated inline in the gate cell rather than
+loaded from `p1.prompts`, so the RNG call order differs and this is not the
+sweep's dataset. Adequate for a behavioural gate. Anything downstream uses the
+repo generator.
+
+### Transfer established. Three conditions, all met
+
+| condition | result |
+|---|---|
+| edge namespace | differs by 144, fully characterised, `parallel_mlp` flag committed |
+| tokenizer | no IOI name splits |
+| task performance | Gate P passed, 117% of GPT-2 small |
+
+### Stop point, and what the next session must not skip
+
+**No discovery cell runs until the reduced grid is pre-registered.** Rule 6.
+
+The grid arithmetic in the earlier estimate of "252 cells, 18 h" is **not
+trustworthy and must be redone from `configs/sweep.yaml`, not from memory.** The
+correction that matters: metric and threshold are applied post hoc to banked
+rankings, which is how 1,540 discovery cells became 18,480 specifications. They
+cost nothing in GPU time. The cost is objectives x ablation-corruption x prompt x
+seed, so reducing seeds from five is a far cheaper lever than reducing any axis
+that enters discovery. Dropping an axis to a single level removes it from the
+space and makes the resulting `F` non-comparable to the headline number, which is
+a design consequence, not a budget one, and is the research lead's call.
