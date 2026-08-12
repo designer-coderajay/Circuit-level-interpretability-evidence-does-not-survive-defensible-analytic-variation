@@ -427,3 +427,52 @@ patching, and the Steegen/Simmons/Simonsohn trio at RECALLED-plus.
 
 **Deleted: one.** Mueller et al. 2026 on non-identifiability, a misattribution of
 2504.13151.
+
+## Foundational MI references resolved, 2026-08-11. One more misattribution found.
+
+Read from the abs page DOM in a browser.
+
+| ID | Exact title as fetched | Authors | Venue | Date | State |
+|---|---|---|---|---|---|
+| 2211.00593 | Interpretability in the Wild: a Circuit for Indirect Object Identification in GPT-2 small | Kevin Wang, Alexandre Variengien, Arthur Conmy, Buck Shlegeris, Jacob Steinhardt | **none on the arXiv record** | Submitted 1 Nov 2022, v1 | **VERIFIED** |
+| 2304.14997 | Towards Automated Circuit Discovery for Mechanistic Interpretability | Arthur Conmy, Augustine N. Mavor-Parker, Aengus Lynch, Stefan Heimersheim, Adria Garriga-Alonso | **NeurIPS 2023 Spotlight** (Comments) | v1 28 Apr 2023, **v4 28 Oct 2023** | **VERIFIED** |
+| 2310.10348 | Attribution Patching Outperforms Automated Circuit Discovery | **Aaquib Syed, Can Rager, Arthur Conmy** | **NeurIPS 2023 ATTRIB Workshop** (Comments) | v1 16 Oct 2023, **v2 20 Nov 2023** | **VERIFIED** |
+
+### "Nanda et al., attribution patching" is a misattribution. Second of the session.
+
+The brief lists attribution patching under **Nanda et al.** The paper is
+**Syed, Rager and Conmy**, `2310.10348`. Neel Nanda is not an author.
+
+**This one is load-bearing.** Edge attribution patching is the method behind six
+of this paper's seven discovery objectives, so it is cited in the methods section,
+not just in related work. Attributing the field's EAP paper to the wrong authors
+in a paper that stress-tests EAP would be a bad look on top of being wrong.
+
+Neel Nanda is associated with attribution patching through earlier informal
+writing. If that lineage is worth stating, it needs its own verified source and
+must not be folded into the citation for `2310.10348`.
+
+### 2211.00593 carries no venue on the arXiv record
+
+No Comments field and no journal-ref. It is widely cited as ICLR 2023, but **the
+arXiv record does not say so and this ledger does not assert it.** If the venue
+is wanted, verify it against OpenReview and add a dated row. Otherwise cite the
+arXiv record alone.
+
+This paper already carries weight in the project beyond related work: the four
+corruption levels of the corruption axis were transcribed from its section 3 and
+appendix A, so it is a methods citation.
+
+### Running count
+
+**Verified and citable: eleven.** 2407.08734, 2606.00033, 2501.16496, 2504.13151,
+2308.14272, 2512.13907, 2510.00845, 2502.20914, 2211.00593, 2304.14997,
+2310.10348.
+
+**Still open: four.** 2409.09951 (authors, venue), 2606.06267 (identifier
+disputed by its own authors), and the Steegen/Simmons/Simonsohn trio at
+RECALLED-plus.
+
+**Deleted: two.** "Mueller et al. 2026 on non-identifiability", a misattribution
+of 2504.13151. "Nanda et al., attribution patching", a misattribution of
+2310.10348.
