@@ -592,3 +592,48 @@ interstitial. `2606.06267`, identifier disputed by its own authors.
 
 Under the skill's rule, **the bibliography may not yet be described as checked**,
 and the two open items must be named wherever the count is reported.
+
+## Both open citations closed, 2026-08-12. Bibliography is complete.
+
+| ID | Exact title as fetched | Authors | Venue | Date | State |
+|---|---|---|---|---|---|
+| PMID 22006061 | False-positive psychology: undisclosed flexibility in data collection and analysis allows presenting anything as significant | Joseph P. Simmons, Leif D. Nelson, Uri Simonsohn | Psychological Science 22(11), 1359-1366 | Nov 2011 | **VERIFIED** |
+| 2606.06267 | Many Circuits, One Mechanism: Input Variation and Evaluation Granularity in Circuit Discovery | Alireza Bayat Makou, Jingcheng Niu, Subhabrata Dutta, Iryna Gurevych | none stated; Comments read "90 pages, 53 figures" | Submitted 4 Jun 2026 | **VERIFIED** |
+
+### Simmons: recovered from a different primary record
+
+The Sage landing page served an interrogation interstitial on two attempts and
+was never read. **The record was instead taken from PubMed, PMID 22006061**, an
+NLM primary bibliographic record, which is a primary source rather than a
+workaround. Every field matches what the ledger held at RECALLED-plus: authors,
+author order, journal, volume, issue, pages, year and DOI 10.1177/0956797611417632.
+
+Note the author order. It is **Simmons, Nelson, Simonsohn** here, and
+**Simonsohn, Simmons, Nelson** on the 2020 specification-curve paper. Same three
+people, different lead author, nine years apart. Getting this backwards is an easy
+and visible error.
+
+### 2606.06267: the identifier was correct, and my earlier doubt was wrong
+
+On 2026-08-11 this was marked DISPUTED because the authors' replication README
+said a preprint "will be made available on arXiv" and their BibTeX carried
+`note = {arXiv preprint, link to be added}`. **That was stale repository text, not
+evidence against the identifier.** The arXiv record exists and resolves:
+`2606.06267`, submitted 4 June 2026, four authors as recorded, Comments field "90
+pages, 53 figures".
+
+**The correction is on me.** I inferred from a not-yet-updated README that the ID
+was unsupported, when the right move was to search arXiv for the title, which took
+one query. Absence of a link in a repository is not evidence that a paper is
+unindexed. Recorded here rather than quietly fixed, because the reasoning error is
+the kind that could equally have gone the other way and produced a fabricated ID.
+
+### Final bibliography status
+
+**Sixteen entries, all VERIFIED. Zero RECALLED. Zero DISPUTED.**
+
+Two entries were deleted during verification and must never reappear:
+"Mueller et al. 2026 on non-identifiability", a misattribution of 2504.13151, and
+"Nanda et al., attribution patching", a misattribution of 2310.10348.
+
+**The bibliography may now be described as checked.**

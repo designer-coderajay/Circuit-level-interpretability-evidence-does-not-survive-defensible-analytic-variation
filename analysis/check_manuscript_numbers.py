@@ -52,6 +52,29 @@ for v, why in [
     (319,'tests'), (0.5227,'discard rate'), (52.3,'discard rate pct'),
 ]: add(v, why)
 
+# Claim-class counts and per-size counts are computed from the sweep, not stored
+# in the analysis JSON, so register them from the same source the tables use.
+import sys as _sys, yaml as _yaml
+from collections import Counter as _Counter
+_sys.path.insert(0, 'src'); _sys.path.insert(0, 'scripts')
+from analyse import load_records as _lr, PRIMARY_GRANULARITY as _PG, PRIMARY_MAP as _PM
+_recs, _ = _lr(Path('results/sweep'), _yaml.safe_load(open('configs/sweep.yaml'))['axes'])
+_lab = [r['claims'][_PG][_PM] for r in _recs]
+_cnt = _Counter(_lab)
+for _c, _n in _cnt.items():
+    add(_n, 'claim class count')
+    add(_n / len(_lab), 'claim class share')
+_sizes = _Counter(r['edges'] for r in _recs)
+for _k, _n in _sizes.items():
+    add(_k, 'ladder rung'); add(_n, 'specs at size')
+# Aggregates and derived arithmetic used in the prose, each justified in the log.
+add(sum(_n for _k, _n in _sizes.items() if _k >= 5000), 'specs contributing no flips')
+add(0.7316 / 0.8889, 'F as fraction of its ceiling')
+add(1 + 12 * 13, 'non-terminal sources feeding the output')
+for _band in ('early', 'late', 'middle'):
+    _s = sum(_n for _c, _n in _cnt.items() if _band in _c)
+    add(_s, f'{_band} band total'); add(_s / len(_lab), f'{_band} band share')
+
 text = Path('paper/manuscript.md').read_text()
 # Strip things that are not claims: DOIs, arXiv ids, section numbers, years,
 # CELEX and article references. Each is verifiable elsewhere, not a result.
@@ -63,6 +86,7 @@ text = _re.sub(r'^#+ \d+(\.\d+)*', ' ', text, flags=_re.M)
 text = _re.sub(r'Annex IV[^.]{0,40}|Article \d+\(?\d*\)?\(?[a-z]?\)?', ' ', text)
 text = _re.sub(r'(CoLM|ICLR|ICML|NeurIPS|ACL) \d{4}', ' ', text)
 text = _re.sub(r'95% CI|B = [\d,]+', ' ', text)  # interval label and bootstrap size
+text = _re.sub(r'thebibliography\}\{\d+\}', ' ', text)  # LaTeX label width, not a claim
 text = _re.sub(r'\b(19|20)\d{2}\b', ' ', text)
 tokens = re.findall(r'(?<![\w.])\d{1,3}(?:,\d{3})*(?:\.\d+)?(?![\w])', text)
 unmatched, checked = [], 0
