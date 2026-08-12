@@ -740,3 +740,42 @@ produced `F = 0.7316`, not a re-derivation of them.
 `agreement_rate` and `cohens_kappa` reproduced verbatim in `src/p1/agreement.py`.
 The functional-equivalence measurement that red-team objection F1 demanded now
 exists, so the phantom-specialization reading can be tested rather than conceded.
+
+### 2026-08-11. Figure 1: the pre-registered form does not apply to a categorical outcome
+
+**Decided before the figure was drawn.** No version of it existed when this was
+written.
+
+PLAN.md section 6 fixes Figure 1 as "the specification curve: effects sorted
+ascending with a bootstrap band, a dot matrix of active choices below, and the
+null multiverse overlaid rather than described", following Simonsohn, Simmons and
+Nelson, *Specification curve analysis*, Nature Human Behaviour 4(11), 1208-1214,
+2020, verified by DOI 2026-08-11.
+
+**That form assumes a continuous effect estimate per specification.** P1's outcome
+is a claim class, one of nine at MEDIUM. There is nothing to sort ascending and no
+band to draw around it. The pre-registration specified a figure its own outcome
+cannot support, which is the same defect as the variance decomposition naming an
+estimator without a response.
+
+**Adopted, by Ajay's delegation, 2026-08-11.** Specifications are ordered by claim
+class, classes ranked by frequency, ties broken by selected circuit size. The
+upper panel plots the claim class of each specification against its rank, so the
+curve is a staircase whose step widths are the class shares. The lower panel is
+the dot matrix the plan asks for: one row per axis level, marked where that level
+is active. The null multiverse is overlaid as its own class-share staircase.
+
+**What the reader gets, and it is what the plan wanted.** The width of the modal
+step is `pi*` read off the axis. The number of steps is the number of distinct
+filings the same system supports. The dot matrix shows which analytic choices sit
+under each step. A standards body can look at it and see how much of the space
+agrees.
+
+**Rejected alternatives, recorded so the choice is auditable.** Plotting
+`log10(selected edges)` as the effect keeps the pre-registered form exactly but
+charts structure rather than claims, and this paper has already shown those are
+governed by different axes. Plotting a per-specification indicator of agreement
+with the modal claim gives a binary strip with no meaningful ascending order.
+
+**Reported as a deviation**, with the pre-registered wording quoted beside it, so
+a reader can see both what was promised and what was drawn.
