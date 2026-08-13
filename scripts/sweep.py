@@ -105,11 +105,22 @@ def attention_rows_for(model, prompts, roles_list, device):
     per_prompt_labels: list[list[str]] = []
     rows: dict[tuple[int, int], list[list[float]]] = defaultdict(list)
 
-    bos_tok = model.tokenizer.bos_token
+    tok = model.tokenizer
+    bos_tok = tok.bos_token
 
     for prompt, roles in zip(prompts, roles_list):
-        text = bos_tok + prompt
-        str_toks = model.to_str_tokens(text, prepend_bos=False)
+        # Tokenise with the raw tokenizer, exactly as `load_datasets_from_json`
+        # does, rather than through transformer-lens.
+        #
+        # VERIFIED 2026-08-13, both branches, on Pythia-160m with
+        # `add_bos_token` cleared:
+        #   to_str_tokens(prompt, prepend_bos=True)      -> ['Then', ...]  no BOS
+        #   to_str_tokens(bos + prompt, prepend_bos=False) -> ['Then', ...]  BOS stripped
+        # transformer-lens declines to add one, and strips a string-prepended
+        # one. Neither branch yields the sequence the loader feeds the model, so
+        # the library's BOS handling is bypassed rather than negotiated with.
+        ids = tok(bos_tok + prompt)["input_ids"]
+        str_toks = [tok.decode([i]) for i in ids]
 
         n_bos, body = split_leading_bos(str_toks, bos_tok)
         if n_bos == 0:

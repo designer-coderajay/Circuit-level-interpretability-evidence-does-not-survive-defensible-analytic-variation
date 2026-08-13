@@ -3980,3 +3980,31 @@ evaluation at about 5 s, read off a tqdm rate in a screenshot. The manifest says
 quietly absorbed. Attribution is amortised across cells sharing
 `(prompt_variant, seed)`, six computations for the whole grid, so it does not
 enter the per-cell figure.
+
+### Third attempt at the same function. transformer-lens BOS semantics, measured
+
+Two branches VERIFIED on Pythia-160m with `add_bos_token` cleared, same session:
+
+```
+to_str_tokens(prompt, prepend_bos=True)        -> ['Then', ...]   no BOS added
+to_str_tokens(bos + prompt, prepend_bos=False) -> ['Then', ...]   BOS stripped
+```
+
+transformer-lens declines to add a BOS when the flag is cleared, and strips a
+string-prepended one when `prepend_bos=False`. **Neither branch returns the
+sequence `load_datasets_from_json` feeds the model.**
+
+Fix, third version: tokenise with the raw tokenizer, `tok(bos_token + prompt)`,
+and decode per token. That is byte-for-byte what the loader does, and it does not
+negotiate with the library's BOS handling at all.
+
+**I got this wrong twice by reasoning about transformer-lens's semantics instead
+of measuring them.** The first attempt assumed `prepend_bos=True` prepends. The
+second assumed `prepend_bos=False` leaves a string-prepended BOS alone. Both were
+assumptions about library behaviour stated as fact. The guard added in the second
+attempt is what surfaced the third, which is the only reason this took minutes
+rather than another silent grid.
+
+The rule already in this log, from 2026-08-04: **reproducing the instrument
+verbatim includes reproducing how it prepares its input.** Applied literally the
+first time, this would have been the fix.
