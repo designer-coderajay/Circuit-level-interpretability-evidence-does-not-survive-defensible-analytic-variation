@@ -132,7 +132,12 @@ def attention_rows_for(model, prompts, roles_list, device):
         labels = [OTHER_ROLE] * n_bos + token_role_labels(body, prompt, roles)
         per_prompt_labels.append(labels)
 
-        toks = model.to_tokens(text, prepend_bos=False).to(device)
+        # Built from the same `ids` the labels were derived from, so the label
+        # list and the token tensor cannot drift apart. Routing this back
+        # through transformer-lens would reintroduce the BOS handling that the
+        # lines above exist to avoid, and would silently produce a tensor one
+        # token shorter than `labels`.
+        toks = t.tensor([ids], device=device)
         with t.inference_mode():
             _, cache = model.run_with_cache(
                 toks, names_filter=lambda n: n.endswith("hook_pattern")

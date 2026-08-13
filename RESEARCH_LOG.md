@@ -4008,3 +4008,49 @@ rather than another silent grid.
 The rule already in this log, from 2026-08-04: **reproducing the instrument
 verbatim includes reproducing how it prepares its input.** Applied literally the
 first time, this would have been the fix.
+
+### Fourth failure was not a tokenizer problem at all. It was a dangling name
+
+The reconstruction hypothesis was **wrong and was tested before being acted on**:
+
+```
+first tokens : ['<|endoftext|>', 'Then', ' James']
+default      : 'Then James and ... book to'   True
+no cleanup   : 'Then James and ... book to'   True
+```
+
+Both reconstruct. The raw-tokenizer approach was correct. The failure had moved.
+
+Reading the file rather than the error: `attention_rows_for` still contained
+
+```python
+toks = model.to_tokens(text, prepend_bos=False).to(device)
+```
+
+`text` was deleted by the edit that replaced the lines above it. **`NameError`,
+after a full minute of GPU work per cell.** Two defects in one line: the dangling
+name, and, had it resolved, `prepend_bos=False` strips the BOS, so `toks` would
+have been one token shorter than `labels` and the attribution rows would have
+been silently misaligned.
+
+Fixed by building the tensor from the same `ids` the labels come from, so the two
+cannot drift.
+
+### `tests/test_scripts_static.py`, and why it is the actual fix
+
+Every entry point in `scripts/` imports torch, so **none of it is reachable from
+the torch-free suite.** All four failures today were in that blind spot. The new
+tests parse `scripts/*.py` and assert no function reads a name bound nowhere.
+Cheap, torch-free, and it catches the one class of defect that costs a GPU
+session to find and a linter to prevent.
+
+**The check flagged three scripts on its first run, and all three were false
+positives in the check.** Recorded because it is the same discipline as the rest
+of this log: nested `def`s were not counted as bindings; nested functions were
+checked in isolation so closure variables looked unresolved; module dunders were
+not in `dir(builtins)`. Fixed the checker rather than exempting the scripts.
+Verified `decompose.py`, `jbar.py` and `repair.py` are clean. 343 tests pass.
+
+This is a partial substitute for the seam smoke test, not a replacement. It
+cannot catch a wrong tokenizer configuration or a wrong ablation argument. Those
+need the 49-cell run that still does not exist.
