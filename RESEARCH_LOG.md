@@ -4054,3 +4054,45 @@ Verified `decompose.py`, `jbar.py` and `repair.py` are clean. 343 tests pass.
 This is a partial substitute for the seam smoke test, not a replacement. It
 cannot catch a wrong tokenizer configuration or a wrong ablation argument. Those
 need the 49-cell run that still does not exist.
+
+## 2026-08-13. First cell completes. `1/1 ok`
+
+Harness verified end to end on Pythia-160m. Five defects between launch and here,
+all in the P1 to auto-circuit seam, all in code the torch-free suite cannot reach.
+
+```
+answer tokens    2 -> 1   tokenizer adjusted: True
+      1/1  ok      elapsed  0.14h
+  discarded_no_rung      4
+  ok                     8
+```
+
+### The 12 specifications from one cell: 8 claims, 4 discards
+
+Four metrics by three tolerances. `discarded_no_rung` is the pre-registered
+discard in `PLAN.md` section 7, the metric-relative `tau` rule admitting no
+circuit within the tested edge counts. Not a defect.
+
+**Yield 8/12 = 0.667 against the confirmatory run's 0.477.** Higher, from a
+single cell, so this is an indication and not an estimate. It matters only
+against `PLAN-REPLICATION.md` section 5.3, which names a yield below 0.20 as the
+condition making the GPT-2 comparison uninterpretable. Nowhere near it.
+
+**Not read, deliberately.** Which claim classes those 8 produced. The grid is not
+complete and a partial `F` over a subset ordered by objective would not be `F`.
+
+### This cell ran on CPU. Discarded from the record
+
+Colab allocated a CPU runtime: `Could not find cuda drivers`, `device cpu`.
+9m05s per cell against about 50 s on a T4. The grid would take 138 h.
+
+Written to `/content/local_results`, **not** the Drive output tree, so no
+CPU-device manifest enters the pre-registered results and the environment
+fingerprint stays homogeneous. The confirmatory run's single-environment property
+is worth preserving and nearly was not.
+
+### Budget unchanged
+
+Per-cell timings from the earlier T4 manifest still stand: EAP 42.3 s, IEG-50
+209.2 s, total 15.5 h against a 23.5 h cut line. Attribution is amortised across
+cells sharing `(prompt_variant, seed)`, six computations for the whole grid.

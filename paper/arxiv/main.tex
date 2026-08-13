@@ -590,8 +590,15 @@ only that the filer declare the space and report how much of it agrees.
 
 \paragraph{One model, one task.} Larger models have more components, so both the
 layer band and the size class have more room, and the direction of the effect on
-$F$ is not obvious. A multi-model replication and a second task were designed and
-not run. This is the limitation most likely to change the number.
+$F$ is not obvious. This is the limitation most likely to change the number.
+
+A second-model replication is pre-registered but not yet run: a 924-cell grid on
+Pythia-160m, a model of a different architecture family that performs the same
+task, identical on every axis except that the seed axis carries three levels
+rather than five. The analysis plan, the reduced grid, and the criteria for what
+would count as replication rather than refutation are committed and timestamped
+before any cell of it ran. It will be reported in a revision in whichever
+direction it falls. A second task remains designed and not run.
 
 \paragraph{Circuit size is an outcome, not an axis.} It is chosen by the threshold
 rule, and it has distorted three separate pooled quantities: $F$ itself, the
@@ -652,7 +659,7 @@ asserts against what is reported: 36 checks, 0 failures, with $F$ derived by thr
 routes including a brute-force pairwise computation. A second script checks that
 every numeric token in this manuscript matches a value derived from the stored
 results. Every table in this paper is emitted directly from those results rather
-than transcribed. The test suite is 319 tests.
+than transcribed. The test suite is 343 tests.
 
 \FloatBarrier
 
