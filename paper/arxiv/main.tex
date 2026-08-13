@@ -337,6 +337,30 @@ sufficiency & 877 & 3,083 & 0.779 \\
 
 \section{Results}
 
+Table~\ref{tab:hyp} states each pre-registered outcome against its result. The
+decision rules and thresholds were fixed and tagged before the confirmatory sweep
+ran, and none was revisited.
+
+\begin{table}[htbp]
+\centering
+\caption{Pre-registered outcomes and their results. Thresholds were fixed on
+6 August 2026 and the plan was tagged before the sweep began. Two results carry
+qualifications that only the within-size decomposition reveals, and those are
+reported in Sections~\ref{sec:null} and \ref{sec:functional} rather than deferred
+to an appendix.}
+\label{tab:hyp}
+\begin{tabular}{llll}
+\toprule
+& Decision rule & Result & Outcome \\
+\midrule
+P0 & $\bar{J}$ reported, not tested & 0.1396 [0.1377, 0.1418] & premise holds \\
+H2 & $F > 0.20$, CI lower bound above & 0.7316 [0.7247, 0.7380] & \textbf{confirmed} \\
+H3 & not separated from random null & separated, intervals disjoint & \textbf{rejected} \\
+H4 & $F - (1 - \text{agreement}) > 0.10$ & 0.3344 [0.3297, 0.3394] & \textbf{supported} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 \subsection{Circuits are almost disjoint}
 
 $\bar{J} = 0.1396$ (95\% CI 0.1377 to 0.1418), computed exactly over all
@@ -479,8 +503,9 @@ Pooled, the discovered multiverse is \emph{less} stable than a size-matched rand
 null drawn from the full 32{,}491-edge population, $R = 1{,}000$ null multiverses:
 0.7316 against 0.6774, intervals disjoint.
 
-We do not report that as a finding. It is an artefact of the size distribution,
-and Table~\ref{tab:bysize} shows why. The null is degenerate above 1{,}000 edges,
+H3 is therefore rejected: the distributions are separated. We do not report the
+direction of that separation as a finding, because it is an artefact of the size
+distribution, and Table~\ref{tab:bysize} shows why. The null is degenerate above 1{,}000 edges,
 where a uniform draw touches all 156 components and can produce only one claim.
 With size held fixed the ordering reverses: discovered 0.2746 against null 0.4230
 at medium granularity, and 0.2706 against 0.3822 at coarse. Discovered circuits
@@ -531,8 +556,8 @@ This is the answer to the phantom specialisation objection. If discovery sampled
 from an equivalence class of behaviourally identical subgraphs, the circuits would
 be functionally interchangeable. At kappa 0.015 they are not.
 
-The gap does not survive holding size fixed. It fails the 0.10 threshold at 6 of
-10 sizes and is negative at 5. At both ends of the range the mechanisms differ
+H4 is supported on the pre-registered quantity. The gap does not survive holding
+size fixed: it fails the 0.10 threshold at 6 of 10 sizes and is negative at 5. At both ends of the range the mechanisms differ
 more than the filings do, and the pooled figure is carried by the 500 to 2{,}000
 edge band alone. We report the pooled result because it was pre-registered, and
 the decomposition beside it because the pooled result alone would mislead.
@@ -614,7 +639,9 @@ sweep that produced the circuit in the first place.
 
 \section{Reproducibility}
 
-Every reported number traces to a config, a seed and an environment fingerprint.
+The pre-registration is a timestamped commit tagged \texttt{prereg-p1-confirmatory}
+in the public repository, made before the confirmatory sweep began. Every reported
+number traces to a config, a seed and an environment fingerprint.
 The confirmatory sweep ran under a single environment across all 1{,}320 cells,
 verified from the results archive rather than asserted, and the code commit was
 recovered by content-addressed comparison of the uploaded archive against the git
