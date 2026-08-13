@@ -3867,3 +3867,116 @@ and one IEG-50 discovery, run directly, before the grid starts.
 
 The 49-cell seam test remains worth building and stays on the open list, now with
 an eighth defect behind it.
+
+### Checkpoint 1 passed. And T4 equals L4 on this workload, which GPT-2 did not
+
+Pre-launch discovery timings, MEASURED on Pythia-160m, 128 discovery prompts:
+
+| objective | L4 | T4 |
+|---|---|---|
+| `PROB_GRAD` (EAP) | 4.6 s | 4.6 s |
+| `INTEGRATED_EDGE_GRADS` (IEG-50) | 171.4 s | 172.6 s |
+
+**The two cards are within half a percent.** `PLAN.md` records GPT-2 small IEG-50
+discovery at 229.1 s on T4 against 172.3 s on L4, a 1.33x gap. That gap does not
+appear here. Pythia-160m on a T4 matches GPT-2 small on an L4.
+
+Not explained. The plan's account, that cost is bound by kernel launch and Python
+overhead rather than arithmetic throughput, predicts weak card sensitivity and is
+consistent with the T4 equalling the L4. It does not predict why GPT-2 showed
+1.33x under the same account. **Recorded as an observation, not resolved.**
+
+Practical consequence: the budget holds on a free T4, which was not assumed.
+
+Budget from these timings, with evaluation priced three ways because evaluation
+is MEASURED on GPT-2 only and INFERRED here:
+
+| evaluation assumption | EAP cell | IEG cell | total |
+|---|---|---|---|
+| 26.7 s, GPT-2 measured | 32.0 s | 198.8 s | **13.3 h** |
+| 1.3x | 40.0 s | 206.8 s | 15.0 h |
+| 2.0x | 58.7 s | 225.5 s | 19.1 h |
+
+Under the 23.5 h cut line on every assumption. **No cut triggered.** Planned
+estimate was 15.7 h.
+
+### Run conditions: free tier, no compute units
+
+Zero compute units, T4 rather than the requested L4, session capped near 3 h
+50 min. 13.3 h therefore needs four to five sessions.
+
+Decision by Ajay: run on the free tier rather than cut the grid. **The grid is
+unchanged and the pre-registration is untouched**, which is the point. Cutting
+seeds here would have needed a new deviation entry with a new reason: the
+pre-registered fallback is triggered by measured cost overrunning by 50 percent,
+and cost did not overrun. Availability changed, which is not the same thing and
+must not be folded into the same rule.
+
+Resume is per cell and writes to Drive, so a reclaimed VM costs the cell in
+flight. Each session re-runs install, restart, mount and extract; the tarball
+lives on Drive so no re-upload is needed.
+
+## 2026-08-13. Ninth seam defect, caused by the fix for the eighth
+
+`--limit 1` on Pythia. Pipeline ran end to end: alignment applied, discovery
+5.741 s, both evaluation passes 36.527 s, all four metrics computed. Then the
+cell failed.
+
+```
+ValueError: tokens do not reconstruct the prompt, so character spans cannot be
+aligned; got ' James and David were at the office, ...'
+against 'Then James and David were at the office, ...'
+```
+
+**Cause: `align_answer_tokenisation` broke the attribution path.**
+`to_str_tokens(prompt, prepend_bos=True)` **honours `tokenizer.add_bos_token`**.
+Clearing that flag to stop the loader doubling BOS also switched off prepending
+in transformer-lens's own tokenisation. `attention_rows_for` stripped
+`str_toks[0]` on the assumption a BOS was there, so it ate the word "Then".
+
+The same mistake as the eighth defect, one layer along: **a tokenizer
+configuration assumed rather than measured.** Yesterday's fix was keyed on
+behaviour precisely to avoid this, and then the code it enabled went on
+assuming.
+
+`token_role_labels`'s reconstruction check is what caught it. That check was
+written on 2026-08-06 with the comment that a tokeniser which strips or
+normalises would silently misalign every span. It earned its place.
+
+**Fix.** `p1.attribution.split_leading_bos` counts leading BOS tokens instead of
+assuming one, and `attention_rows_for` builds the text the way
+`load_datasets_from_json` builds it, by string-concatenating `bos_token`, so the
+model is asked about the sequence discovery actually ran on. Zero, one and two
+leading BOS are all reachable and all tested. `n_bos == 0` now raises rather than
+proceeding. 331 tests pass.
+
+**Extracted to `src/p1/` deliberately.** The old logic lived in `scripts/sweep.py`,
+which imports torch, so no test in the torch-free suite could reach it. Three
+defects in twenty-four hours have all been in code the suite cannot execute.
+Extraction is the structural fix, not the five new tests.
+
+**NOT VERIFIED: the effect on GPT-2.** The new path should produce an identical
+token sequence on GPT-2, since the loader prepends the same way, but that has not
+been run. No confirmatory number changes, because those are banked. **If the
+confirmatory sweep is ever re-run, this is the first thing to check.**
+
+### Budget, now from measured numbers rather than inference
+
+Per-cell, MEASURED on a T4 from manifest `d0da7a3237491637`:
+`data 0.072 s | EAP discovery 5.741 s | evaluation 36.527 s | IEG discovery 172.6 s`
+
+| | cell | count | hours |
+|---|---|---|---|
+| EAP | 42.3 s | 660 | 7.76 |
+| IEG-50 | 209.2 s | 132 | 7.67 |
+| `LOGIT_MSE` | 3.0 s INFERRED | 132 | 0.11 |
+| **total** | | **924** | **15.54** |
+
+Planned 15.7 h, cut line 23.5 h. **No cut triggered.**
+
+**Correction to my own estimate.** Last night I put this at 13.3 h by pricing
+evaluation at about 5 s, read off a tqdm rate in a screenshot. The manifest says
+36.5 s. The estimate was optimistic and the correction is recorded rather than
+quietly absorbed. Attribution is amortised across cells sharing
+`(prompt_variant, seed)`, six computations for the whole grid, so it does not
+enter the per-cell figure.

@@ -79,21 +79,49 @@ def attention_rows_for(model, prompts, roles_list, device):
 
     BOS is prepended by the loader and is not part of the prompt string, so it is
     stripped before span matching and labelled `other`.
+
+    **The prompt is built exactly as `load_datasets_from_json` builds it**, by
+    string-concatenating `tokenizer.bos_token`, rather than by asking
+    transformer-lens to prepend. Two reasons, both learned the hard way on
+    2026-08-12.
+
+    First, `to_str_tokens(prompt, prepend_bos=True)` **honours
+    `tokenizer.add_bos_token`**. `p1.prompts.align_answer_tokenisation` clears
+    that flag on tokenizers that would otherwise double the BOS, and doing so
+    silently switched off prepending here too, so `str_toks[0]` became a real
+    content token and `token_role_labels` raised on the reconstruction check.
+    That check earned its place.
+
+    Second, the model is being asked about the same token sequence discovery ran
+    on. Prepending the way the loader does is the only way to guarantee that.
+
+    The number of leading BOS tokens is then **counted, not assumed**, so this
+    holds whether the tokenizer inserts one itself or not.
     """
     import torch as t
 
-    from p1.attribution import OTHER_ROLE, token_role_labels
+    from p1.attribution import OTHER_ROLE, split_leading_bos, token_role_labels
 
     per_prompt_labels: list[list[str]] = []
     rows: dict[tuple[int, int], list[list[float]]] = defaultdict(list)
 
+    bos_tok = model.tokenizer.bos_token
+
     for prompt, roles in zip(prompts, roles_list):
-        str_toks = model.to_str_tokens(prompt, prepend_bos=True)
-        bos, body = str_toks[0], list(str_toks[1:])
-        labels = [OTHER_ROLE] + token_role_labels(body, prompt, roles)
+        text = bos_tok + prompt
+        str_toks = model.to_str_tokens(text, prepend_bos=False)
+
+        n_bos, body = split_leading_bos(str_toks, bos_tok)
+        if n_bos == 0:
+            raise RuntimeError(
+                "expected at least one leading BOS token after prepending "
+                f"{bos_tok!r}; got {str_toks[:3]!r}"
+            )
+
+        labels = [OTHER_ROLE] * n_bos + token_role_labels(body, prompt, roles)
         per_prompt_labels.append(labels)
 
-        toks = model.to_tokens(prompt, prepend_bos=True).to(device)
+        toks = model.to_tokens(text, prepend_bos=False).to(device)
         with t.inference_mode():
             _, cache = model.run_with_cache(
                 toks, names_filter=lambda n: n.endswith("hook_pattern")

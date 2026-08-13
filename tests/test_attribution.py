@@ -248,3 +248,70 @@ def test_role_labels_feed_segment_mass_end_to_end():
     assert mass["S2"] == pytest.approx(0.5)
     assert set(mass) == {"IO", "S1", "S2", "place", "object", OTHER_ROLE}
     assert all(mass[r] == 0.0 for r in ("S1", "place", "object", OTHER_ROLE))
+
+
+# --- split_leading_bos ----------------------------------------------------
+#
+# Extracted from scripts/sweep.py on 2026-08-12 because the logic it replaces
+# was untestable there (the module imports torch) and shipped a wrong
+# assumption that failed 924 of 924 cells.
+
+
+def test_no_leading_bos_is_reported_not_silently_stripped():
+    """The configuration that broke the replication run.
+
+    `to_str_tokens(prompt, prepend_bos=True)` honours `tokenizer.add_bos_token`,
+    so clearing that flag switches off prepending. The old code stripped
+    `str_tokens[0]` regardless and ate the word "Then".
+    """
+    from p1.attribution import split_leading_bos
+
+    toks = ["Then", " James", " and", " David"]
+    n, body = split_leading_bos(toks, "<|endoftext|>")
+    assert n == 0
+    assert body == toks
+
+
+def test_one_leading_bos():
+    from p1.attribution import split_leading_bos
+
+    toks = ["<|endoftext|>", "Then", " James"]
+    n, body = split_leading_bos(toks, "<|endoftext|>")
+    assert n == 1
+    assert body == ["Then", " James"]
+
+
+def test_two_leading_bos():
+    """Reachable: a string-prepended BOS meeting a tokenizer that adds its own.
+
+    VERIFIED on Pythia-160m 2026-08-12 before the tokenizer was aligned:
+    clean prompts began [0, 0, 5872] against GPT-2's single [50256, ...].
+    """
+    from p1.attribution import split_leading_bos
+
+    toks = ["<|endoftext|>", "<|endoftext|>", "Then", " James"]
+    n, body = split_leading_bos(toks, "<|endoftext|>")
+    assert n == 2
+    assert body == ["Then", " James"]
+
+
+def test_body_reconstructs_the_prompt_after_the_split():
+    """The property the caller actually depends on, asserted directly."""
+    from p1.attribution import split_leading_bos, token_role_labels
+
+    prompt = "Then James and David were at the office, and David handed the book to"
+    toks = ["<|endoftext|>", "Then", " James", " and", " David",
+            " were at the office, and", " David", " handed the book to"]
+    n, body = split_leading_bos(toks, "<|endoftext|>")
+    assert "".join(body) == prompt
+    # And the reconstruction check downstream now passes rather than raising.
+    labels = token_role_labels(body, prompt, {"IO": "James", "S1": "David", "S2": "David"})
+    assert len(labels) == len(body)
+
+
+def test_split_does_not_consume_an_all_bos_sequence_incorrectly():
+    from p1.attribution import split_leading_bos
+
+    n, body = split_leading_bos(["<|endoftext|>", "<|endoftext|>"], "<|endoftext|>")
+    assert n == 2
+    assert body == []

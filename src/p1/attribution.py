@@ -35,6 +35,7 @@ __all__ = [
     "segment_mass",
     "mean_segment_mass",
     "token_role_labels",
+    "split_leading_bos",
     "OTHER_ROLE",
     "MASS_TOLERANCE",
 ]
@@ -44,6 +45,34 @@ __all__ = [
 #: so the mass sums over the whole sequence and a circuit that attends mostly to
 #: template scaffolding is visible rather than silently renormalised away.
 OTHER_ROLE: str = "other"
+
+
+def split_leading_bos(str_tokens, bos_token):
+    """Count leading BOS tokens and return them separately from the body.
+
+    Counted, never assumed. On 2026-08-12 `scripts/sweep.py` stripped exactly one
+    leading token on the assumption that transformer-lens had prepended a BOS.
+    It had not: `to_str_tokens(..., prepend_bos=True)` honours
+    `tokenizer.add_bos_token`, which `p1.prompts.align_answer_tokenisation`
+    clears on tokenizers that would otherwise double it. The strip therefore ate
+    a content token and every cell in the replication run failed on the
+    reconstruction check in `token_role_labels`.
+
+    Zero, one and two leading BOS tokens are all reachable configurations:
+    zero when the tokenizer inserts none and nothing prepends, one in the normal
+    case, two when a string-prepended BOS meets a tokenizer that inserts its own.
+
+    Args:
+        str_tokens: Tokenised text as strings, in order.
+        bos_token: The tokenizer's BOS string.
+
+    Returns:
+        `(n_bos, body)`, where `body` is everything after the leading BOS run.
+    """
+    n = 0
+    while n < len(str_tokens) and str_tokens[n] == bos_token:
+        n += 1
+    return n, list(str_tokens[n:])
 
 
 def token_role_labels(
