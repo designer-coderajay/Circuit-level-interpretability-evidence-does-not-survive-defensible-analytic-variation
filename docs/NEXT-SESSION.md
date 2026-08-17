@@ -1,118 +1,180 @@
-# Next session
+# Next session: v2, the Pythia-160m replication
 
-Written 2026-08-12 after the Pythia-160m transfer probe. Read
-`RESEARCH_LOG.md` from the 2026-08-12 entry down; it has the probe result, Gate P
-and the thresholds as committed.
+Written 2026-08-13, after v1 went to arXiv. Everything below is blocked on one
+thing only: **a GPU**. No design decisions remain open.
 
 ## State
 
-**The paper is finished and submittable as it stands.** 12 pages, 7 tables, 1
-figure, 15 references all cited and resolving, 347 of 347 numbers traced to
-`results/analysis/*.json`, 36 of 36 claim checks, 321 tests, 0 LaTeX errors.
-Nothing below is required to submit. All of it is to answer one reviewer
-objection: one model, one task.
+**v1 submitted.** arXiv `submit/7948759`, status `submitted`, primary `cs.AI`.
+12 pages, 1 figure, 7 tables, 15 references. Repository is now public.
 
-**Second-model transfer is established.** Three conditions, all met:
+**The replication is pre-registered and the harness is verified.** What is left
+is compute and analysis, not design.
 
-| condition | result |
+| | |
 |---|---|
-| edge namespace | 32,347 against 32,491. Deficit is `n_blocks * n_heads`, all `A{b}.{h}->MLP {b}`. `parallel_mlp` flag committed at `0cd6856` |
-| tokenizer | no IOI name splits under Pythia's tokenizer |
-| task performance | Gate P passed: IO preferred 0.961, mean logit diff 117% of GPT-2 small |
+| plan | `preregistration/PLAN-REPLICATION.md`, tag `prereg-p1-replication` |
+| config | `configs/replication_pythia.yaml`, 924 cells, 11,088 specifications |
+| harness | VERIFIED end to end on Pythia-160m: `1/1 ok`, 8 of 12 specs produced a claim |
+| budget | 15.5 h measured, cut line 23.5 h |
 
-## Housekeeping before anything else
+## Do this first
 
-1. **Clear the git locks** if not already done. `.git/HEAD.lock`,
-   `.git/index.lock`, `.git/objects/*/tmp_obj_*`. Left by a commit run through
-   the Cowork sandbox mount, which cannot unlink inside `.git`. Do not run git
-   write operations through that mount.
+1. **Cross-list the arXiv paper** once announced: `cs.LG` and `cs.CY`, from the
+   Cross list action on your account page.
+2. **Delete `submit/7942283`**, a stale incomplete draft.
+3. **Copy `requirements-confirmatory.lock.txt` into the repo.** 719 lines, still
+   only on Drive. It has been on this list since 08-11 and it cost a session on
+   08-12 when a fresh Colab image needed the pins rederived.
 
-2. **Copy `requirements-confirmatory.lock.txt` into the repo.** 719 lines, still
-   only on Drive. It is the exact environment all 1,540 confirmatory cells ran
-   in. It has been on the non-blocking list since 08-11 and it cost time on
-   08-12 when a fresh Colab image needed the pins rederived. It is blocking now.
+## Running the grid
 
-   The rebuild that worked, for reference:
-   `auto-circuit==1.0.1 transformer-lens==2.18.0`, then
-   `numpy==1.26.4 pandas==2.2.3`, then restart the runtime. Colab's current pandas
-   is a numpy-2 build and pip no longer downgrades it alongside numpy.
+Six cells. Repo is public now, so the clone needs no token.
 
-## The one rule that governs this session
+**CELL 1**
+```python
+!pip install -q auto-circuit==1.0.1 transformer-lens==2.18.0
+!pip install -q "numpy==1.26.4" "pandas==2.2.3"
+```
+Then **Runtime > Restart session.** Mandatory: numpy changed under a kernel that
+already imported it.
 
-**No discovery cell runs until the reduced grid is pre-registered.** Rule 6. The
-plan is committed with a timestamp first, results are looked at second.
+**CELL 2**
+```python
+from google.colab import drive
+drive.mount('/content/drive')
+%cd /content
+!rm -rf /content/p1
+!git clone --depth 1 https://github.com/designer-coderajay/p1-circuit-multiverse.git /content/p1
+%cd /content/p1
+!git log --oneline -1
+!nvidia-smi --query-gpu=name --format=csv,noheader
+```
 
-## Do these in order
+**CELL 3**
+```python
+%cd /content/p1
+!python3 scripts/sweep.py --config configs/replication_pythia.yaml --dry-run
+```
+Expect `specifications 11,088`, `discovery cells 924`, and `already complete`
+climbing across sessions.
 
-### 1. Redo the grid arithmetic from `configs/sweep.yaml`
+**CELL 4**
+```python
+%cd /content/p1
+!python3 scripts/sweep.py --config configs/replication_pythia.yaml \
+    --out /content/drive/MyDrive/p1_replication/results
+```
 
-The earlier "252 cells, about 18 hours" estimate is **not trustworthy and must
-not be reused.** Two time estimates were wrong this week, both by extrapolating
-from an inner loop rather than timing something end to end.
+**CELL 5**, progress, safe in a separate cell at any time
+```python
+import json, pathlib
+R = pathlib.Path('/content/drive/MyDrive/p1_replication/results')
+m = [json.loads(p.read_text()) for p in R.glob('*/manifest.json')]
+ok = sum(x.get('status') == 'ok' for x in m)
+print(f"cells {len(m):>4} of 924   ok {ok}   failed {len(m)-ok}")
+```
 
-The correction that matters: **metric and threshold are applied post hoc to
-banked rankings.** That is how 1,540 discovery cells became 18,480
-specifications. They cost nothing in GPU time. Discovery cost is
+### Two things that must be checked, not assumed
 
-    objectives x ablation-corruption x prompt_variant x seed
+**The first line of output must read `device Tesla T4` or better.** On
+2026-08-13 Colab silently allocated a CPU runtime and a single cell took 9m05s
+against about 50 s. At CPU speed the grid is 138 h. If it says `device cpu`, stop
+immediately.
 
-so seeds are the cheap lever and every axis that enters discovery is expensive.
-`LOGIT_MSE_GRAD_PRUNE_ALGO` does not execute and contributes nothing, so six
-objectives, not seven. IEG-50 runs at roughly 200 s against EAP's 45 s on an L4,
-measured for GPT-2 small; Pythia-160m is 1.3x the parameters and the scaling is
-**INFERRED, not measured**. Time one cell end to end before committing a budget.
+**Nothing from a CPU run may enter the results tree.** The confirmatory sweep has
+a single environment fingerprint across all 1,320 cells, verified rather than
+asserted, and that property is worth keeping.
 
-### 2. Decide the grid. Research lead's call, not the implementer's
+### Budget checkpoints, from the locked plan section 8
 
-The live question is how far seeds drop. Reducing an axis to a single level
-removes it from the space, which changes what `F` means and makes the replication
-`F` non-comparable to the headline 0.7316. That is a design consequence, not a
-budget one, and it should be decided knowingly rather than fall out of a runtime
-target.
+Measured per cell on a T4: EAP 42.3 s, IEG-50 209.2 s, evaluation 36.5 s.
 
-Both outcomes must be writeable before the run. Rule 6 of the programme brief:
-draft both abstracts. If Pythia's `F` is comparable, the finding generalises
-across architecture family. If it is much lower, the paper reports that circuit
-multiplicity is model-dependent, which is a result and not a failure. If only one
-direction is writeable, the grid is wrong.
+- **Checkpoint 1**, after 20 cells, all EAP. Extrapolated total above **23.5 h**
+  means cut seeds from three to two. That is the only pre-registered cut.
+- **Checkpoint 2**, on reaching `INTEGRATED_EDGE_GRADS`, which runs last. The
+  4.4x IEG-to-EAP ratio is assumed from GPT-2, not measured here.
+- Either cut goes in `DEVIATIONS.md` with the measured rate that triggered it.
+- **No other axis may be pruned, and seeds may not go below two.**
 
-### 3. Pre-register, then run
+Free-tier Colab reclaimed the runtime after about 1 h 40 m on 08-13, not the
+advertised 3 h 50 m. Expect several reconnects. Resume is per cell and writes to
+Drive, so each drop costs the cell in flight.
 
-Use the `preregistration` skill. The plan must fix, before any cell runs: the
-grid, the seeds, the dataset size and whether it is re-calibrated or inherited
-from GPT-2 (inherited needs a `DEVIATIONS.md` entry), the primary outcome, and
-what counts as replication rather than refutation.
+## When the grid completes
 
-`n_prompts: 256` was selected for GPT-2 by the committed calibration rule.
-Re-running that rule for Pythia costs time. Inheriting it is defensible and must
-be declared, not assumed.
+**Do not compute `F` before it does.** Cells run in objective order, so a partial
+`F` is an `F` over a non-random slice of the axis the paper leans on hardest.
 
-### 4. Only then, fold into the paper
+Then, in order:
 
-The replication is a section, not a rewrite. The abstract's scale limitation
-softens from "one model and one task" to whatever was actually shown, and not one
-word further.
+1. `scripts/analyse.py` against `results/replication_pythia`, mirroring the
+   confirmatory run.
+2. `scripts/jbar.py` and the null multiverse with `parallel_mlp=True`. The null
+   must draw from Pythia's 32,347 edges, not GPT-2's 32,491.
+3. Evaluate the replication criteria in `PLAN-REPLICATION.md` section 5.1: `F >
+   0.20` with the CI lower bound above it, filability failing at all three
+   tolerances, and both holding at COARSE and MEDIUM.
+4. Check the three conditions in section 5.3 that would make the comparison
+   uninterpretable: claim yield below 20 percent, a different class count moving
+   the `1 - 1/k` ceiling, any objective beyond `LOGIT_MSE` failing to execute.
+   **Report `F` as a fraction of its ceiling alongside the raw value regardless.**
+5. Write the section. Both abstracts are already drafted in section 7 of the
+   plan. Use whichever the data selects, and do not soften the other.
 
-## What the replication must not be written as
+**The GPT-2 versus Pythia comparison is descriptive and carries no p-value.** The
+two grids share the claim map, the task, the templates and six of seven axes.
+Rule 3.
 
-It measures specification instability on a second model. It does **not** measure
-mechanism equivalence across models. Gate P establishes that Pythia-160m performs
-IOI. It establishes nothing about whether it does so with an IOI-like circuit,
-and no sentence should imply otherwise.
+## Page budget for v2
 
-## Still open, still non-blocking
+v1 is 12 pages and you asked for 10 to 12. A replication section is roughly 1.5
+pages, so something gives. Likeliest candidates: compress the multiverse-methods
+paragraph in related work, move one of the seven tables to an appendix. Decide
+after the result is in, when its actual size is known.
 
-- Seam smoke test over every axis level. Seven defects have lived in the P1 to
-  auto-circuit seam; none was caught by the torch-free suite.
+## Known gaps, in the order they will bite
+
+- **The seam smoke test still does not exist.** Five defects reached a launched
+  run on 08-12 and 08-13, all in the P1 to auto-circuit seam.
+  `tests/test_scripts_static.py` now catches unresolved names, which is the cheap
+  half. A 49-cell run over every objective by ablation would catch the rest, at
+  about four minutes of GPU time.
+- **`check_manuscript_numbers.py` reads `paper/manuscript.md`, not
+  `paper/arxiv/main.tex`.** The file that went to arXiv was never covered by it
+  until it was run manually with LaTeX normalisation on 08-13: 321 of 323, the
+  two misses being `924` and `343`, both verified directly. **Point the checker at
+  the tex before v2 ships.**
+- **The GPT-2 effect of the 08-13 attribution change is NOT VERIFIED.** The new
+  path should produce an identical token sequence on GPT-2, but that has not been
+  run. No confirmatory number changes, because those are banked. If the
+  confirmatory sweep is ever re-run, check this first.
 - EMS cross-check on the balanced five-operator block.
-- FINE and `phi_affected` null, needs an attention cache the sweep never wrote.
+- FINE and `phi_affected` null, which needs an attention cache the sweep never wrote.
 - Annex III point 2, the one provision of ten not re-checked against the
   consolidated text.
-- `scripts/repair.py` reloads every `result.json` before its skip check.
+
+## The scale question, and the one promising lead
+
+The paper's remaining limitation after v2 is scale: both models are around 150M
+parameters. Edge count grows roughly with blocks squared times heads, so GPT-2
+medium is 7.1x the graph and Pythia-2.8b is 49x. Those are closed.
+
+**Pythia-1b is the exception, if its shape is what I think.** Deep and narrow at
+16 blocks by 8 heads gives 27,673 edges, *fewer* than GPT-2 small, for a model 6x
+larger. Three caveats, in order of how badly they could sink it: the runtime
+estimate scales only edge count and inherits a kernel-launch-bound finding
+measured at 124M and 160M, which may not hold at 1B; VRAM is unmeasured, peak was
+3.7 GB at 160M; and **the 16 by 8 shape is RECALLED, not verified.** If it is 16
+by 16 the number roughly quadruples and the lead evaporates.
+
+One CPU probe settles it, the same way Pythia-160m was settled on 08-12. Worth
+doing before anyone writes a limitations paragraph claiming scale is out of reach.
 
 ## The rule that earned its place this week
 
-A constraint written in a design document is not a constraint enforced by
-anything. The 32,347 figure lives in an assertion in `tests/test_graph.py`, not
-in a comment, because that is the only version of it that fails when it is
-violated.
+Five defects in two days, every one in code the torch-free suite cannot execute,
+and two of them were assumptions about library behaviour stated as fact. The
+tokenizer probe on 08-12 passed because it called `to_tokens`; the loader calls
+the raw tokenizer. **A probe that does not call the same function the instrument
+calls is not a probe of the instrument.**

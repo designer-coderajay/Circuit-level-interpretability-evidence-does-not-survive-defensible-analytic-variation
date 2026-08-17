@@ -1,44 +1,174 @@
-# Paper 1: Explanation Multiplicity and the Instability of Conformity Claims
+# Explanation Multiplicity
 
-Circuits are formally non-identifiable, and circuit faithfulness is sensitive to
-the choice of ablation operator. The EU AI Act requires technical documentation
-describing how a high-risk system reaches its decisions. If the explanation filed
-as conformity evidence changes when a different competent analyst runs the same
-tool with different defensible settings, the filing carries no evidential weight.
-An audit means two auditors reach the same conclusion.
+**Circuit-level interpretability evidence does not survive defensible analytic variation.**
 
-This repository measures how far an Annex IV claim moves across the space of
-defensible analytic specifications, and whether that movement is distinguishable
-from a size-matched random baseline.
+[![Paper](https://img.shields.io/badge/arXiv-2608.13754-b31b1b.svg)](https://arxiv.org/abs/2608.13754)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Tests](https://img.shields.io/badge/tests-343%20passing-brightgreen.svg)](tests/)
+[![Pre-registered](https://img.shields.io/badge/pre--registered-2%20plans-blue.svg)](preregistration/)
 
-## Status
+An audit means two auditors reach the same conclusion. That is not a definition
+borrowed from machine learning; it is what makes an audit worth commissioning.
 
-Setup. No experimental results exist. See `RESEARCH_LOG.md`.
+The EU AI Act requires providers of high-risk AI systems to file technical
+documentation describing how the system reaches its decisions. Mechanistic
+interpretability is the obvious source of that evidence, and circuit discovery is
+its most developed instrument. This repository measures whether that evidence
+survives the condition under which it would be relied upon: **two competent
+analysts, the same system, the same tool, different defensible settings.**
 
-## Start here
+## Headline results
 
-- `CLAUDE.md` operating rules for this repo
-- `docs/P1-MEMORY.md` decisions taken and open
-- `docs/DESIGN-DELTAS.md` where the original brief and verified reality diverge
-- `docs/CITATION-LEDGER.md` what has actually been verified
-- `RESEARCH_LOG.md` dated, append-only
+Across **15,840 pre-registered specifications** on GPT-2 small and the indirect
+object identification task, of which 7,561 produced a claim:
 
-## Instrument
+| quantity | value | 95% CI |
+|---|---|---|
+| Claim flip rate `F` | **0.7316** | 0.7247 to 0.7380 |
+| Modal claim share `pi*` | 0.4109 | |
+| `F` after standardising the evaluation metric | 0.5939 | 0.5803 to 0.6063 |
+| `F` with circuit size removed from the claim and held fixed | 0.2706 | 0.2550 to 0.2859 |
+| Mean pairwise circuit overlap `J_bar` | 0.1396 | 0.1377 to 0.1418 |
+| Functional agreement, Cohen's kappa | 0.0146 | |
 
-`auto-circuit` 1.0.1, the library released with the closest prior work
-(arXiv:2407.08734, CoLM 2024). **Reproduced verbatim and never modified.** Any
-extension lives in `src/p1/`, is additive only, and is reported separately.
+The filed claim flips across 73.2% of specification pairs. The circuits behind
+those claims are structurally near-disjoint and functionally uncorrelated, so the
+instability is **not** one mechanism described in different words.
 
-## Tests
+Every number above is recomputed from raw results by
+[`analysis/verify_all_claims.py`](analysis/verify_all_claims.py), 36 checks,
+0 failures, with `F` derived by three independent routes including brute-force
+enumeration over all 28,580,580 specification pairs.
+
+## Pre-registration
+
+Two plans, each committed and tagged **before** the results they govern existed.
+
+| tag | plan | status |
+|---|---|---|
+| `prereg-p1-confirmatory` | [`preregistration/PLAN.md`](preregistration/PLAN.md) | complete, reported in the paper |
+| `prereg-p1-replication` | [`preregistration/PLAN-REPLICATION.md`](preregistration/PLAN-REPLICATION.md) | **not yet run**, see v2 below |
+
+```bash
+git log -1 --format=%ci prereg-p1-confirmatory   # predates the confirmatory sweep
+git log -1 --format=%ci prereg-p1-replication    # predates any replication cell
+```
+
+Every departure from a locked plan is recorded in
+[`preregistration/DEVIATIONS.md`](preregistration/DEVIATIONS.md), including the
+ones that were mistakes.
+
+## Reproducing
+
+**The statistics layer needs no GPU.** This is deliberate: the mathematics must be
+verifiable without the circuit pipeline.
 
 ```bash
 pip install -r requirements-analysis.txt
-python3 -m pytest tests/ -q
+python3 -m pytest tests/ -q                 # 343 tests
+python3 analysis/verify_all_claims.py       # 36 checks against raw results
+python3 analysis/emit_tables.py             # every paper table, from stored results
+python3 analysis/figure1.py --out paper/figures
 ```
 
-The statistics layer has no torch dependency and needs no GPU, so the
-mathematics is verifiable independently of the circuit pipeline.
+All 1,540 per-cell manifests and the analysis outputs are committed, so the
+headline numbers are reproducible from this repository alone. Raw circuits are
+too large to track and are regenerated by the sweep.
 
-## Licence and citation
+**The full sweep needs a GPU** (about 20 h on an L4 for the confirmatory grid):
 
-Not yet set.
+```bash
+pip install -r requirements.txt
+python3 scripts/sweep.py --config configs/sweep.yaml --dry-run
+python3 scripts/sweep.py --config configs/sweep.yaml --out results/sweep
+```
+
+Resume is per cell: a dropped session costs the cell in flight and nothing more.
+
+## Layout
+
+```
+configs/          one file per experimental specification, no hardcoded params
+src/p1/           library code, importable, tested, no torch in the stats layer
+scripts/          entry points taking a config and writing to results/
+analysis/         reads results/, produces figures, tables and verification
+preregistration/  analysis plans, calibration, and every deviation
+results/          per-cell manifests and analysis outputs
+paper/            manuscript and arXiv source
+docs/             findings, citation ledger, design deltas, research memory
+tests/            pytest, 343 tests
+RESEARCH_LOG.md   dated, append-only: what was run and what was learned
+```
+
+## The instrument
+
+[`auto-circuit`](https://github.com/UFO-101/auto-circuit) 1.0.1, the library
+released with the closest prior work (arXiv:2407.08734, CoLM 2024).
+
+**Reproduced verbatim and never modified.** Every extension lives in `src/p1/`,
+is additive only, and is reported as an extension. Modifying the instrument under
+test would hand a reviewer a free rejection.
+
+One finding about the instrument is reported in the paper: **one of seven
+documented, publicly exported discovery objectives does not execute at all** on
+the library's own canonical task, discarding 220 of 1,540 cells.
+
+## What this repository is not claiming
+
+Stated early because each is a reading the results do not support.
+
+- **Not** that discovered circuits are no better than random. With size held
+  fixed the ordering reverses and they are more stable than a size-matched null,
+  0.2746 against 0.4230.
+- **Not** that filings differ where mechanisms do not. Mechanisms differ a great
+  deal.
+- **Not** that random seeds are the problem. The seed selects which prompts are
+  sampled, so this is evaluation-set variability, not nondeterminism.
+- **Nothing at all about scale.** One model, one task.
+
+## v2: the second-model replication
+
+Pre-registered and tagged, harness verified, **not yet run**. Blocked on GPU
+access only.
+
+- **Model** Pythia-160m, a different architecture family. GPT-NeoX runs attention
+  and MLP in parallel, so its factorised graph has 32,347 edges against GPT-2
+  small's 32,491, a deficit of exactly `n_blocks * n_heads`. Predicted from the
+  closed-form ordering, then matched against the instrument.
+- **Grid** 924 cells, 11,088 specifications. Identical to the confirmatory grid on
+  every axis except that `seed` carries three levels rather than five.
+- **Gate P, passed before the plan was written.** Pythia-160m performs the task:
+  IO preferred on 96.1% of clean prompts, mean logit difference 117% of GPT-2
+  small's on the same prompts.
+- **Criteria fixed in advance.** What counts as replication rather than
+  refutation, and the three conditions that would make the comparison
+  uninterpretable, are in
+  [`PLAN-REPLICATION.md`](preregistration/PLAN-REPLICATION.md) section 5.
+- **Both abstracts are already drafted**, section 7. If only one direction were
+  writeable, the design would be wrong.
+
+The comparison between models is descriptive and carries **no p-value**. The two
+grids share the claim map, the task, the templates and six of seven axes, so they
+are not independent samples of anything.
+
+Running instructions are in [`docs/NEXT-SESSION.md`](docs/NEXT-SESSION.md).
+
+## Citation
+
+```bibtex
+@misc{mahale2026explanation,
+  title         = {Explanation Multiplicity: Circuit-Level Interpretability
+                   Evidence Does Not Survive Defensible Analytic Variation},
+  author        = {Mahale, Ajay Pravin},
+  year          = {2026},
+  eprint        = {2608.13754},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AI},
+  url           = {https://arxiv.org/abs/2608.13754}
+}
+```
+
+## Licence
+
+Code and data in this repository: [MIT](LICENSE).
+The manuscript on arXiv is licensed CC BY 4.0.

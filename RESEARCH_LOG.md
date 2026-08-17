@@ -4096,3 +4096,60 @@ is worth preserving and nearly was not.
 Per-cell timings from the earlier T4 manifest still stand: EAP 42.3 s, IEG-50
 209.2 s, total 15.5 h against a 23.5 h cut line. Attribution is amortised across
 cells sharing `(prompt_variant, seed)`, six computations for the whole grid.
+
+## 2026-08-13. v1 submitted to arXiv. Repository public
+
+`submit/7948759`, status `submitted`, primary `cs.AI`, licence CC BY. 12 pages,
+1 figure, 7 tables, 15 references. Repository made public at submission, which
+the paper's reproducibility section depends on and which was still private when
+the manuscript claiming it was written.
+
+### Decision: ship v1 now, replication as v2
+
+Colab compute exhausted, free-tier GPU refused. The paper does not depend on the
+replication and never did. The limitation is stated in its own abstract.
+
+**Splitting them is better practice than bundling, not worse.**
+`prereg-p1-replication` is tagged and timestamped **before any result exists**, in
+a now-public repository. When the second model lands it lands as a checkable
+pre-registration rather than something a reader must take on trust.
+
+### Two manuscript corrections found while packaging
+
+Both would have shipped.
+
+1. **`\section{Reproducibility}` claimed "the public repository" while the
+   repository was private.** Caught because `git clone` had demanded credentials
+   an hour earlier. Resolved by making it public rather than by softening the
+   sentence, which is the right way round.
+2. **"The test suite is 319 tests", present tense, when it is 343.** Stale since
+   the replication work began.
+
+Added: one paragraph in Limitations recording that the replication is
+pre-registered, not yet run, and will be reported in whichever direction it falls.
+
+### The number check had never covered the file being submitted
+
+`analysis/check_manuscript_numbers.py` reads `paper/manuscript.md`. **The arXiv
+`.tex` was outside its coverage.** Run manually against `main.tex` with LaTeX
+normalisation, `{,}` and `\%`, it returns 321 of 323. The two misses are `924`
+and `343`, both added that day and neither derivable from `results/analysis`;
+both verified directly, 924 from `p1.spec.discovery_cells` on the config and 343
+from a pytest run in the same session.
+
+**The paper is clean. The checker's coverage was not, and the gap was invisible
+until someone pointed it at the right file.** Fix before v2.
+
+### Submission package, verified rather than assumed
+
+`arxiv_submission_v1.tar.gz`, `main.tex` plus one figure, bibliography inline so
+no BibTeX pass is needed. Built twice from a clean directory containing only
+those two files: 12 pages, 0 LaTeX errors, 0 warnings, 0 undefined references or
+citations.
+
+### Correction to my own advice
+
+Recommended `cs.LG` as primary without checking endorsement. **arXiv endorsement
+is per-archive, not per-account.** Ajay's prior paper `2603.09988` is `cs.CL`, so
+`cs.LG` was refused. Submitted under `cs.AI`. Cross-lists to `cs.LG` and `cs.CY`
+to be requested after announcement.
