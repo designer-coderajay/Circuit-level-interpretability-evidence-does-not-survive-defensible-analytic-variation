@@ -459,3 +459,63 @@ blocks. Detail and method in `docs/CITATION-LEDGER.md`.
 **Consequence.** The claim map's addressees are unchanged, `phi` does not move,
 and no banked result is affected. The manuscript's regulatory section is
 unblocked. Annex III point 2 remains unchecked and is the only outstanding item.
+
+---
+
+# 2026-09-21. Point 2(c) verified, and point 4 finally used
+
+## 2(c), previously unrecorded in this file
+
+Quoted to Prof. Galke on 2026-09-08 as the answer to his storyline question. It
+was never verified here. **VERIFIED 2026-09-21**, fetched from
+`https://artificialintelligenceact.eu/annex/4/`:
+
+> "(c) the description of the system architecture explaining how software
+> components build on or feed into each other and integrate into the overall
+> processing; the computational resources used to develop, train, test and
+> validate the AI system"
+
+**The quotation was accurate. The hook is weak, and the IASEAI paper does not
+build on it.** "Software components" sits inside a system-architecture frame and
+is paired with computational resources. It reads as modules and services, not as
+attention heads inside one network. A reader with legal training will contest
+that a circuit is a software component, and the contest is winnable against us.
+
+2(e) and section 3 have no such problem. Both say, verbatim, "technical measures
+... to facilitate the interpretation of the outputs". That is what an
+interpretability artefact is, and `phi_overseer` already rests on them.
+
+2(c) is mentioned in the paper as part of the broad reading, which is where it
+belongs.
+
+## Point 4 is now in the paper
+
+This file flagged section 4 on 2026-08-03 under "The paragraph nobody noticed",
+with the note that it should be in the paper. **It never was.** The arXiv version
+does not cite it. Re-verified 2026-09-21 from the same source:
+
+> "4. A description of the appropriateness of the performance metrics for the
+> specific AI system"
+
+The IASEAI paper uses it. The argument is that this looks like a formality and is
+not one: standardising the evaluation metric removes more claim instability than
+standardising any other axis, 0.1377 against 0.0302 for the next largest. Metric
+choice is therefore a determinant of what the filing says, and Annex IV 4 is a
+load-bearing justification whose adequacy nobody has measured.
+
+## Provisions the IASEAI paper relies on, and their status
+
+| provision | role in the paper | status |
+|---|---|---|
+| 2(c) | part of the broad reading, then set aside | VERIFIED 2026-09-21 |
+| 2(e) | anchor: measures *needed* to interpret outputs | VERIFIED, unchanged |
+| 3 | anchor: measures *put in place* to interpret outputs | VERIFIED, unchanged |
+| 4 | metric appropriateness, newly used | VERIFIED 2026-09-21 |
+| 86(1) | the individual's right, causal reading | VERIFIED, unchanged |
+| 14(4)(c) | oversight, keys `phi_overseer` | VERIFIED, unchanged |
+
+**Note on sources.** The text above was fetched from a well-known mirror, not
+from EUR-Lex. The confirmatory paper's quotations were checked against the
+consolidated EUR-Lex text (CELEX 02024R1689-20260727). **Before submission, 2(c)
+and 4 should be re-checked against EUR-Lex** so that every provision in the paper
+has the same provenance.

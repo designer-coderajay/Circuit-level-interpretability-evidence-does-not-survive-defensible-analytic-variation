@@ -30,6 +30,10 @@
 \frenchspacing  % DO NOT CHANGE THIS
 \usepackage{booktabs}
 \usepackage{amsmath,amssymb}
+% framed is NOT on the AAAI forbidden list (checked against the full list in
+% the header comment above). It boxes the filability protocol, which is the
+% paper's deliverable and should be visually separable from the prose.
+\usepackage{framed}
 
 \pdfinfo{
 /TemplateVersion (2027.1)
@@ -56,51 +60,176 @@
 
 \maketitle
 
+% Leads on the interpretation and the criterion, then the measurement as
+% evidence for them. The preprint's abstract led on the measurement. Mentions
+% neither the preprint nor any repository.
 \begin{abstract}
-% TODO. Adapt from paper/arxiv/main.tex but re-lead on the regulatory claim,
-% not on the measurement. The preprint abstract leads with the EU AI Act then
-% pivots to numbers; here the contribution is the interpretation plus the
-% criterion, evidenced by the numbers.
-%
-% Must not mention the preprint (guide 3.5). Must not name the code repository.
-%
-% Keep every figure identical to the verified values:
-%   F = 0.7316, 95\% CI 0.7247 to 0.7380
-%   pi* = 0.4109
-%   metric standardised: 0.5939, CI 0.5803 to 0.6063
-%   size removed and fixed: 0.2706, CI 0.2550 to 0.2859
-%   J_bar = 0.1396, CI 0.1377 to 0.1418
-%   Cohen's kappa = 0.0146
-%   15,840 specifications, 7,561 producing a claim, 1,320 discovery cells
-% Verify with: python3 analysis/check_manuscript_numbers.py (points at
-% paper/manuscript.md; repoint it at this file before submission).
+\noindent
+The EU AI Act requires providers of high-risk systems to file technical
+documentation describing how the system reaches its decisions. Annex~IV names no
+method. We set out a reading of it under which circuit-level interpretability
+evidence is the relevant evidence, mark that reading explicitly as an
+interpretive choice, and then ask whether such evidence can support a conformity
+claim.
+
+We give a criterion. Evidence is \emph{filable at tolerance} $\alpha$ if the
+modal claim commands at least $1 - \alpha$ of the space of defensible analytic
+specifications. We then measure it. Across 15{,}840 pre-registered
+specifications on GPT-2 small and the indirect object identification task, with
+every axis level drawn from a published implementation, the derived Annex~IV
+statement flips across 73.2\% of specification pairs (95\% CI 0.725 to 0.738)
+and the modal claim commands 41.1\% of the space. The evidence is not filable at
+any tolerance a conformity assessment body would plausibly accept.
+
+Standardising the evaluation metric, the largest single lever, leaves 59.4\%.
+Removing circuit size from the claim and holding it fixed leaves 27.1\%. The
+underlying circuits are near-disjoint, at a median pairwise Jaccard overlap of
+4\%, and functionally uncorrelated, at a Cohen's kappa of 0.015. The instability
+is therefore not one mechanism described in different words.
+
+Annex~IV point 4 already requires providers to justify the appropriateness of
+their performance metrics. Our results make that requirement load-bearing rather
+than formal. The study covers one model and one task.
 \end{abstract}
 
 % =====================================================================
-% WRITE THIS SECTION LAST. Galke's instruction, and Widom's.
-% Five paragraphs: what is the problem; why is it interesting and important;
-% why is it hard; why has it not been solved; what are the key components of
-% the approach and results, including limitations. Then a bulleted
-% "Summary of Contributions".
-% Jargon-free. Give away the results.
+% Written last, per Widom and per Galke. Five paragraphs answering: what is the
+% problem; why does it matter; why is it hard; why has it not been solved;
+% what did we do and find, including the limitation. Then the contributions.
+% Deliberately jargon-light: no "multiverse", "Gini-Simpson" or "U-statistic"
+% before the reader has a reason to care.
 % =====================================================================
 \section{Introduction}
 
-TODO
+An audit means two auditors reach the same conclusion. That is not a definition
+borrowed from machine learning. It is what makes an audit worth commissioning.
 
+The EU AI Act requires providers of high-risk AI systems to file technical
+documentation describing how their systems reach decisions, and it gives a
+person subject to certain automated decisions a right to an explanation of the
+main elements of the decision taken. Mechanistic interpretability is the obvious
+source of that technical content, and circuit discovery is its most developed
+instrument. A circuit is a subgraph of a model said to be responsible for a
+behaviour. If a provider files a circuit-level account of why its system behaved
+as it did, that filing is worth something only if a second analyst, given the
+same system and the same tool, would file something compatible.
+
+There is reason to doubt it before any experiment. Circuit discovery requires a
+series of choices that the literature does not settle: which attribution
+objective to optimise, which ablation operator to use, which corrupted inputs to
+compare against, which faithfulness metric to score with, and where to cut the
+ranking. Each choice has published defenders. None is currently reported as part
+of a filing. A claim that changes with an unreported choice is not a property of
+the system alone.
+
+The pieces of this argument exist separately. Prior work shows that mechanistic
+explanations need not be unique, that faithfulness scores move with ablation
+methodology, and that different research groups have reached conflicting
+conclusions about the same behaviour. What has not been done is to connect those
+results to the filing: to ask how far a \emph{regulatory statement} moves across
+the space of defensible choices, and to attach a decision rule that a standards
+body could apply without adjudicating which choice is correct.
+
+We do that. We state a reading of Annex~IV under which circuit-level evidence is
+the relevant evidence, and we mark the reading as an interpretive choice rather
+than a legal conclusion. We define a criterion, filability, that a conformity
+procedure can apply. We then measure it over a pre-registered grid of 15{,}840
+specifications, with every level of every axis taken from a published
+implementation, and map each discovered circuit through deterministic code to a
+structured Annex~IV statement. The statement flips across 73.2\% of
+specification pairs. No single analytic choice rescues it, and the circuits
+behind the conflicting statements are neither structurally nor functionally
+interchangeable. The study covers one model and one task, which is the
+limitation most likely to change the number.
+
+\paragraph{Contributions.}
+\begin{itemize}\itemsep1pt
+\item A reading of Annex~IV, stated as an explicit interpretive choice, under
+which circuit-level evidence is the evidence the documentation duty calls for,
+and an argument from the text for why the causal form of the question selects
+it (section on Interpreting Annex~IV).
+\item \emph{Filability}, a criterion a conformity procedure can apply without
+deciding which analytic choice is correct, together with a five-step protocol
+for applying it (section on The Filability Protocol).
+\item A measurement of that criterion over a pre-registered grid, with a
+deterministic map from circuit to regulatory statement (Results).
+\item Evidence that the instability survives every available control:
+standardising any single axis, removing circuit size from the claim, holding
+size fixed, and comparison against a size-matched random null (Results,
+Baselines).
+\item A methodological result for multiverse designs generally. When
+specifications select objects of different sizes, pooled statistics can invert,
+and we report three of ours that do (Limitations).
+\end{itemize}
+
+% =====================================================================
+% Ported 21 Sep from paper/arxiv/main.tex section 2, tightened toward
+% simplified technical English: shorter sentences, active voice, one idea per
+% sentence. No self-citation of the companion preprint anywhere in this
+% section, so nothing here threatens anonymity.
+%
+% Cross-references are by section NAME, not \ref. The AAAI template sets
+% secnumdepth to 0, so sections are unnumbered and \ref would render empty.
 % =====================================================================
 \section{Related Work}
 
-% Port from paper/arxiv/main.tex section 2. Already written and verified.
-% Six paragraphs: non-identifiability (meloux2025), faithfulness metric
-% sensitivity (miller2024), structure versus function (bayatmakou2026),
-% variance as estimation (meloux2025b), auditability (lan2026, sharkey2025,
-% mueller2025), multiverse method (steegen2016, simonsohn2020, simmons2011).
-%
-% ANONYMITY: no self-citation of the preprint here. If the preprint must be
-% cited, third person only, and consider whether it reveals identity.
+\paragraph{Non-identifiability.}
+\citet{meloux2025} ask whether a unique mechanistic explanation exists for a
+given behaviour, judged by the field's own criteria. They answer that it need
+not. That result is our premise. Our contribution is downstream of it. We
+measure what non-identifiability costs when an explanation is filed with a
+regulator rather than published in a paper.
 
-TODO
+\paragraph{Faithfulness metric sensitivity.}
+\citet{miller2024} survey design choices in ablation-based faithfulness
+measurement. They find that existing methods are highly sensitive to changes
+that appear insignificant. They conclude that a faithfulness score reflects the
+researcher's methodological choices as much as it reflects the circuit. They
+establish that one axis matters. We cross seven, and we carry the result through
+to a regulatory statement. We also use their released library as our instrument,
+so this study is a stress test of the tooling by the tooling's own definitions.
+
+\paragraph{Structure versus function.}
+\citet{bayatmakou2026} vary input statistics while holding the task fixed. They
+find that structurally distinct circuits can implement the same computation, and
+they call this phantom specialisation. This is the strongest objection to our
+design. If circuit discovery samples from an equivalence class of behaviourally
+identical subgraphs, then a flip rate over claims measures only which member was
+sampled. We answer the objection with a measurement rather than an argument, in
+the section on structure versus function below. Our circuits are not
+functionally interchangeable.
+
+\paragraph{Variance as estimation.}
+\citet{meloux2025b} treat mechanistic interpretability as statistical estimation
+and analyse the variance of the estimator. Seed variance is one axis of our
+specification space. Their framing is the statistical companion to what we do at
+the level of the whole specification.
+
+\paragraph{Auditability.}
+\citet{lan2026} observe that two papers reached conflicting conclusions about the
+same behaviour, and that a third found both partly correct and incomparable. They
+call for auditing standards so that findings can be certified in safety-critical
+settings. We answer that call with a measurement and a decision rule rather than
+a proposal. \citet{sharkey2025} list open problems in the field, including the
+socio-technical problems this paper touches. \citet{mueller2025} argue that
+comparison across methods requires standardised evaluation. That argument is
+adjacent to ours: certification requires standardised specification.
+
+\paragraph{Explanation metrics under optimisation pressure.}
+\citet{hsia2023} show that sufficiency and comprehensiveness can be inflated
+without changing either the prediction or the explanation. Two of our four
+evaluation metrics are those two. This is one reason we report the discard rate
+for each metric separately rather than pooling the metrics silently.
+
+\paragraph{Multiverse analysis.}
+The design follows \citet{steegen2016}, who propose reporting results across the
+space of defensible data-processing choices, and \citet{simonsohn2020}, whose
+specification curve is the visualisation we adapt. \citet{simmons2011} named the
+underlying problem: undisclosed flexibility in analysis lets an analyst present
+almost anything as significant. We apply a methods literature from psychology to
+an evidentiary question in machine learning. The transfer is not decorative. A
+claim that an explanation is stable is exactly the kind of claim that undisclosed
+flexibility can manufacture.
 
 % =====================================================================
 % THE NEW SECTION. This is the contribution beyond the preprint, and it is
@@ -123,109 +252,685 @@ TODO
 % =====================================================================
 \section{Interpreting Annex IV}
 
-TODO
+Annex~IV requires technical documentation for a high-risk AI system. Nothing in
+it names circuit discovery, mechanistic interpretability, or any other method.
+This section sets out how we read the requirement and why. The reading is a
+choice, and we mark it as one.
 
+\paragraph{The broad reading.}
+Annex~IV can be read broadly. Point 2(c) asks for a description of the system
+architecture, explaining how software components build on or feed into each
+other. Point 2(d) asks for the training data, its provenance and its
+characteristics. Point 3 asks for monitoring, functioning and control. On a broad
+reading, a provider documents what enters the system, what leaves it, and how the
+parts are wired together. The duty is then discharged at the level of the system
+rather than the model. A multi-agent deployment would be documented as a topology
+of components. Nothing in that reading requires anyone to look inside a network.
+
+We do not claim the broad reading is wrong. It is available, and for many
+high-risk systems it may be sufficient.
+
+\paragraph{The narrow reading we adopt.}
+Two provisions ask for something the broad reading does not supply. Point 2(e)
+requires an assessment of the technical measures needed ``to facilitate the
+interpretation of the outputs of AI systems by the deployers''. Point 3 requires
+the technical measures ``put in place to facilitate the interpretation of the
+outputs''. The same concept appears twice, in two tenses: the measures needed,
+and the measures taken.
+
+Both provisions are about interpreting outputs. A deployer exercising human
+oversight under Article 14 must be able to form a view about why a particular
+output occurred. Article 86(1) sharpens this for the individual, who has a right
+to ``clear and meaningful explanations of the role of the AI system in the
+decision-making procedure and the main elements of the decision taken''.
+
+We read ``the main elements of the decision'' as a causal claim, not a
+correlational one. That is our interpretive choice, and the rest of this paper
+depends on it.
+
+\paragraph{Why the causal reading selects this evidence.}
+% NOTE: deliberately argued from what each method DOES, not from a contested
+% empirical claim about attention weights. If we later want to cite the
+% attention-is-not-explanation literature, those references must be added to
+% refs.bib and verified first. Do not add an unverified citation here.
+Three families of evidence could be offered against these provisions, and they
+differ in what they establish.
+
+Black-box evaluation, including benchmarking and red-teaming, characterises what
+a system does across a distribution of inputs. It establishes behaviour. It does
+not identify which parts of the system produced a particular output, so it cannot
+speak to the main elements of a specific decision.
+
+Post-hoc attribution that reads off internal quantities, such as attention
+weights or gradient-based saliency, reports an association between an internal
+value and an output. Association is evidence about what covaries with the
+decision. It is not evidence about what produced it.
+
+Ablation-based circuit analysis operates differently. It removes a component and
+measures the change in the output. That is an intervention on the system, and the
+quantity it returns is a causal one. Of the three families, it is the one whose
+operation matches the form of the question that Article 86(1) asks.
+
+This does not make circuit analysis correct, complete, or the only admissible
+evidence. It makes it the family whose output is the right \emph{kind} of object
+for the narrow reading. That is the claim, and it is the only claim we need.
+
+\paragraph{The metric provision, and why it is load-bearing.}
+Point 4 requires ``a description of the appropriateness of the performance
+metrics for the specific AI system''. Read quickly, alongside eight other
+documentation duties, it looks like a formality.
+
+Our results make it load-bearing. Standardising the evaluation metric removes
+more claim instability than standardising any other axis in the space
+(Table~\ref{tab:fixed}). The metric is therefore not a presentational detail of
+the filing. It is a determinant of what the filing says. A provider who cannot
+justify the choice of metric has not justified the claim that rests on it, and
+\citet{hsia2023} show that the two metrics most used in this literature can be
+inflated without changing either the prediction or the explanation.
+
+\paragraph{What we are not claiming.}
+We are not lawyers, and we do not claim to settle which reading of Annex~IV is
+correct. We claim three things. The narrow reading is defensible on the text.
+Under that reading, circuit-level evidence is the relevant evidence. And under
+that reading, the evidence must be stable enough that two competent analysts
+filing the same system would file compatible statements.
+
+The rest of this paper measures whether it is.
+
+% =====================================================================
+% Ported 21 Sep from paper/arxiv/main.tex sections "Formalism" and "The claim
+% map", merged. Equation and table cross-references work under secnumdepth 0
+% because equations and tables are numbered independently of sections.
+%
+% The bin-sensitivity table stays in the main text rather than an appendix. It
+% answers a specific reviewer attack ("you chose the bins to get the number"),
+% and rule 4 says reviewers are not obliged to read appendices.
 % =====================================================================
 \section{Formalism and the Claim Map}
 
-% Port from paper/arxiv/main.tex sections 4 and 5. Specification tuple, the
-% unbiased Gini-Simpson flip rate, modal share, the filability criterion
-% pi* >= 1 - alpha, and the 1 - 1/k ceiling.
-%
-% Keep the point that phi is deterministic code and not LLM-generated. A
-% reviewer will ask, and it is the thing that stops the claim map being one
-% more researcher degree of freedom.
+A \emph{specification} is a tuple of analytic choices
+$s = (o, a, d, m, \tau, P, r, g)$. Here $o$ is the discovery objective, $a$ the
+ablation operator, $d$ the corruption distribution, $m$ the evaluation metric,
+$\tau$ the size threshold, $P$ the prompt variant, $r$ the seed and $g$ the
+granularity.
 
-TODO
+Circuit discovery returns $C(s) \subseteq E$, a subset of the model's edge set.
+For GPT-2 small under the factorised graph with separate query, key and value
+inputs, $|E| = 32{,}491$. We confirm this figure twice. The instrument reports
+it, and a closed-form count over the computation order reproduces it
+independently. In that count, block $b$ attention receives from $1 + 13b$ sources
+at three input slots for each of 12 heads. MLP $b$ receives from those same
+sources plus its own block's heads. The output receives from all 157
+non-terminal sources. Circuits touch components drawn from 144 attention heads
+and 12 MLPs, so 156 in total.
 
+\paragraph{Circuit instability.}
+For two specifications,
+\begin{equation}
+D(s_i, s_j) = 1 - \frac{|C_i \cap C_j|}{|C_i \cup C_j|},
+\end{equation}
+and $\bar{J}$ is the mean Jaccard similarity over unordered pairs.
+
+\paragraph{Claim instability.}
+Let $\varphi$ map a circuit to a structured Annex~IV statement. The flip rate is
+the probability that two distinct specifications yield different statements,
+\begin{equation}
+F = 1 - \frac{\sum_c n_c (n_c - 1)}{N(N-1)},
+\label{eq:flip}
+\end{equation}
+where $n_c$ counts specifications yielding claim class $c$ and $N$ is the number
+of specifications. Equation~\ref{eq:flip} is the unbiased Gini--Simpson form. It
+gives the probability that two draws without replacement differ. It is
+unit-tested against the brute-force pairwise definition over randomised cases.
+The modal share is $\pi^{*} = \max_c n_c / N$.
+
+We also use a within-group form. For a set of conditioning axes $G$,
+\begin{equation}
+F_{\text{within}}(G) = 1 - \frac{\sum_g \sum_c n_{g,c}(n_{g,c}-1)}{\sum_g n_g(n_g-1)},
+\label{eq:within}
+\end{equation}
+which weights every pair equally rather than every group equally. It reduces
+exactly to Equation~\ref{eq:flip} when $G$ is empty.
+
+\paragraph{Filability.}
+Evidence is \emph{filable at tolerance} $\alpha$ if and only if
+$\pi^{*} \geq 1 - \alpha$.
+
+A reported flip rate must be read against the number of classes the map can
+produce, because $F \leq 1 - 1/k$ for $k$ claim classes. With the nine classes
+observed here the ceiling is 0.8889. The observed $F$ of 0.7316 is 82.3\% of
+that ceiling. $F$ is therefore not near one by construction.
+
+\paragraph{The map itself.}
+$\varphi$ is the most attackable choice in this paper. It is therefore fixed in
+the pre-registration, implemented as deterministic code, and released on
+publication. It is not generated by a language model. Generating it that way
+would add model variance on top of circuit variance, with no way to separate the
+two.
+
+There are two addressees, and they follow the regulation rather than
+convenience. $\varphi_{\text{overseer}}$ is built on Annex~IV 2(e) and 3
+together with Article 14(4)(c). It is keyed on the dominant layer band, then the
+size class, then the ranked input segment. $\varphi_{\text{affected}}$ is built
+on Article 86(1) and leads with the input segment, because that right is owed to
+the person the decision is about. Three granularities are nested by
+construction, so a claim at a finer granularity refines the coarser one rather
+than contradicting it.
+
+A reviewer will suspect that the size bins were chosen to produce the reported
+flip rate. They were not chosen. They were returned by a committed calibration
+rule applied to a measured node-count curve. Table~\ref{tab:bins} reports the
+sensitivity.
+
+\begin{table}[t]
+\centering
+\caption{Flip rate under alternative size binnings. The committed bins are not a
+maximum: four alternatives give a higher $F$, including halving every threshold.
+Across binnings differing by a factor of four the range is 0.70 to 0.77.
+Removing the size term from the claim entirely still leaves 0.5733.}
+\label{tab:bins}
+\begin{tabular}{lc}
+\toprule
+Binning & $F$ \\
+\midrule
+Committed bins & 0.7316 \\
+All thresholds $\times$ 0.5 & 0.7448 \\
+All thresholds $\times$ 0.8 & 0.7435 \\
+All thresholds $\times$ 0.9 & 0.7394 \\
+All thresholds $\times$ 1.1 & 0.7289 \\
+All thresholds $\times$ 1.25 & 0.7314 \\
+All thresholds $\times$ 1.5 & 0.7308 \\
+All thresholds $\times$ 2 & 0.7232 \\
+Equal thirds & 0.7018 \\
+Deciles & 0.7719 \\
+No size term (COARSE) & 0.5733 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+% Ported 21 Sep from paper/arxiv/main.tex section "Method". The repository is
+% deliberately unnamed: rule 3.3 forbids directly identifying URLs and project
+% names. "Released on publication" is the anonymous form and is honest, since
+% the repository is public.
 % =====================================================================
 \section{Experimental Setup}
 
-% Port from paper/arxiv/main.tex section 6. Model, task, grid, pre-registration,
-% statistics, the two exclusions.
+\paragraph{Model and task.}
+GPT-2 small on indirect object identification \citep{wang2022}. This choice is
+not an apology. The non-identifiability and faithfulness literature that this
+paper extends works at this scale, so comparability is the point. The edge count
+at this scale is also what makes a size-matched random baseline meaningful.
+
+\paragraph{Grid.}
+The pre-registered grid crosses seven discovery objectives, seven ablation
+operators, four corruption distributions, four evaluation metrics, three size
+thresholds, two prompt variants and five seeds. That is 1{,}540 discovery cells
+and 18{,}480 specifications. Corruption is nested within ablation rather than
+crossed with it, because two of the seven ablation operators never read the
+corrupt distribution. Crossing them would emit duplicate specifications.
+
+Every level of every axis is taken from a published implementation. None was
+invented for this study. Discovery uses the edge attribution patching family
+\citep{syed2023} and integrated edge gradients, as implemented in the library
+released with \citet{miller2024}. The automated circuit discovery lineage is
+\citet{conmy2023}. The four corruption constructions are taken from
+\citet{wang2022}. The ablation operators are the full set exported by the
+library. \citet{li2024} motivate the choice of ablation operator as an analytic
+decision rather than a detail.
+
+\paragraph{Pre-registration.}
+The analysis plan was committed and tagged before the confirmatory sweep began.
+Both abstracts were drafted in advance, so neither direction could be written up
+as a surprise. Deviations are recorded in an append-only file, with dates, and
+with a note on whether each was decided before or after the affected result was
+seen. The plan, the code and the per-cell records are released on publication.
+
+\paragraph{Statistics.}
+No $p$-value is computed across specifications anywhere. Specifications are a
+designed grid, not an independent sample \citep{steegen2016,simonsohn2020}.
+Uncertainty comes from a nonparametric bootstrap that resamples specifications
+and never pairs, at $B = 10{,}000$. This matters because $F$ and $\bar{J}$ are
+U-statistics over pairs, and pairs that share a specification are dependent.
+Intervals quantify uncertainty given the grid. They license nothing beyond it.
+
+\paragraph{Two exclusions, with criteria fixed before any circuit was seen.}
+One discovery objective does not execute. All 220 of its cells raise a runtime
+error, from a mean squared error computed against an integral target, inside the
+library's own code. We verified by digest over the sorted failing cell
+identifiers that the failure set is exactly that arm and contains nothing else.
+We did not repair it. The library is the instrument under test and is reproduced
+verbatim. The realised grid is six objectives, 1{,}320 cells and 15{,}840
+specifications.
+
+The metric-relative threshold rule admits no circuit for 8{,}279 of the 15{,}840
+specifications. That is a discard rate of 52.3\%, and it is distributed unevenly
+across metrics (Table~\ref{tab:discard}). The unevenness was disclosed before the
+plan was locked, from a six-cell validation slice. The surviving pool is
+therefore 52\% comprehensiveness against 25\% by design. We report that
+composition rather than smoothing it.
+
+\begin{table}[t]
+\centering
+\caption{Discard rate by evaluation metric under the pre-registered
+metric-relative threshold rule. The unevenness was disclosed before the
+pre-registration was locked.}
+\label{tab:discard}
+\begin{tabular}{lccc}
+\toprule
+Metric & Kept & Discarded & Rate \\
+\midrule
+Comprehensiveness & 3{,}947 & 13 & 0.003 \\
+KL divergence & 1{,}467 & 2{,}493 & 0.630 \\
+Logit difference & 1{,}270 & 2{,}690 & 0.679 \\
+Sufficiency & 877 & 3{,}083 & 0.779 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% =====================================================================
+% Ported 21 Sep from paper/arxiv/main.tex section "Results". Reordered so that
+% "Baselines" is an explicitly named subsection: Galke read the preprint and
+% asked whether we had baselines, because they are present but never labelled
+% as such. Four exist and the opening paragraph of that subsection now names
+% all four in one place.
 %
-% The pre-registration must be described without naming the repository. Guide
-% 3.3 permits "a public repository, released on acceptance" style phrasing.
-
-TODO
-
+% PAGE BUDGET: this section carries four tables and the figure. Do not cut
+% anything by estimate. Compile the whole paper first, measure, then cut with
+% a real page count. If a cut is needed, tab:bins in the Formalism section
+% converts to two sentences with no loss.
 % =====================================================================
 \section{Results}
 
-TODO
+Table~\ref{tab:hyp} states each pre-registered outcome against its result. The
+decision rules and thresholds were fixed and tagged before the confirmatory
+sweep ran. None was revisited.
 
-% ---------------------------------------------------------------------
-% GALKE ASKED FOR THIS EXPLICITLY AND THE PREPRINT BURIES IT.
-%
-% "Another thing that reviewers will look out for is, if you have considered
-%  some sort of baselines, what we compare against."
-%
-% Four baselines already exist in the results. They are not currently labelled
-% as baselines anywhere, which is why a co-author who read the paper did not
-% find them. Give them their own subsection and name them as baselines.
-%
-%   1. Size-matched random-circuit null multiverse. With circuit size held
-%      fixed, discovered 0.2746 against null 0.4230. This is the comparison
-%      that shows discovered circuits carry information.
-%   2. Analytic random-Jaccard line, J_rand = k / (2N - k), adopted from
-%      bayatmakou2026's own calibration.
-%   3. The ceiling F <= 1 - 1/k. With nine claim classes the ceiling is 0.8889,
-%      so the observed 0.7316 is 82.3\% of the maximum attainable. Report F as
-%      a fraction of its ceiling, not only raw.
-%   4. Cohen's kappa as the chance-corrected counterpart to raw agreement.
-%      Raw agreement 0.6028 is almost entirely marginal accuracy; kappa 0.0146
-%      is what survives correction.
-% ---------------------------------------------------------------------
+\begin{table}[t]
+\centering
+\caption{Pre-registered outcomes and their results. Thresholds were fixed and
+the plan was tagged before the sweep began. Two results carry qualifications
+that only the within-size decomposition reveals. Those are reported in the
+subsections below rather than deferred to an appendix.}
+\label{tab:hyp}
+\begin{tabular}{llll}
+\toprule
+& Decision rule & Result & Outcome \\
+\midrule
+P0 & $\bar{J}$ reported, not tested & 0.1396 & premise holds \\
+H2 & $F > 0.20$, CI above & 0.7316 & \textbf{confirmed} \\
+H3 & not separated from null & separated & \textbf{rejected} \\
+H4 & gap $> 0.10$ & 0.3344 & \textbf{supported} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Circuits Are Almost Disjoint}
+
+$\bar{J} = 0.1396$ (95\% CI 0.1377 to 0.1418). This is computed exactly over all
+28{,}580{,}580 specification pairs rather than sampled. The 7{,}561
+specifications hold 3{,}218 distinct circuits, which makes the exact computation
+tractable.
+
+The distribution says more than the mean. For pairwise $D$, the 1\% quantile is
+0.196, the 25\% quantile is 0.788, the median is 0.960 and the 75\% quantile is
+0.998. The median pair of circuits shares 4\% of its edges. Only 1\% of pairs
+exceed a Jaccard similarity of 0.8.
+
+\subsection{The Claim Flips on Three Quarters of Pairs}
+
+$F = 0.7316$ (95\% CI 0.7247 to 0.7380), against a pre-registered threshold of
+0.20 with the interval lower bound required to clear it. It clears by more than
+three times. $\pi^{*} = 0.4109$, so the evidence is not filable at any
+pre-registered tolerance: 0.411 against requirements of 0.95, 0.90 and 0.80.
+
+\begin{table}[t]
+\centering
+\caption{The nine claim classes produced by $\varphi_{\text{overseer}}$ at
+medium granularity, ordered by frequency. Aggregating over size class, the layer
+attribution splits 47.9\% early, 43.6\% late and 8.5\% middle. The first of
+these is the COARSE modal share of 0.4788, computed independently.}
+\label{tab:classes}
+\begin{tabular}{clccc}
+\toprule
+Rank & Layer band & Size class & Count & Share \\
+\midrule
+1 & early & distributed & 3{,}107 & 0.4109 \\
+2 & late & sparse & 2{,}153 & 0.2848 \\
+3 & late & moderate & 657 & 0.0869 \\
+4 & late & distributed & 489 & 0.0647 \\
+5 & early & sparse & 477 & 0.0631 \\
+6 & middle & moderate & 283 & 0.0374 \\
+7 & middle & sparse & 269 & 0.0356 \\
+8 & middle & distributed & 90 & 0.0119 \\
+9 & early & moderate & 36 & 0.0048 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The two most common claims cover 41.1\% and 28.5\% of the space
+(Table~\ref{tab:classes}). They attribute the same model's behaviour on the same
+task to early layers and to late layers. These are not different emphases. They
+contradict each other.
+
+All six addressee-granularity combinations reject filability
+(Table~\ref{tab:gran}). The coarsest statement available to an affected person
+is a two-class claim, and it still flips on 39.5\% of pairs. The result is
+therefore not an artefact of fine-grained claim language.
+Figure~\ref{fig:speccurve} shows the specification curve. The width of the modal
+step is $\pi^{*}$.
+
+\begin{table}[t]
+\centering
+\caption{Flip rate and modal share for both addressees at all three
+granularities. Filability is evaluated at the loosest pre-registered tolerance,
+$\alpha = 0.20$, which requires $\pi^{*} \geq 0.80$. No cell passes.}
+\label{tab:gran}
+\begin{tabular}{llcccc}
+\toprule
+Addressee & Gran. & Classes & $F$ & $\pi^{*}$ & Filable \\
+\midrule
+affected & COARSE & 2 & 0.3950 & 0.7291 & no \\
+affected & MEDIUM & 4 & 0.6597 & 0.4875 & no \\
+affected & FINE & 8 & 0.6744 & 0.4786 & no \\
+overseer & COARSE & 3 & 0.5733 & 0.4788 & no \\
+overseer & MEDIUM & 9 & 0.7316 & 0.4109 & no \\
+overseer & FINE & 12 & 0.7681 & 0.4109 & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.86\textwidth]{figure1_specification_curve.pdf}
+\caption{Specification curve for $\varphi_{\text{overseer}}$ at medium
+granularity. Upper panel: claim class against specification rank, with classes
+ordered by frequency, so each step's width is that class's share of the space.
+The dashed line marks the size-matched random null's modal share. That pooled
+comparison is confounded by circuit size, as discussed under Baselines below.
+Lower panel: which analytic level is active for each specification. The solid
+band on the comprehensiveness row is the composition effect of the discard rule
+in Table~\ref{tab:discard}. The seed rows are unstructured, which is the same
+result as seed removing only 0.0009 from $F$ in Table~\ref{tab:fixed}.}
+\label{fig:speccurve}
+\end{figure*}
+
+\subsection{No Analytic Axis Rescues the Filing}
+
+\begin{table}[t]
+\centering
+\caption{Residual flip rate once each axis is standardised, computed with
+Equation~\ref{eq:within}. All intervals are valid: group sizes run from 1{,}512
+to 2{,}520, bootstrap bias is below 0.0006 on every axis, and every observed
+value lies inside its own interval.}
+\label{tab:fixed}
+\begin{tabular}{lccc}
+\toprule
+Axis standardised & Residual $F$ & 95\% CI & Removes \\
+\midrule
+Evaluation metric & 0.5939 & 0.5803--0.6063 & 0.1377 \\
+Ablation operator & 0.7014 & 0.6939--0.7075 & 0.0302 \\
+Discovery objective & 0.7018 & 0.6938--0.7084 & 0.0298 \\
+Threshold $\tau$ & 0.7070 & 0.6981--0.7149 & 0.0246 \\
+Corruption & 0.7092 & 0.7008--0.7166 & 0.0224 \\
+Prompt variant & 0.7232 & 0.7157--0.7300 & 0.0084 \\
+Seed & 0.7307 & 0.7234--0.7368 & 0.0009 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The evaluation metric is the largest single lever, and it is not enough.
+Standardising it completely is more than a conformity procedure could demand. It
+still leaves $F = 0.5939$, with the interval lower bound at 0.5803.
+
+Structure and claim are governed by different axes. A REML variance
+decomposition on $\log_{10}$ of the selected circuit size attributes 78.8\% of
+structural variance to the ablation-corruption interaction, 11.5\% to residual,
+4.4\% to ablation, 4.1\% to the threshold, and 0.7\% to the metric. The metric is
+the largest driver of claim variance and almost the smallest driver of
+structural variance. A standards body that read the structural decomposition
+would standardise the ablation operator and fix almost none of the filing
+instability.
+
+\subsection{The Result Under Maximum Pressure}
+
+Strip every trace of circuit size from the claim, so that the statement is the
+dominant layer band alone. Then hold circuit size fixed using
+Equation~\ref{eq:within}. The result is $F = 0.2706$ (95\% CI 0.2550 to 0.2859).
+The interval lower bound is above the pre-registered threshold. Where in the
+model the behaviour is attributed still flips on 27\% of pairs when nothing
+about size can contribute.
+
 \subsection{Baselines}
 
-TODO
+We compare against four baselines, and we state them together here because each
+one answers a different question about whether $F$ is large.
 
-\subsection{Claim Instability}
+\emph{First, the attainable maximum.} $F \leq 1 - 1/k$ for $k$ claim classes.
+With nine classes the ceiling is 0.8889, so the observed 0.7316 is 82.3\% of the
+maximum attainable rather than a number near one by construction.
 
-TODO
+\emph{Second, chance overlap between circuits.} At the median circuit size of
+200 edges, the analytic random line $k/(2|E|-k)$ gives 0.0031, so observed
+overlap is about 45 times chance. Beating chance at this scale is not evidence
+of much: a 500-edge circuit has an expected random overlap of 0.008.
+
+\emph{Third, a size-matched random-circuit null multiverse}, drawn from the full
+32{,}491-edge population with $R = 1{,}000$ null multiverses. Pooled, the
+discovered multiverse is \emph{less} stable than the null: 0.7316 against
+0.6774, with disjoint intervals. H3 is therefore rejected, since the
+distributions are separated.
+
+We do not report the direction of that separation as a finding, because it is an
+artefact of the size distribution. Table~\ref{tab:bysize} shows why. The null is
+degenerate above 1{,}000 edges, where a uniform draw touches all 156 components
+and can produce only one claim. With size held fixed the ordering reverses:
+discovered 0.2746 against null 0.4230 at medium granularity, and 0.2706 against
+0.3822 at coarse. Discovered circuits are more stable than random ones once the
+comparison is fair. They are still not stable enough to file.
+
+\begin{table}[t]
+\centering
+\caption{Flip rate within each circuit size, medium granularity. The null
+collapses to a single claim class at and above 1{,}000 edges, which is what
+depresses its pooled flip rate. The discovered multiverse also collapses at
+5{,}000 and 10{,}000 edges, so 2{,}692 of 7{,}561 specifications contribute no
+flips at all, and the instability lives entirely below 2{,}000 edges.}
+\label{tab:bysize}
+\begin{tabular}{rrcccc}
+\toprule
+Size & $n$ & Disc. $F$ & Cls. & Null $F$ & Null cls. \\
+\midrule
+10 & 2{,}492 & 0.4543 & 3 & 0.7331 & 6 \\
+20 & 489 & 0.3380 & 4 & 0.6622 & 3 \\
+50 & 519 & 0.4639 & 3 & 0.7310 & 6 \\
+100 & 242 & 0.5792 & 3 & 0.6584 & 3 \\
+200 & 199 & 0.5122 & 4 & 0.6366 & 3 \\
+500 & 236 & 0.4258 & 3 & 0.1421 & 3 \\
+1{,}000 & 380 & 0.5133 & 3 & 0.0000 & 1 \\
+2{,}000 & 312 & 0.5714 & 3 & 0.0000 & 1 \\
+5{,}000 & 625 & 0.0000 & 1 & 0.0000 & 1 \\
+10{,}000 & 2{,}067 & 0.0000 & 1 & 0.0000 & 1 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\emph{Fourth, chance-corrected functional agreement.} Raw agreement between
+circuits is not interpretable on its own, because two circuits that are right
+about the same fraction of examples will agree often without agreeing on the
+same examples. Cohen's kappa corrects for that, and we report it in the next
+subsection.
 
 \subsection{Structure Versus Function}
 
-% The answer to the phantom-specialisation objection. Raw agreement 0.6028,
-% kappa 0.0146, kappa staying between 0.016 and 0.047 at every circuit size
-% while raw agreement climbs 0.52 to 0.92.
+Per-example functional agreement between circuits is 0.6028, so functional
+instability is 0.3972. The gap to the claim flip rate is 0.3344 (95\% CI 0.3297
+to 0.3394), against a pre-registered threshold of 0.10. Agreement is computed
+from per-example correct or incorrect verdicts, using the measures of
+\citet{bayatmakou2026}, reproduced verbatim.
 
-TODO
+Cohen's kappa is 0.0146. The 60\% raw agreement is almost entirely explained by
+both circuits being right about the same fraction of examples, not the same
+examples. Kappa stays between 0.016 and 0.047 at every circuit size, while raw
+agreement climbs from 0.52 to 0.92 and accuracy climbs from 0.51 to 0.95.
 
+This answers the phantom specialisation objection. If discovery sampled from an
+equivalence class of behaviourally identical subgraphs, the circuits would be
+functionally interchangeable. At a kappa of 0.015 they are not.
+
+H4 is supported on the pre-registered quantity. The gap does not survive holding
+size fixed: it fails the 0.10 threshold at 6 of 10 sizes and is negative at 5. At
+both ends of the range the mechanisms differ more than the filings do, and the
+pooled figure is carried by the 500 to 2{,}000 edge band alone. We report the
+pooled result because it was pre-registered, and the decomposition beside it
+because the pooled result alone would mislead.
+
+% =====================================================================
+% Ported 21 Sep from paper/arxiv/main.tex. This is the deliverable: the part a
+% standards body could adopt. Keep it boxed and keep it short enough to read
+% in one pass.
 % =====================================================================
 \section{The Filability Protocol}
 
-% Port from paper/arxiv/main.tex. The five-step protocol, stated so a standards
-% body could apply it. This is the deliverable, and it is the part that makes
-% the paper a contribution rather than a measurement report.
+\begin{framed}
+\noindent\textbf{Filability of an interpretability claim.} For a filed claim $c$
+derived from a circuit:
+\begin{enumerate}\itemsep2pt
+\item Declare the specification space $\mathcal{S}$: the analytic axes, and the
+levels of each that a competent analyst could defend, each with a citation.
+\item Declare the claim map $\varphi$ as deterministic, published code. Not a
+language model.
+\item Compute $\pi^{*} = \max_c n_c / N$ over $\mathcal{S}$, and $F$ by
+Equation~\ref{eq:flip}.
+\item The claim is filable at tolerance $\alpha$ if $\pi^{*} \geq 1 - \alpha$.
+\item Report $\pi^{*}$, $F$, the discard rate per axis level, and the
+within-group decomposition of any pooled statistic.
+\end{enumerate}
+\end{framed}
 
-TODO
+\noindent
+A filing that cannot state its own $\pi^{*}$ has not been audited. It has been
+asserted.
 
+The protocol does not ask the regulator to adjudicate which analytic choice is
+correct. That is the property that makes it implementable. It asks only that the
+filer declare the space and report how much of that space agrees.
+
+% =====================================================================
+% Ported 21 Sep, plus one paragraph the arXiv version does not have: what the
+% result means for a conformity procedure, tied to Annex IV point 4. That is
+% the paragraph this audience is here for.
+%
+% Interpretation lives in this section and nowhere else. Results stay objective.
 % =====================================================================
 \section{Discussion}
 
-% Interpretation goes HERE and nowhere else. Galke: "try to keep results very
-% objective and only in the discussion, try to say what they mean".
+\paragraph{What standardising one axis buys.}
+Less than it appears. The evaluation metric is the biggest lever, and it removes
+0.1377 of a 0.7316 flip rate. There is no single knob. A procedure that
+standardised one axis and declared the problem solved would be mistaken by a
+wide margin.
 
-TODO
+\paragraph{What this means for a conformity procedure.}
+The protocol in the previous section does not ask a regulator to decide which
+ablation operator is correct. That is the property that makes it implementable,
+because a conformity assessment body has no basis on which to adjudicate an open
+methodological question in machine learning, and should not be asked to.
 
+It asks something a body can do. Require the filer to declare the space of
+defensible choices, and to report how much of that space agrees. Annex~IV point
+4 already requires the provider to justify the appropriateness of the
+performance metrics. Our results turn that requirement from a formality into a
+measurement: metric choice moves the filed claim more than any other analytic
+decision, so a metric justification that does not report the claim's sensitivity
+to it has justified nothing.
+
+\paragraph{On the instrument.}
+One of seven documented, publicly exported discovery objectives does not run on
+the library's own canonical task. We report this as a discard with its rate, and
+as an observation about the maturity of the tooling that regulatory evidence is
+expected to rest on. It is not this paper's headline. It is also not a criticism
+of a library whose authors are among those calling for the field to address
+exactly this \citep{sharkey2025}.
+
+\paragraph{What a regulator can take from this.}
+Not that interpretability evidence is worthless. Rather, that its evidentiary
+weight is a measurable property rather than an assumed one, and that the
+measurement is cheap relative to the sweep that produced the circuit in the
+first place.
+
+% =====================================================================
+% Ported 21 Sep. The replication paragraph names neither the repository nor the
+% tag, and says "reported whichever direction it falls" rather than "in a
+% revision", which would be odd phrasing in an anonymous submission.
 % =====================================================================
 \section{Limitations}
 
-% One model, one task. The second-model replication is pre-registered and not
-% run: say so, and say it will be reported whichever way it falls. Do not
-% name the repository or the tag.
-%
-% Also port: circuit size is an outcome not an axis; the multiverse is as wide
-% as the library not the literature; the discard rate is high and uneven; the
-% bootstrap is invalid for one reported family.
+\paragraph{One model, one task.}
+Larger models have more components, so both the layer band and the size class
+have more room. The direction of the effect on $F$ is not obvious. This is the
+limitation most likely to change the number.
 
-TODO
+A second-model replication is pre-registered but not yet run: a 924-cell grid on
+Pythia-160m, a model of a different architecture family that performs the same
+task. It is identical on every axis except that the seed axis carries three
+levels rather than five. The analysis plan, the reduced grid, and the criteria
+for what would count as replication rather than refutation were committed and
+timestamped before any cell of it ran. It will be reported whichever direction
+it falls. A second task remains designed and not run.
 
+\paragraph{Circuit size is an outcome, not an axis.}
+It is chosen by the threshold rule, and it has distorted three separate pooled
+quantities: $F$ itself, the direction of the null comparison, and the sign of
+the functional gap. Fixing it drops $F$ from 0.7316 to 0.2746, a larger
+reduction than standardising any pre-registered axis. We take this to be a
+general hazard for multiverse designs whose specifications select objects of
+different sizes. We therefore report every pooled statistic with its within-size
+decomposition.
+
+\paragraph{The multiverse is as wide as the library, not the literature.}
+Optimal ablation \citep{li2024} is a defensible operator that the instrument
+does not implement, so it never entered the space. The measured $F$ is therefore
+a lower bound with respect to the field's full set of defensible choices.
+
+\paragraph{The discard rate is high and uneven.}
+It is 52.3\%, and the surviving pool is imbalanced across metrics. The threshold
+rule was fixed in advance and no failing item was repaired. The composition is
+nonetheless a property of the reported set, so we state it rather than adjust
+for it.
+
+\paragraph{The bootstrap is invalid for one reported family.}
+Where the conditioning groups hold only two to five specifications, retained
+self-pairs dominate and the intervals are unusable. Those quantities are
+reported as point estimates with the diagnostic attached. We did not construct a
+bias-corrected estimator after seeing the naive intervals disagree, because
+choosing an estimator in response to a result is the behaviour this paper
+documents.
+
+% =====================================================================
+% Widom: do not repeat the abstract or introduction. Make the original claims
+% concrete by pointing at the measured quantities.
 % =====================================================================
 \section{Conclusions}
 
-TODO
+We asked whether circuit-level interpretability evidence survives the condition
+under which it would be relied upon: two competent analysts, the same system,
+the same tool, different defensible settings. On GPT-2 small and indirect object
+identification, across 15{,}840 pre-registered specifications, it does not. The
+derived Annex~IV statement flips across 73.2\% of specification pairs, the modal
+claim commands 41.1\% of the space, and the evidence fails the filability
+criterion at every tolerance a conformity assessment body would plausibly
+accept.
+
+The finding is not that discovered circuits are meaningless. Held at fixed size
+they are more stable than a size-matched random null, 0.2746 against 0.4230. The
+finding is that the filing derived from them is not determined by the system
+under examination. It is determined jointly by that system and by analytic
+choices that nobody is currently required to report.
+
+The remedy we propose does not ask a regulator to settle which choice is
+correct. It asks the filer to declare the space and to report how much of that
+space agrees. A filing that cannot state its own $\pi^{*}$ has not been audited.
 
 % =====================================================================
 % MANDATORY. Guide section 3.6. Must situate the work against the earlier
@@ -239,9 +944,28 @@ TODO
 % Annex IV" and the protocol in Section "The Filability Protocol", both new.
 % Say only what is true.
 % =====================================================================
+% Mandatory, rule 3.6. Phrasing mirrors the guide's own example, which does not
+% attribute the earlier work to anyone. No venue, no authors, no link.
+%
+% READ THIS BEFORE CHOOSING THE TRACK. This statement says plainly that the
+% quantitative content is not new. If the Program Chairs rule that an arXiv
+% preprint counts as a "prior publication" under rule 3.1, then the 50%
+% new-technical-content bar is not met and the archival track is unavailable.
+% The statement must stay honest. The track is what flexes.
 \section{Statement of Contributions}
 
-TODO
+This paper extends earlier preliminary work. That earlier work reported the
+pre-registered multiverse measurement, the claim map, and the filability
+criterion. All quantitative results presented here appeared in it.
+
+Three things are new. The reading of Annex~IV set out in the section of that
+name is stated here for the first time as an explicit interpretive choice, with
+the broad alternative acknowledged and the argument for narrowing given from the
+text. The use of Annex~IV point 4, on the appropriateness of performance
+metrics, does not appear in the earlier work, and it is what makes the paper's
+largest empirical result regulatorily load-bearing rather than merely
+descriptive. The implications for a conformity procedure, set out in the
+Discussion, are also new.
 
 \bibliography{refs}
 
