@@ -1,0 +1,248 @@
+% IASEAI'27 submission. ANONYMOUS. Double-blind, see the guide section 3.3.
+%
+% Build on Overleaf. The AAAI style needs newtx, which is not installed in the
+% project sandbox, so this file has NOT been compiled locally. First compile is
+% yours.
+%
+% FORBIDDEN by the AAAI kit and therefore absent on purpose. Do not re-add them
+% when porting from paper/arxiv/main.tex, which uses several of them:
+%   hyperref, geometry, lmodern, float, setspace, titlesec, wrapfig, multicol,
+%   fullpage, indentfirst, ulem, tabu, stfloats, savetrees, balance, authblk
+% Also forbidden: \newpage, \clearpage, \pagebreak, \addtolength, \tiny,
+% negative \vspace near captions, and ANY option on \usepackage{natbib}.
+%
+% ANONYMITY CHECKLIST before submitting:
+%   [ ] no author names, no Hochschule Trier, no SDU
+%   [ ] no arXiv link or arXiv number for the companion preprint
+%   [ ] no github.com/designer-coderajay, no PyPI link
+%   [ ] no "Glassbox" project name
+%   [ ] no acknowledgement of the co-author or anyone else
+%   [ ] self-citations in third person, never "in our prior work"
+
+\documentclass[letterpaper]{article} % DO NOT CHANGE THIS
+\usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
+\usepackage[hyphens]{url}  % DO NOT CHANGE THIS
+\usepackage{graphicx} % DO NOT CHANGE THIS
+\urlstyle{rm} % DO NOT CHANGE THIS
+\def\UrlFont{\rm}  % DO NOT CHANGE THIS
+\usepackage{natbib}  % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\usepackage{caption} % DO NOT CHANGE THIS AND DO NOT ADD ANY OPTIONS TO IT
+\frenchspacing  % DO NOT CHANGE THIS
+\usepackage{booktabs}
+\usepackage{amsmath,amssymb}
+
+\pdfinfo{
+/TemplateVersion (2027.1)
+}
+
+\setcounter{secnumdepth}{0}
+
+% TITLE. Mixed case, not sentence case. Cannot be changed after 2 October.
+% Candidates, pick one and delete the rest:
+%   (a) Filability: A Criterion for When Circuit-Level Evidence Can Support an
+%       EU AI Act Conformity Claim
+%   (b) Can Circuit-Level Interpretability Evidence Support a Conformity Claim?
+%       A Pre-Registered Multiverse Analysis
+%   (c) Explanation Multiplicity: Circuit-Level Interpretability Evidence Does
+%       Not Survive Defensible Analytic Variation
+% (c) is the preprint title. Reusing it verbatim makes the double-blind search
+% trivial for any reviewer who pastes it into Google. Prefer (a) or (b).
+\title{TODO: Title}
+
+\author{}
+\affiliations{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+% TODO. Adapt from paper/arxiv/main.tex but re-lead on the regulatory claim,
+% not on the measurement. The preprint abstract leads with the EU AI Act then
+% pivots to numbers; here the contribution is the interpretation plus the
+% criterion, evidenced by the numbers.
+%
+% Must not mention the preprint (guide 3.5). Must not name the code repository.
+%
+% Keep every figure identical to the verified values:
+%   F = 0.7316, 95\% CI 0.7247 to 0.7380
+%   pi* = 0.4109
+%   metric standardised: 0.5939, CI 0.5803 to 0.6063
+%   size removed and fixed: 0.2706, CI 0.2550 to 0.2859
+%   J_bar = 0.1396, CI 0.1377 to 0.1418
+%   Cohen's kappa = 0.0146
+%   15,840 specifications, 7,561 producing a claim, 1,320 discovery cells
+% Verify with: python3 analysis/check_manuscript_numbers.py (points at
+% paper/manuscript.md; repoint it at this file before submission).
+\end{abstract}
+
+% =====================================================================
+% WRITE THIS SECTION LAST. Galke's instruction, and Widom's.
+% Five paragraphs: what is the problem; why is it interesting and important;
+% why is it hard; why has it not been solved; what are the key components of
+% the approach and results, including limitations. Then a bulleted
+% "Summary of Contributions".
+% Jargon-free. Give away the results.
+% =====================================================================
+\section{Introduction}
+
+TODO
+
+% =====================================================================
+\section{Related Work}
+
+% Port from paper/arxiv/main.tex section 2. Already written and verified.
+% Six paragraphs: non-identifiability (meloux2025), faithfulness metric
+% sensitivity (miller2024), structure versus function (bayatmakou2026),
+% variance as estimation (meloux2025b), auditability (lan2026, sharkey2025,
+% mueller2025), multiverse method (steegen2016, simonsohn2020, simmons2011).
+%
+% ANONYMITY: no self-citation of the preprint here. If the preprint must be
+% cited, third person only, and consider whether it reveals identity.
+
+TODO
+
+% =====================================================================
+% THE NEW SECTION. This is the contribution beyond the preprint, and it is
+% what Galke asked for on 8 September and specified on 17 September.
+%
+% His framing, which must be followed exactly:
+%   1. Acknowledge the broad reading first. Annex IV could be read to cover
+%      what data goes into the model, what comes out, how a multi-agent
+%      system is constructed.
+%   2. Then narrow to the causal reading, and say plainly that this is a
+%      deliberate interpretive choice.
+%   3. Justify it: standard post-hoc XAI and black-box evaluation are
+%      correlational; Annex IV point 2(c) asks how software components
+%      "build on or feed into each other", which is a causal question.
+%   4. State explicitly that we are not lawyers and are not settling whether
+%      the interpretation is correct. We argue it is reasonable.
+%
+% Do not overclaim. The paper's contribution survives even if a lawyer
+% disagrees with the interpretation, because the criterion is general.
+% =====================================================================
+\section{Interpreting Annex IV}
+
+TODO
+
+% =====================================================================
+\section{Formalism and the Claim Map}
+
+% Port from paper/arxiv/main.tex sections 4 and 5. Specification tuple, the
+% unbiased Gini-Simpson flip rate, modal share, the filability criterion
+% pi* >= 1 - alpha, and the 1 - 1/k ceiling.
+%
+% Keep the point that phi is deterministic code and not LLM-generated. A
+% reviewer will ask, and it is the thing that stops the claim map being one
+% more researcher degree of freedom.
+
+TODO
+
+% =====================================================================
+\section{Experimental Setup}
+
+% Port from paper/arxiv/main.tex section 6. Model, task, grid, pre-registration,
+% statistics, the two exclusions.
+%
+% The pre-registration must be described without naming the repository. Guide
+% 3.3 permits "a public repository, released on acceptance" style phrasing.
+
+TODO
+
+% =====================================================================
+\section{Results}
+
+TODO
+
+% ---------------------------------------------------------------------
+% GALKE ASKED FOR THIS EXPLICITLY AND THE PREPRINT BURIES IT.
+%
+% "Another thing that reviewers will look out for is, if you have considered
+%  some sort of baselines, what we compare against."
+%
+% Four baselines already exist in the results. They are not currently labelled
+% as baselines anywhere, which is why a co-author who read the paper did not
+% find them. Give them their own subsection and name them as baselines.
+%
+%   1. Size-matched random-circuit null multiverse. With circuit size held
+%      fixed, discovered 0.2746 against null 0.4230. This is the comparison
+%      that shows discovered circuits carry information.
+%   2. Analytic random-Jaccard line, J_rand = k / (2N - k), adopted from
+%      bayatmakou2026's own calibration.
+%   3. The ceiling F <= 1 - 1/k. With nine claim classes the ceiling is 0.8889,
+%      so the observed 0.7316 is 82.3\% of the maximum attainable. Report F as
+%      a fraction of its ceiling, not only raw.
+%   4. Cohen's kappa as the chance-corrected counterpart to raw agreement.
+%      Raw agreement 0.6028 is almost entirely marginal accuracy; kappa 0.0146
+%      is what survives correction.
+% ---------------------------------------------------------------------
+\subsection{Baselines}
+
+TODO
+
+\subsection{Claim Instability}
+
+TODO
+
+\subsection{Structure Versus Function}
+
+% The answer to the phantom-specialisation objection. Raw agreement 0.6028,
+% kappa 0.0146, kappa staying between 0.016 and 0.047 at every circuit size
+% while raw agreement climbs 0.52 to 0.92.
+
+TODO
+
+% =====================================================================
+\section{The Filability Protocol}
+
+% Port from paper/arxiv/main.tex. The five-step protocol, stated so a standards
+% body could apply it. This is the deliverable, and it is the part that makes
+% the paper a contribution rather than a measurement report.
+
+TODO
+
+% =====================================================================
+\section{Discussion}
+
+% Interpretation goes HERE and nowhere else. Galke: "try to keep results very
+% objective and only in the discussion, try to say what they mean".
+
+TODO
+
+% =====================================================================
+\section{Limitations}
+
+% One model, one task. The second-model replication is pre-registered and not
+% run: say so, and say it will be reported whichever way it falls. Do not
+% name the repository or the tag.
+%
+% Also port: circuit size is an outcome not an axis; the multiverse is as wide
+% as the library not the literature; the discard rate is high and uneven; the
+% bootstrap is invalid for one reported family.
+
+TODO
+
+% =====================================================================
+\section{Conclusions}
+
+TODO
+
+% =====================================================================
+% MANDATORY. Guide section 3.6. Must situate the work against the earlier
+% version WITHOUT naming venues or authors, and without revealing identity.
+%
+% Model wording from the guide: "the paper extends earlier preliminary work
+% with new experiments presented in Sections 4.2 and 4.3".
+%
+% Yours will say something like: this paper extends an earlier preprint of the
+% measurement with the regulatory interpretation in Section "Interpreting
+% Annex IV" and the protocol in Section "The Filability Protocol", both new.
+% Say only what is true.
+% =====================================================================
+\section{Statement of Contributions}
+
+TODO
+
+\bibliography{refs}
+
+\end{document}
