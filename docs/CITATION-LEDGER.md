@@ -694,3 +694,60 @@ Two notes for the record, neither an error:
 - The phrase quoted for point 3 also appears in point 2(d), where the wording
   continues "of the high-risk AI systems". The paper truncates before that point,
   so its quotation is exact for both and its attribution to point 3 is correct.
+
+---
+
+## 2026-09-22. Governance and audit scholarship, added to Related Work
+
+Related Work had seven paragraphs and cited no regulatory, compliance or audit
+literature at all, in a paper whose argument is about conformity assessment.
+Two entries added, both verified against the primary record rather than the
+search tool's summary.
+
+| Field | Value |
+|---|---|
+| Key | `mokander2022` |
+| Title | Conformity Assessments and Post-market Monitoring: A Guide to the Role of Auditing in the Proposed European AI Regulation |
+| Authors | Jakob Mökander, Maria Axente, Federico Casolari, **Luciano Floridi** |
+| Venue | Minds and Machines 32(2), 241-268 |
+| Year | 2022 |
+| DOI | 10.1007/s11023-021-09577-4 |
+| State | VERIFIED against Crossref |
+
+Two details the literature-search tool got wrong, both caught by fetching the
+Crossref record:
+
+- It returned **three** authors. There are four. Floridi was truncated and would
+  have been dropped from the bibliography.
+- It reported year **2021**. Crossref gives `published-online` 2021-11-05 and
+  `published-print` 2022-06, with `journal-issue` 2022. Volume 32 issue 2 is a
+  2022 issue. Cited as 2022.
+
+The tool truncates author lists to three without saying so. Treat its author
+field as a search result, never as a citation.
+
+| Field | Value |
+|---|---|
+| Key | `casper2024` |
+| Title | Black-Box Access is Insufficient for Rigorous AI Audits |
+| Authors | Stephen Casper, Carson Ezell, Charlotte Siegmann, Noam Kolt, Taylor Lynn Curtis, Benjamin Bucknall, and 15 others |
+| Venue | FAccT '24, ACM Conference on Fairness, Accountability and Transparency, 2254-2272 |
+| Year | 2024 |
+| DOI | 10.1145/3630106.3659037 |
+| arXiv | 2401.14446, v3 29 May 2024 |
+| State | VERIFIED against the arXiv abs page, which gives the full 21-author list, the FAccT journal reference and the ACM DOI |
+
+The same truncation hazard, in a more dangerous form. The tool's ACM record
+listed the first three authors as Ezell, Siegmann and Kolt, with **Casper
+absent**, while its arXiv record listed Casper first. Citing from either without
+checking would have produced a wrong author order. The arXiv abs page resolves
+it: Stephen Casper is first of 21.
+
+**Claims used, both from the abstract of record, not from recall.** Mökander et
+al. conclude with "the need to translate vague concepts into verifiable
+criteria". Casper et al. conclude that white- and outside-the-box access allow
+substantially more scrutiny than black-box access alone. Neither is attributed a
+finding it does not state.
+
+Bibliography now **18 entries**. Rebuild: 9 pages, 0 errors, 0 overfull boxes,
+0 undefined citations.

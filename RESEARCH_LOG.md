@@ -4389,3 +4389,40 @@ rebuild still 9 pages, 0 errors, 0 overfull boxes, 0 undefined citations.
 One self-correction worth recording: the first draft of the ledger entry above
 said 17 entries. The build said 16. Caught by checking the built `.bbl` instead
 of counting from memory.
+
+### 2026-09-22. Related Work now cites governance scholarship
+
+Related Work ran to seven paragraphs on interpretability, faithfulness metrics
+and multiverse methodology, and cited no regulatory, compliance or audit
+literature at all. In a paper arguing about conformity assessment, a reviewer
+from the governance side would open there.
+
+Added one paragraph, two citations, both verified to primary record:
+
+**Mökander et al. (2022)**, Minds and Machines 32(2), read the Act as an attempt
+to build a Europe-wide ecosystem for AI auditing and close by recommending that
+its vague concepts be translated into verifiable criteria. That is a precise
+statement of what filability does for one provision.
+
+**Casper et al. (2024)**, FAccT, argue black-box access is insufficient for a
+rigorous audit and that white-box access lets an auditor interpret a model more
+thoroughly. Taking that as given sets up the next question directly: white-box
+access establishes that a circuit can be recovered, not that two auditors
+recover the same one.
+
+Positioning both as premises rather than targets is honest and it strengthens
+the paper. The governance literature says audits need internal access. This
+paper measures what that access actually yields.
+
+**The literature-search tool truncates author lists to three and does not say
+so.** It returned three authors for Mökander; there are four, and Floridi would
+have been dropped. Worse, for Casper it returned two different author orders for
+the arXiv and ACM records of the same paper, with Casper absent from the ACM
+one. Crossref and the arXiv abs page resolved both. It also reported Mökander as
+2021, which is the online-first date; the issue is 2022.
+
+Search output is a lead, not a citation. Every field was taken from Crossref or
+the publisher record.
+
+Rebuild: 18 bibliography entries, **9 pages**, 0 errors, 0 overfull boxes,
+0 undefined citations. Still one page under the limit.
