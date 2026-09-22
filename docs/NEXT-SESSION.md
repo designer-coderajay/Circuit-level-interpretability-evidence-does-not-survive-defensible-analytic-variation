@@ -2,25 +2,15 @@
 
 Written 2026-09-22 at the end of the verification and code-quality audit.
 
-## Do this first
+## Committed and pushed
 
-**Commit.** Everything below was verified in the working tree and nothing is
-committed. Git writes fail from the sandbox mount (`.git/index.lock`, operation
-not permitted), so this has to run on the Mac:
+The audit landed as `71c67d4` and is on the renamed remote. Nothing is
+outstanding from it except this file and `RESEARCH_LOG.md`, which were updated
+after the commit:
 
 ```
-git add -A
-git commit -m "verification audit: clone-reproducible analysis, LaTeX-aware
-number check, computed finite-N ceiling, strict zips"
-python3 -m pytest tests/ -q
-python3 analysis/verify_all_claims.py | tail -2
-python3 analysis/check_manuscript_numbers.py ; echo $?
+git add -A && git commit -m "log: gitignore near-miss and clone verification" && git push
 ```
-
-Expected: 367 passed 1 skipped, `PASSED 39 FAILED 0`, `PASS 0 unmatched`, exit 0.
-
-`results/analysis/specifications.json.gz` is new and **must** be committed. It is
-140 KB and it is the only reason any analysis script runs from a clone.
 
 ## State
 

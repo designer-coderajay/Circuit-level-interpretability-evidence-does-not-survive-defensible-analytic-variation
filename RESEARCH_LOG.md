@@ -4273,3 +4273,37 @@ of the analysis scripts.
 - The IASEAI paper has not been compiled in this session; page count unmeasured
   against the 10-page limit.
 - The 924-cell Pythia grid still needs a GPU.
+
+### 2026-09-22. The export was gitignored, and the test that guarded it was not a guard
+
+Caught after the audit commit was prepared and before it landed.
+
+`.gitignore` excludes `results/**` and re-admits `!results/analysis/*.json`.
+That pattern does **not** match `.json.gz`, so
+`results/analysis/specifications.json.gz` was ignored. `git add -A` would have
+skipped it in silence, the commit would have reported success, and every clone
+would have failed on the first analysis script. The fix that makes this paper
+reproducible from a clone would have been the one file absent from the
+repository.
+
+`tests/test_clone_reproducibility.py::test_export_is_committed` did not catch it
+because it only asserted the file existed on the filesystem, which it did. A test
+named for a property it does not check is the same defect class as the ceiling
+constant that matched for the wrong reason. It now runs `git check-ignore`.
+Semantics confirmed against a control rather than assumed: a real
+`results/sweep/*/result.json` returns 0 (ignored), the export returns 1 (not
+ignored).
+
+**End-to-end verification, `git clone` of the pushed commit `71c67d4`.** The
+clone carries 1,543 manifests, 0 `result.json`, 0 `.npz`. Running there:
+367 passed 1 skipped, 39 of 39 claim checks, number audit exit 0. Against the
+author's tree holding all 389 MB of raw output: every table row identical, all
+39 checks identical, the number audit identical, and `figure1` byte-identical as
+a PNG.
+
+**The claim "every number in this paper is reproducible from the public
+repository" is now tested rather than asserted.**
+
+Also removed `paper/iaseai/zizMDWUY`, a stray 119 KB Overleaf download
+duplicating `iaseai27_overleaf.zip`, and repointed `origin` at the renamed
+repository, which GitHub had been serving through a redirect.
