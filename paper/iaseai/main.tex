@@ -110,10 +110,10 @@ than formal. The study covers one model and one task.
 An audit means two auditors reach the same conclusion. That is not a definition
 borrowed from machine learning. It is what makes an audit worth commissioning.
 
-The EU AI Act requires providers of high-risk AI systems to file technical
-documentation describing how their systems reach decisions, and it gives a
-person subject to certain automated decisions a right to an explanation of the
-main elements of the decision taken. Mechanistic interpretability is the obvious
+The EU AI Act \citep{aiact2024} requires providers of high-risk AI systems to
+file technical documentation describing how their systems reach decisions, and
+it gives a person subject to certain automated decisions a right to an
+explanation of the main elements of the decision taken. Mechanistic interpretability is the obvious
 source of that technical content, and circuit discovery is its most developed
 instrument. A circuit is a subgraph of a model said to be responsible for a
 behaviour. If a provider files a circuit-level account of why its system behaved
@@ -567,6 +567,9 @@ the plan was tagged before the sweep began. Two results carry qualifications
 that only the within-size decomposition reveals. Those are reported in the
 subsections below rather than deferred to an appendix.}
 \label{tab:hyp}
+% \small and tighter columns: this table overflowed the AAAI column by 7.5pt
+% at default size. Measured, not guessed. See RESEARCH_LOG 2026-09-22.
+\small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{llll}
 \toprule
 & Decision rule & Result & Outcome \\
@@ -640,6 +643,8 @@ step is $\pi^{*}$.
 granularities. Filability is evaluated at the loosest pre-registered tolerance,
 $\alpha = 0.20$, which requires $\pi^{*} \geq 0.80$. No cell passes.}
 \label{tab:gran}
+% Overflowed the column by 28.2pt at default size.
+\small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{llcccc}
 \toprule
 Addressee & Gran. & Classes & $F$ & $\pi^{*}$ & Filable \\
@@ -684,6 +689,8 @@ Equation~\ref{eq:within}. All intervals are valid: mean group sizes run from
 1{,}080 to 3{,}781, bootstrap bias is below 0.0006 on every axis, and every
 observed value lies inside its own interval.}
 \label{tab:fixed}
+% Overflowed the column by 29.4pt at default size.
+\small\setlength{\tabcolsep}{4pt}
 \begin{tabular}{lccc}
 \toprule
 Axis standardised & Residual $F$ & 95\% CI & Removes \\

@@ -30,12 +30,13 @@ were in the verification apparatus, not the paper.
 
 ## Open, in priority order for the 26 September handover
 
-1. **Compile the IASEAI paper and measure the page count.** Estimated 9 to 9.5
-   against a hard 10. Not measured in any session yet. If it is over, the
-   Limitations and Related Work paragraphs are the compressible ones.
-2. **Re-verify Annex IV 2(c) and point 4 against EUR-Lex.** Currently quoted
-   from a mirror. This is the single largest unverified-source exposure in the
-   submission and it is a `web_fetch` away.
+1. ~~Compile and measure the page count.~~ **Done 2026-09-22: 9 pages of 10**,
+   0 errors, 0 overfull boxes, 0 undefined citations. Three tables that
+   overflowed the column are fixed. Room to spare; no cuts needed.
+2. ~~Verify the Annex IV and Article 86 quotations.~~ **Done 2026-09-22: all
+   nine verbatim against `CELEX:02024R1689-20260727`**, and Regulation (EU)
+   2026/1744 confirmed real and not touching the provisions relied on. The Act
+   is now actually cited, which it was not.
 3. **Related Work has no regulatory or compliance scholarship.** Flagged at the
    reviewer pass and still open. Needs verified citations, ledger entries first.
 4. **Fill the AAAI Reproducibility Checklist**, `paper/iaseai/ReproducibilityChecklist.tex`.

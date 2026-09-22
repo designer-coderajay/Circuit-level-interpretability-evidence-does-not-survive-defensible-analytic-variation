@@ -637,3 +637,60 @@ Two entries were deleted during verification and must never reappear:
 "Nanda et al., attribution patching", a misattribution of 2310.10348.
 
 **The bibliography may now be described as checked.**
+
+---
+
+## 2026-09-22. The primary legal source, verified against EUR-Lex
+
+Until now every regulatory quotation in this programme was carried from a
+mirror. All are now verified against EUR-Lex itself.
+
+**Source of record.** Consolidated text `CELEX:02024R1689-20260727`, the version
+current on the date of checking, reached from the EUR-Lex document page for
+`32024R1689`. This is the consolidated version incorporating Regulation (EU)
+2026/1744.
+
+| Provision | Quoted phrase | State |
+|---|---|---|
+| Annex IV point 2(b) | "the general logic of the AI system and of the algorithms" | VERIFIED verbatim |
+| Annex IV point 2(c) | "build on or feed into each other" | VERIFIED verbatim |
+| Annex IV point 2(e) | "to facilitate the interpretation of the outputs of AI systems by the deployers" | VERIFIED verbatim |
+| Annex IV point 3 | "put in place to facilitate the interpretation of the outputs" | VERIFIED verbatim |
+| Annex IV point 4 | "description of the appropriateness of the performance metrics for the specific AI system" | VERIFIED verbatim |
+| Annex IV chapeau | "as applicable to the relevant AI system" | VERIFIED verbatim |
+| Article 14(4)(c) | "the interpretation tools and methods available" | VERIFIED verbatim |
+| Article 86 heading | "Right to explanation of individual decision-making" | VERIFIED verbatim |
+| Article 86(1) | "clear and meaningful explanations of the role of the AI system in the decision-making procedure and the main elements of the decision taken" | VERIFIED verbatim |
+
+**Nine quotations, nine verbatim matches, every attribution correct.**
+
+**Regulation (EU) 2026/1744 exists and is correctly described.** `CELEX:32026R1744`,
+"of the European Parliament and of the Council of 8 July 2026 amending
+Regulations (EU) 2024/1689, (EU) 2018/1139 and (EU) 2023/1230 as regards the
+simplification of the implementation of harmonised rules". This was the largest
+single fabrication exposure in the programme: an amending instrument dated after
+the assistant's training cutoff, cited by number in `paper/manuscript.md`. It is
+real.
+
+It does **not** amend the provisions this paper relies on. Its only Annex IV
+references concern SMEs filing the documentation in simplified form (Article 11)
+and the post-market monitoring plan (Article 72). It does not touch Article 86.
+Confirmed both ways: by reading 2026/1744 itself, and by matching every quotation
+against the post-amendment consolidated text rather than inferring from absence.
+
+### One defect found and fixed
+
+**The IASEAI paper quoted the Act four times and never cited it.** No regulation
+number, no CELEX identifier, no bibliography entry appeared anywhere in the
+printed text, only the words "the EU AI Act". For a paper whose argument rests
+entirely on Annex IV and Article 86, that is a citation defect a governance
+reviewer would raise immediately. Added `aiact2024` to `refs.bib` and cited it at
+first mention. Bibliography is now **16 entries**, still 9 pages.
+
+Two notes for the record, neither an error:
+
+- Annex IV point 4 begins "A description" in the source; the paper renders it
+  "a description" because the quote is spliced mid-sentence. Standard practice.
+- The phrase quoted for point 3 also appears in point 2(d), where the wording
+  continues "of the high-risk AI systems". The paper truncates before that point,
+  so its quotation is exact for both and its attribution to point 3 is correct.

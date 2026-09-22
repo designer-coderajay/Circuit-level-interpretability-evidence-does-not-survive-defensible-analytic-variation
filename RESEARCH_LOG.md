@@ -4307,3 +4307,85 @@ repository" is now tested rather than asserted.**
 Also removed `paper/iaseai/zizMDWUY`, a stray 119 KB Overleaf download
 duplicating `iaseai27_overleaf.zip`, and repointed `origin` at the renamed
 repository, which GitHub had been serving through a redirect.
+
+### 2026-09-22. The IASEAI submission compiles, and the page count is 9
+
+First actual build of `paper/iaseai/main.tex` in any session. The estimate
+carried since drafting was 9 to 9.5 against a hard 10; **measured: 9.**
+
+Built with the real `newtx`, not a font substitute. Sandbox TeX Live 2021 lacks
+it, and `mathptmx` has close but not identical metrics, so substituting would
+have produced a page count that was an estimate rather than a measurement.
+Installed `newtx` from the pinned 2021 historic repository into a user tree
+instead.
+
+**The first build said 8 pages and was wrong.** BibTeX had not run, so all 15
+citations were undefined and the entire bibliography was absent. A page count
+taken before the bibliography resolves is not a page count. Full cycle
+(`pdflatex`, `bibtex`, `pdflatex`, `pdflatex`) gives 9.
+
+Final state, built from the committed file in a clean directory:
+
+| | |
+|---|---|
+| pages | 9 of a hard 10 |
+| LaTeX errors | 0 |
+| overfull hbox / vbox | 0 / 0 |
+| undefined citations | 0 |
+| undefined references | 0 |
+| bibliography | 15 entries, 15 distinct cite keys, no uncited entry, no missing key |
+| tables / figures | 7 / 1 |
+
+**Three tables overflowed the AAAI column** and would have printed into the
+margin: `tab:gran` by 28.2pt, `tab:fixed` by 29.4pt, `tab:hyp` by 7.5pt. The
+first two are roughly 0.4 inch. `\small` alone left all three at 7 to 8pt;
+`\small` plus `\tabcolsep` at 4pt clears them to zero. Note that the initial
+count of these was 2, not 3: the grep filter used only caught boxes of 20pt or
+more. Counting with a threshold and reporting the count as total is the same
+error class as the rest of this audit.
+
+Page count has margin either way. The AAAI limit's treatment of references still
+needs confirming against the IASEAI'27 call, but 9 total is under 10 whether
+references count or not.
+
+### 2026-09-22. Every regulatory quotation verified against EUR-Lex
+
+The last unverified-source exposure in the programme. All nine quotations across
+`paper/iaseai/main.tex`, `paper/manuscript.md` and `docs/ANNEX-IV.md` are now
+checked against the primary source rather than a mirror. Full table in
+`docs/CITATION-LEDGER.md`.
+
+**Result: nine quotations, nine verbatim matches, every attribution correct.**
+Annex IV points 2(b), 2(c), 2(e), 3, 4 and the chapeau; Article 14(4)(c); the
+Article 86 heading; Article 86(1).
+
+**Regulation (EU) 2026/1744 is real.** It was the single largest fabrication
+exposure here: an amending instrument dated 8 July 2026, after the assistant's
+training cutoff, cited by number in `paper/manuscript.md` and never checked.
+Verified at `CELEX:32026R1744`. It does not amend any provision this paper
+relies on, confirmed by reading it and then by re-matching every quotation
+against the post-amendment consolidated text `CELEX:02024R1689-20260727` rather
+than inferring from its absence.
+
+**`web_fetch` returns an empty shell for EUR-Lex**, which renders its text in
+JavaScript. Escalated to the browser, which executes it, per the standing rule
+that a successful-but-empty fetch is a rendering problem and not a reason to
+reach for another fetch method.
+
+### The defect: the paper quoted the Act four times and never cited it
+
+No regulation number, no CELEX identifier, no bibliography entry appeared
+anywhere in the printed text of the IASEAI submission. Only the words "the EU AI
+Act", three times. Every Annex IV and Article 86 quotation sat uncited.
+
+This is the mirror image of the errors found earlier in this audit. Those were
+checks that reported a pass without testing anything. This was a paper whose
+entire legal foundation was correct, verbatim, correctly attributed, and
+formally unsourced. A governance reviewer would raise it on the first page.
+
+Added `aiact2024` to `refs.bib`, cited at first mention. Bibliography 16 entries,
+rebuild still 9 pages, 0 errors, 0 overfull boxes, 0 undefined citations.
+
+One self-correction worth recording: the first draft of the ledger entry above
+said 17 entries. The build said 16. Caught by checking the built `.bbl` instead
+of counting from memory.
