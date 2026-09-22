@@ -73,3 +73,42 @@ Note that 3.6 requires the Statement of Contributions to situate the work
 against earlier versions "without naming venues or authors". Ours does. But it
 also says plainly that all quantitative results are prior, which is what makes
 the 3.1 question live. That sentence is correct and should not be softened.
+
+## The title differs from the preprint, deliberately
+
+| | |
+|---|---|
+| arXiv:2608.13754 | Explanation Multiplicity: Circuit-Level Interpretability Evidence Does Not Survive Defensible Analytic Variation |
+| IASEAI'27 | Filability: A Criterion for When Circuit-Level Evidence Can Support an EU AI Act Conformity Claim |
+
+This is not a problem and it should not be changed.
+
+**Disclosure does not run through the title.** Rule 3.6 requires a Statement of
+Contributions situating the work against earlier versions, and ours says all
+quantitative results are prior. That is where the overlap is declared. A title
+is not a disclosure mechanism and nothing in the guide requires the two to
+match.
+
+**The difference helps under 3.3.** Review is double-anonymous and 3.5 forbids
+linking or mentioning the preprint. Identical titles would let a reviewer reach
+the arXiv page, and the author's name, by pasting the title into a search box.
+A distinct title reduces accidental deanonymisation that no amount of care in
+the manuscript could prevent.
+
+**The change is substantive, not cosmetic.** The preprint leads on the negative
+measurement. This version leads on the criterion and its regulatory reading,
+which is what the new material actually is.
+
+**The one risk, and how it is closed.** If the Program Chairs treat the preprint
+as a prior publication under 3.1, differing titles could look like they softened
+the overlap. The email to the chairs therefore names the arXiv identifier, gives
+both titles, and says why they differ, so the chairs can see the overlap
+themselves rather than through our summary of it.
+
+**Do not put the old title in the manuscript.** It is directly searchable to the
+author and would break 3.3.
+
+Open for later: if the IASEAI version is accepted non-archival, decide then
+whether to align the arXiv title in a v2, or leave both standing. Two titles for
+related work fragments citations slightly. That is a cosmetic cost and not a
+compliance one.

@@ -54,7 +54,16 @@ Dear Program Chairs,
 We are preparing a paper submission for IASEAI'27 and would like to check one
 point in the Paper Submission Guide before the portal closes on 2 October.
 
-A preprint of substantially this work is on arXiv, posted before submission.
+A preprint of substantially this work is on arXiv as arXiv:2608.13754, posted
+before submission. It carries a different title, "Explanation Multiplicity:
+Circuit-Level Interpretability Evidence Does Not Survive Defensible Analytic
+Variation". The submitted version is titled "Filability: A Criterion for When
+Circuit-Level Evidence Can Support an EU AI Act Conformity Claim". The change
+reflects a reframing rather than an attempt to distance the two: the preprint
+leads on the negative measurement, and this version leads on the criterion and
+its regulatory reading. We mention it so that the overlap is visible to you
+directly and not only through our own summary of it.
+
 Under 3.5, online preprints are allowed before or during review and must not be
 linked or mentioned in the submission, which we have followed. Under 3.1,
 archival submissions must contain at least 50% new technical content relative to
