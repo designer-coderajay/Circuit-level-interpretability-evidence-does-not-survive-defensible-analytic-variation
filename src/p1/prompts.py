@@ -47,15 +47,15 @@ from pathlib import Path
 from typing import Literal, Mapping, Sequence
 
 __all__ = [
-    "Order",
-    "EXAMPLE_TEMPLATES",
     "EXAMPLE_NAMES",
-    "EXAMPLE_PLACES",
     "EXAMPLE_OBJECTS",
+    "EXAMPLE_PLACES",
+    "EXAMPLE_TEMPLATES",
+    "Order",
     "PromptPair",
+    "align_answer_tokenisation",
     "generate_ioi_dataset",
     "write_dataset_json",
-    "align_answer_tokenisation",
 ]
 
 Order = Literal["ABBA", "BABA"]

@@ -29,17 +29,18 @@ from typing import Hashable, Iterable, Sequence
 import numpy as np
 
 __all__ = [
+    "BootstrapResult",
+    "bootstrap_over_specifications",
     "expected_random_jaccard",
-    "jaccard_similarity",
-    "jaccard_distance",
-    "pairwise_jaccard_similarities",
-    "mean_jaccard",
     "flip_rate",
     "flip_rate_bruteforce",
-    "modal_share",
     "is_filable",
-    "bootstrap_over_specifications",
-    "BootstrapResult",
+    "jaccard_distance",
+    "jaccard_similarity",
+    "max_flip_rate",
+    "mean_jaccard",
+    "modal_share",
+    "pairwise_jaccard_similarities",
 ]
 
 
@@ -157,6 +158,38 @@ def flip_rate(labels: Sequence[Hashable]) -> float:
     agreeing_ordered = sum(c * (c - 1) for c in counts.values())
     total_ordered = n * (n - 1)
     return 1.0 - agreeing_ordered / total_ordered
+
+
+def max_flip_rate(n: int, k: int) -> float:
+    """The largest F attainable with N specifications over k claim classes.
+
+    The familiar bound is ``F <= 1 - 1/k``. That is **asymptotic**. It is the
+    limit as N grows, and it is not attainable at finite N, because
+    ``sum_c n_c (n_c - 1)`` is minimised by the most even integer split of N
+    rather than by k exactly equal real-valued shares. Writing ``1 - 1/k`` as
+    the ceiling at N = 7,561 understates it, and a paper arguing that small
+    analytic slips change conclusions cannot afford to make one.
+
+    With ``N = qk + r``, the most even split is r classes of size q+1 and k-r of
+    size q, giving
+
+        F_max = 1 - [ r (q+1) q + (k - r) q (q - 1) ] / (N (N - 1))
+
+    Integer arithmetic until the final division, as in ``flip_rate``.
+
+    At N = 7,561 and k = 9 this is 0.889006, against an asymptotic 1 - 1/9 =
+    0.888889. The paper reports the former.
+    """
+    if k < 1:
+        raise ValueError(f"need at least 1 claim class, got {k}")
+    if n < 2:
+        raise ValueError(f"need at least 2 specifications to form a pair, got {n}")
+    if k > n:
+        raise ValueError(f"cannot spread {n} specifications over {k} classes")
+
+    q, r = divmod(n, k)
+    agreeing_ordered = r * (q + 1) * q + (k - r) * q * (q - 1)
+    return 1.0 - agreeing_ordered / (n * (n - 1))
 
 
 def flip_rate_bruteforce(labels: Sequence[Hashable]) -> float:

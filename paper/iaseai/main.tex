@@ -51,7 +51,13 @@
 %       Not Survive Defensible Analytic Variation
 % (c) is the preprint title. Reusing it verbatim makes the double-blind search
 % trivial for any reviewer who pastes it into Google. Prefer (a) or (b).
-\title{TODO: Title}
+% Set 21 Sep. Leads on the criterion, which is the contribution, rather than on
+% the finding, which is the evidence. Deliberately NOT the preprint's title:
+% that one is one search away from defeating the double-blind.
+% AAAI mixed case: articles and prepositions lower ("for", "an"), everything
+% else capitalised, both halves of the hyphenated term.
+\title{Filability: A Criterion for When Circuit-Level\\Evidence Can Support an
+EU AI Act Conformity Claim}
 
 \author{}
 \affiliations{}
@@ -396,10 +402,18 @@ exactly to Equation~\ref{eq:flip} when $G$ is empty.
 Evidence is \emph{filable at tolerance} $\alpha$ if and only if
 $\pi^{*} \geq 1 - \alpha$.
 
+% CORRECTED 21 Sep. The arXiv version asserts "F <= 1 - 1/k". That is the
+% asymptotic bound and is strictly FALSE at finite N: the unbiased
+% Gini-Simpson form attains 0.889006 at N = 7,561 and k = 9, slightly above
+% 1 - 1/9 = 0.888889. The difference does not move 82.3%, but a paper arguing
+% for rigour should not state a false inequality. Verified numerically over the
+% most even split of N into k classes.
 A reported flip rate must be read against the number of classes the map can
-produce, because $F \leq 1 - 1/k$ for $k$ claim classes. With the nine classes
-observed here the ceiling is 0.8889. The observed $F$ of 0.7316 is 82.3\% of
-that ceiling. $F$ is therefore not near one by construction.
+produce. As $N$ grows, $F$ approaches a maximum of $1 - 1/k$ for $k$ claim
+classes; at finite $N$ the exact maximum is attained by the most even split of
+$N$ across the $k$ classes. With $N = 7{,}561$ and the nine classes observed
+here that maximum is 0.8890. The observed $F$ of 0.7316 is 82.3\% of it. $F$ is
+therefore not near one by construction.
 
 \paragraph{The map itself.}
 $\varphi$ is the most attackable choice in this paper. It is therefore fixed in
@@ -659,10 +673,16 @@ result as seed removing only 0.0009 from $F$ in Table~\ref{tab:fixed}.}
 
 \begin{table}[t]
 \centering
+% CORRECTED 21 Sep. The arXiv version says "group sizes 1,512 to 2,520". Both
+% numbers are real (corruption and seed have mean group size 1512.2, threshold
+% 2520.3) but they are NOT the min and max. Verified from
+% results/analysis/stage3_decomposition.json: the range is ablation at 1,080.1
+% to prompt_variant at 3,780.5. A token-matching number check passes the wrong
+% claim because both digits appear in the data.
 \caption{Residual flip rate once each axis is standardised, computed with
-Equation~\ref{eq:within}. All intervals are valid: group sizes run from 1{,}512
-to 2{,}520, bootstrap bias is below 0.0006 on every axis, and every observed
-value lies inside its own interval.}
+Equation~\ref{eq:within}. All intervals are valid: mean group sizes run from
+1{,}080 to 3{,}781, bootstrap bias is below 0.0006 on every axis, and every
+observed value lies inside its own interval.}
 \label{tab:fixed}
 \begin{tabular}{lccc}
 \toprule
@@ -706,9 +726,11 @@ about size can contribute.
 We compare against four baselines, and we state them together here because each
 one answers a different question about whether $F$ is large.
 
-\emph{First, the attainable maximum.} $F \leq 1 - 1/k$ for $k$ claim classes.
-With nine classes the ceiling is 0.8889, so the observed 0.7316 is 82.3\% of the
-maximum attainable rather than a number near one by construction.
+\emph{First, the attainable maximum.} $F$ is bounded above by the value it takes
+when the $N$ specifications are split as evenly as possible across the $k$ claim
+classes, which approaches $1 - 1/k$ as $N$ grows. With $N = 7{,}561$ and nine
+classes that maximum is 0.8890, so the observed 0.7316 is 82.3\% of the
+attainable maximum rather than a number near one by construction.
 
 \emph{Second, chance overlap between circuits.} At the median circuit size of
 200 edges, the analytic random line $k/(2|E|-k)$ gives 0.0031, so observed
@@ -898,6 +920,15 @@ It is 52.3\%, and the surviving pool is imbalanced across metrics. The threshold
 rule was fixed in advance and no failing item was repaired. The composition is
 nonetheless a property of the reported set, so we state it rather than adjust
 for it.
+
+% Added 21 Sep. Pre-empts the strongest remaining objection: that F is an
+% artefact of which specifications survived the discard rule. The bound already
+% exists in tab:fixed and was simply never connected to this limitation.
+The effect of that imbalance on the headline figure is bounded by a result we
+already report. Standardising the evaluation metric removes the imbalance by
+construction, because each group then contains a single metric. It leaves
+$F = 0.5939$ (Table~\ref{tab:fixed}). The instability therefore does not depend
+on the metric composition of the surviving pool.
 
 \paragraph{The bootstrap is invalid for one reported family.}
 Where the conditioning groups hold only two to five specifications, retained

@@ -168,7 +168,7 @@ def main() -> int:
         assert abs(kappa[i, j] - cohens_kappa(a, b)) < 1e-6, (i, j)
     print("  vectorised agreement and kappa match p1.agreement on 8 sampled pairs")
 
-    F = flip_rate([lab for lab, c in zip(labels, w.astype(int)) for _ in range(c)])
+    F = flip_rate([lab for lab, c in zip(labels, w.astype(int), strict=True) for _ in range(c)])
     agreement = weighted_pair_mean(p_o, w)
     kappa_mean = weighted_pair_mean(kappa, w)
     functional_instability = 1.0 - agreement

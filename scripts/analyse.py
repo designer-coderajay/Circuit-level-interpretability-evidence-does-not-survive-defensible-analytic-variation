@@ -64,14 +64,150 @@ AXES = (
 )
 
 
+#: Committed derived artefact. See `analysis/export_records.py`.
+EXPORT = (
+    Path(__file__).resolve().parents[1] / "results" / "analysis" / "specifications.json.gz"
+)
+
+#: Node count of the instrumented graph, 12 heads + 1 MLP per block.
+N_COMPONENTS = 12 * 12 + 12
+
+
+def _cached_payload() -> dict | None:
+    """Read the committed export, or None when it is absent."""
+    import gzip
+
+    if not EXPORT.exists():
+        return None
+    return json.loads(gzip.decompress(EXPORT.read_bytes()))
+
+
+def _load_exported_records() -> tuple[list[dict], dict] | None:
+    """Fall back to the committed export when the raw sweep output is absent.
+
+    `results/sweep` is 389 MB and gitignored, so a clone has the manifests but
+    not the per-cell `result.json`. Without this fallback none of the four
+    analysis entry points runs for anyone but the author, which is a poor
+    property for a paper about reproducible evidence. See
+    `analysis/export_records.py`.
+
+    **Raw output always wins.** This is consulted only when the raw directory is
+    missing or holds no cells, so an author with the data reads the source and
+    never this file. Returns None when the export is absent too, so the caller
+    raises its own error rather than this one masking it.
+    """
+    payload = _cached_payload()
+    if payload is None:
+        return None
+    strings = payload["claim_strings"]
+    records = [
+        {
+            **{k: v for k, v in r.items() if k != "claims"},
+            "claims": {
+                g: {m: strings[i] for m, i in maps.items()}
+                for g, maps in r["claims"].items()
+            },
+        }
+        for r in payload["records"]
+    ]
+    audit = dict(payload["audit"])
+    if "discards" in audit:
+        audit["discards"] = Counter(
+            {tuple(json.loads(k)): v for k, v in audit["discards"].items()}
+        )
+    return records, audit
+
+
+def sweep_facts(results_dir: Path) -> dict:
+    """Per-cell facts that `load_records` does not carry, raw preferred.
+
+    Two paper tables need fields from the raw per-cell output that a record does
+    not hold:
+
+      `n_edges`     the edge count the instrument itself reports, checked here
+                    across every cell rather than sampled from one.
+      `bin_pairs`   one (layer band, component fraction) pair per kept
+                    specification. `tab:bins` re-bins the fraction under eight
+                    alternative bin edges, so the pair is the correct cut point
+                    between what is measured and what the table varies. The
+                    upstream `top_edges` list is far too large to commit and is
+                    not needed once the pair is known.
+
+    Same contract as `load_records`: computed from `results_dir` when it holds
+    output, read from the committed export when it does not.
+
+    Pairs are emitted in sorted-cell order so the export is deterministic. Order
+    does not affect any consumer, because `flip_rate` is a function of the label
+    counts alone.
+    """
+    cells = sorted(results_dir.glob("*/result.json")) if results_dir.exists() else []
+
+    if not cells:
+        payload = _cached_payload()
+        if payload is None:
+            raise FileNotFoundError(
+                f"no per-cell output under {results_dir}, and no export at "
+                f"{EXPORT}. Run scripts/sweep.py, or regenerate the export with "
+                f"analysis/export_records.py."
+            )
+        derived = payload["derived"]
+        bands = derived["bands"]
+        return {
+            "n_edges": derived["n_edges"]["value"],
+            "n_cells": derived["n_edges"]["cells"],
+            "bin_pairs": [(bands[b], f) for b, f in derived["bin_pairs"]],
+        }
+
+    from p1.claim_map import DEFAULT_BAND_NAMES, layer_band
+    from p1.features import features_from_circuit
+    from p1.graph import nodes_from_edge_names
+
+    reported: Counter = Counter()
+    pairs: list[tuple[str, float]] = []
+
+    for path in cells:
+        payload = json.loads(path.read_text())
+        reported[payload["n_edges"]] += 1
+        top = payload["top_edges"]
+        cache: dict[int, tuple[str, float]] = {}
+        for entry in payload["specifications"].values():
+            if entry.get("status") != "ok":
+                continue
+            k = entry["edges"]
+            if k not in cache:
+                features = features_from_circuit(
+                    nodes_from_edge_names(top[:k]), n_blocks=12, n_heads_per_block=12
+                )
+                cache[k] = (
+                    layer_band(features, DEFAULT_BAND_NAMES),
+                    len(features.components) / N_COMPONENTS,
+                )
+            pairs.append(cache[k])
+
+    if len(reported) != 1:
+        raise ValueError(f"cells disagree on the instrumented edge count: {dict(reported)}")
+    (value, n_cells), = reported.items()
+    return {"n_edges": value, "n_cells": n_cells, "bin_pairs": pairs}
+
+
 def load_records(results_dir: Path, axes: dict) -> tuple[list[dict], dict]:
     """One record per specification that produced a claim, plus a cell audit.
 
     A cell contributes nothing unless its manifest reports `status: ok`, and a
     specification contributes nothing unless its own status is `ok`. Discards are
     counted, never repaired, per PLAN.md section 7.
+
+    When the raw sweep output is not present, falls back to the committed
+    export so that the analysis remains runnable from a clone.
     """
     from p1.spec import enumerate_grid
+
+    if not results_dir.exists() or not any(
+        (c / "result.json").exists() for c in results_dir.iterdir() if c.is_dir()
+    ):
+        cached = _load_exported_records()
+        if cached is not None:
+            return cached
 
     spec_index = {s.spec_id: s for s in enumerate_grid(axes)}
 

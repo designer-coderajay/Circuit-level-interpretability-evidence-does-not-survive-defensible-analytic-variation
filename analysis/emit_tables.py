@@ -8,7 +8,7 @@ import json, sys, yaml
 from collections import Counter
 from pathlib import Path
 sys.path.insert(0,'src'); sys.path.insert(0,'scripts')
-from analyse import load_records, PRIMARY_GRANULARITY, PRIMARY_MAP
+from analyse import load_records, sweep_facts, PRIMARY_GRANULARITY, PRIMARY_MAP
 from p1.multiverse import flip_rate
 
 A = Path('results/analysis')
@@ -53,25 +53,15 @@ out.append(f"% D quantiles {j['pairwise_D_quantiles']}")
 out.append(f"% H4 agreement {h4['agreement_rate']:.4f} kappa {h4['cohens_kappa']:.4f} gap {h4['gap']:.4f} CI {h4['gap_ci95']}")
 out.append(f"% pooled F {flip_rate(lab):.4f} classes {len(cnt)} N {N:,}")
 a = json.load(open(A/'stage3_decomposition.json'))['arm_a_structural_reml']
-out.append(f"% REML shares {{k: round(v,4) for k,v in a['share_of_total'].items()}}")
 out.append("% REML " + str({k: round(v,4) for k,v in a['share_of_total'].items()}))
 print("\n".join(out))
 
 # ---- bin sensitivity, regenerated so the table is not typed by hand ----
-from p1.graph import nodes_from_edge_names
-from p1.features import features_from_circuit
-from p1.claim_map import layer_band, DEFAULT_SIZE_BINS, DEFAULT_BAND_NAMES
-import glob
-pairs=[]
-for f in glob.glob('results/sweep/*/result.json'):
-    d=json.load(open(f)); top=d['top_edges']; cache={}
-    for e in d['specifications'].values():
-        if e.get('status')!='ok': continue
-        k=e['edges']
-        if k not in cache:
-            ft=features_from_circuit(nodes_from_edge_names(top[:k]),n_blocks=12,n_heads_per_block=12)
-            cache[k]=(layer_band(ft,DEFAULT_BAND_NAMES), len(ft.components)/156.0)
-        pairs.append(cache[k])
+# `sweep_facts` computes the (band, component fraction) pair from the raw
+# per-cell output when it is present, and reads the committed export when it is
+# not. Every bin edge below is applied to those pairs here, at table time.
+from p1.claim_map import DEFAULT_SIZE_BINS
+pairs = sweep_facts(Path('results/sweep'))['bin_pairs']
 def FB(bins):
     return flip_rate([(b,next(n for t,n in bins if fr<t)) for b,fr in pairs])
 base=[(t,n) for t,n in DEFAULT_SIZE_BINS]

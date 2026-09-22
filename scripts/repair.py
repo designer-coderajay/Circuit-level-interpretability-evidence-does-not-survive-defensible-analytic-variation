@@ -156,7 +156,10 @@ def probe(results: Path) -> int:
     ok = order[: len(top)] == top
     print(f"ranking reproduced      {'YES' if ok else 'NO'}")
     if not ok:
-        first = next(i for i, (a, b) in enumerate(zip(order, top)) if a != b)
+        # `order` is the full ranking and `top` the banked prefix, so the two are
+        # deliberately unequal in length. Truncate explicitly rather than relying
+        # on zip to stop at the shorter one.
+        first = next(i for i, (a, b) in enumerate(zip(order[: len(top)], top, strict=True)) if a != b)
         print(f"  first divergence at rank {first}: {order[first]!r} vs {top[first]!r}")
         return 1
 
@@ -255,7 +258,7 @@ def main() -> int:
 
     args.out.mkdir(parents=True, exist_ok=True)
     done = mismatched = failed = 0
-    for cell, man, payload, rungs in load_cells(args.results):
+    for cell, _man, payload, rungs in load_cells(args.results):
         dest = args.out / cell.name
         if (dest / "verdicts.json").exists():
             done += 1

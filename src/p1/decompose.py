@@ -27,9 +27,9 @@ from collections.abc import Hashable, Sequence
 import numpy as np
 
 __all__ = [
+    "GroupedLabels",
     "encode",
     "within_flip_rate",
-    "GroupedLabels",
 ]
 
 

@@ -32,7 +32,7 @@ real auto-circuit output before any number it produces enters the paper.
 
 from __future__ import annotations
 
-from typing import Any, Iterable, Mapping, Protocol, Sequence
+from typing import Iterable, Mapping, Protocol
 
 from p1.claim_map import CircuitFeatures, Component
 

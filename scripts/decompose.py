@@ -199,7 +199,7 @@ def arm_a(records: list[dict]) -> dict:
 
     comps = {k: float(v) for k, v in fit.vcomp_dict.items()} if hasattr(
         fit, "vcomp_dict"
-    ) else dict(zip(vc.keys(), (float(v) for v in fit.vcomp)))
+    ) else dict(zip(vc.keys(), (float(v) for v in fit.vcomp), strict=True))
     residual = float(fit.scale)
     total = sum(comps.values()) + residual
 

@@ -32,12 +32,12 @@ from collections import defaultdict
 from typing import Mapping, Sequence
 
 __all__ = [
-    "segment_mass",
-    "mean_segment_mass",
-    "token_role_labels",
-    "split_leading_bos",
-    "OTHER_ROLE",
     "MASS_TOLERANCE",
+    "OTHER_ROLE",
+    "mean_segment_mass",
+    "segment_mass",
+    "split_leading_bos",
+    "token_role_labels",
 ]
 
 #: Label for tokens belonging to no named role: the template's connective words,
@@ -225,7 +225,7 @@ def segment_mass(
     n_heads = len(rows)
     acc: dict[str, float] = defaultdict(float)
     for row in rows:
-        for label, value in zip(seq_labels, row):
+        for label, value in zip(seq_labels, row, strict=True):
             acc[label] += value / n_heads
 
     total = sum(acc.values())

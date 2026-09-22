@@ -379,3 +379,78 @@ def test_their_reported_calibration_is_reproducible_in_shape():
     n_edges = 32_491
     for k in (100, 500, 2000):
         assert expected_random_jaccard(k, n_edges) < 0.04
+
+
+# --------------------------------------------------------------------------
+# The attainable maximum of F at finite N
+# --------------------------------------------------------------------------
+#
+# The arXiv v1 states "F <= 1 - 1/k" and gives 0.8889 as the ceiling. That bound
+# is asymptotic and is not attained at finite N. These tests pin the exact
+# finite-N maximum so the corrected figure in the paper is computed rather than
+# typed, which is how the original slip survived a passing number audit.
+
+
+@pytest.mark.parametrize("n,k", [(10, 3), (11, 4), (13, 5), (7, 2), (20, 6), (9, 9)])
+def test_max_flip_rate_equals_brute_force_over_every_split(n, k):
+    """The even split really is the argmax, checked exhaustively at small N."""
+    from p1.multiverse import max_flip_rate
+
+    best = 0.0
+    for cuts in combinations(range(1, n), k - 1):
+        parts = [b - a for a, b in zip((0,) + cuts, cuts + (n,))]
+        labels = [i for i, p in enumerate(parts) for _ in range(p)]
+        best = max(best, flip_rate(labels))
+
+    assert max_flip_rate(n, k) == pytest.approx(best, abs=1e-12)
+
+
+def test_max_flip_rate_is_strictly_above_the_asymptotic_bound():
+    """1 - 1/k is a limit, not a ceiling. At finite N the true maximum exceeds it."""
+    from p1.multiverse import max_flip_rate
+
+    for n, k in [(7561, 9), (100, 4), (50, 7)]:
+        assert max_flip_rate(n, k) > 1 - 1 / k
+
+
+def test_max_flip_rate_approaches_the_asymptotic_bound_as_n_grows():
+    from p1.multiverse import max_flip_rate
+
+    k = 9
+    gaps = [max_flip_rate(n, k) - (1 - 1 / k) for n in (100, 10_000, 1_000_000)]
+    assert gaps == sorted(gaps, reverse=True)
+    assert gaps[-1] < 1e-5
+
+
+def test_max_flip_rate_reproduces_the_figure_the_paper_reports():
+    """0.889006 at the realised N and k, against an asymptotic 0.888889.
+
+    If this fails, `paper/iaseai/main.tex` and `analysis/check_manuscript_numbers.py`
+    both state a number the code no longer produces.
+    """
+    from p1.multiverse import max_flip_rate
+
+    assert max_flip_rate(7561, 9) == pytest.approx(0.889006, abs=5e-7)
+    assert round(0.731611 / max_flip_rate(7561, 9) * 100, 1) == 82.3
+
+
+@pytest.mark.parametrize("n,k", [(10, 0), (1, 1), (5, 6)])
+def test_max_flip_rate_rejects_invalid(n, k):
+    from p1.multiverse import max_flip_rate
+
+    with pytest.raises(ValueError):
+        max_flip_rate(n, k)
+
+
+def test_flip_rate_bruteforce_rejects_fewer_than_two_specifications():
+    """No pair exists below N = 2, so there is nothing to be unbiased about."""
+    for labels in ([], ["a"]):
+        with pytest.raises(ValueError, match="at least 2 specifications"):
+            flip_rate_bruteforce(labels)
+
+
+def test_modal_share_rejects_an_empty_multiverse():
+    from p1.multiverse import modal_share
+
+    with pytest.raises(ValueError, match="no specifications"):
+        modal_share([])

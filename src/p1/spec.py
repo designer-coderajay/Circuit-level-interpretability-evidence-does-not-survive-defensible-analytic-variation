@@ -27,16 +27,16 @@ __all__ = [
     "CORRUPTION_NOT_APPLICABLE",
     "DISCOVERY_OBJECTIVES",
     "DISCOVERY_OBJECTIVE_PARAMS",
-    "METRIC_SPECS",
     "EDGE_COUNT_LADDER",
     "FIELDS",
+    "GRANULARITIES",
     "IEG_1000_OBJECTIVE",
     "METRICS",
-    "GRANULARITIES",
+    "METRIC_SPECS",
+    "_DISCOVERY_FIELDS",
     "Specification",
     "ablation_corruption_cells",
     "discovery_cells",
-    "_DISCOVERY_FIELDS",
     "enumerate_grid",
     "grid_size",
 ]
@@ -442,7 +442,7 @@ class Specification:
         matches the same cell in the next one.
         """
         payload = json.dumps(
-            dict(zip(_DISCOVERY_FIELDS, self.discovery_key)),
+            dict(zip(_DISCOVERY_FIELDS, self.discovery_key, strict=True)),
             sort_keys=True,
             separators=(",", ":"),
         )

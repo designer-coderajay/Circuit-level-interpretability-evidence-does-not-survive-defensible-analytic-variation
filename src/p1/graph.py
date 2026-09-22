@@ -36,9 +36,9 @@ from dataclasses import dataclass
 
 __all__ = [
     "Node",
-    "parse_node",
     "enumerate_edges",
     "nodes_from_edge_names",
+    "parse_node",
 ]
 
 _ATTN = re.compile(r"^A(\d+)\.(\d+)(?:\.([QKV]))?$")

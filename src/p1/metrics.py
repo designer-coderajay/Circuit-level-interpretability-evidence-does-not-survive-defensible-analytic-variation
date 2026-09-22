@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from typing import Sequence
 
-__all__ = ["normalised_recovery", "select_rung", "DegenerateMetric"]
+__all__ = ["DegenerateMetric", "normalised_recovery", "select_rung"]
 
 
 class DegenerateMetric(ValueError):
@@ -104,7 +104,7 @@ def select_rung(
         raise ValueError("ladder must be ascending; the scan relies on its order")
 
     target = 1.0 - tau
-    for rung, rec in zip(ladder, recoveries):
+    for rung, rec in zip(ladder, recoveries, strict=True):
         if rec >= target:
             return rung
     return None

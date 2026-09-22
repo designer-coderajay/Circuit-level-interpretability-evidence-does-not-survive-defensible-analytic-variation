@@ -5,6 +5,8 @@ venv/
 .env
 .ipynb_checkpoints/
 .pytest_cache/
+.coverage
+.coverage.*
 .DS_Store
 
 # raw sweep outputs are large; keep the tree, not the contents.
@@ -18,6 +20,11 @@ results/**
 !results/**/*.md
 # pooled analysis outputs are small and are the paper's numbers; track them
 !results/analysis/*.json
+# and the derived specification export, which is what makes the analysis
+# runnable from a clone. `*.json` does NOT match `.json.gz`, so without this
+# line `git add -A` silently skips the one file every analysis script falls
+# back to, and the commit looks clean while the clone stays broken.
+!results/analysis/*.json.gz
 
 # model weights / caches
 *.pt

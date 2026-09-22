@@ -20,19 +20,18 @@ import hashlib
 import json
 import platform
 import subprocess
-import sys
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Mapping
 
 __all__ = [
+    "PACKAGES_OF_RECORD",
+    "Manifest",
+    "canonical_hash",
     "environment_fingerprint",
     "environment_hash",
     "git_commit",
-    "canonical_hash",
-    "Manifest",
-    "PACKAGES_OF_RECORD",
 ]
 
 #: Packages whose versions materially change results. Anything here that is
@@ -53,7 +52,13 @@ def _version(pkg: str) -> str:
         from importlib.metadata import version
 
         return version(pkg)
-    except Exception:
+    except Exception:  # noqa: BLE001
+        # Deliberately broad. This records provenance for a run that may have
+        # cost an hour of GPU time; it must never be the thing that kills it.
+        # A package that cannot be resolved for any reason is reported as
+        # ABSENT, which is a fact about the environment and is what the
+        # fingerprint is for. Narrowing this to PackageNotFoundError would let
+        # an importlib failure propagate into the sweep.
         return "ABSENT"
 
 
@@ -102,17 +107,22 @@ def git_commit(repo: Path | None = None) -> str:
     try:
         h = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, cwd=cwd, timeout=10,
+            capture_output=True, text=True, cwd=cwd, timeout=10, check=False,
         )
         if h.returncode != 0:
             return "UNKNOWN"
         commit = h.stdout.strip()
         st = subprocess.run(
             ["git", "status", "--porcelain"],
-            capture_output=True, text=True, cwd=cwd, timeout=10,
+            capture_output=True, text=True, cwd=cwd, timeout=10, check=False,
         )
         return commit + ("-dirty" if st.stdout.strip() else "")
-    except Exception:
+    except Exception:  # noqa: BLE001
+        # Deliberately broad, for the same reason as `_version`. Every one of
+        # the 1,540 banked manifests carries UNKNOWN here, because the sweep ran
+        # in Colab from an unpacked tarball with no `.git`. That is recorded as
+        # a design delta rather than repaired: the environment fingerprint and
+        # the config hash, not the commit, are what tie a result to its inputs.
         return "UNKNOWN"
 
 

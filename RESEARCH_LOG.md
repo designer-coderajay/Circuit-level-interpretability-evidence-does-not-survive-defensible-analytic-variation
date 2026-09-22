@@ -4153,3 +4153,123 @@ Recommended `cs.LG` as primary without checking endorsement. **arXiv endorsement
 is per-archive, not per-account.** Ajay's prior paper `2603.09988` is `cs.CL`, so
 `cs.LG` was refused. Submitted under `cs.AI`. Cross-lists to `cs.LG` and `cs.CY`
 to be requested after announcement.
+
+---
+
+## 2026-09-21 / 22, verification and code-quality audit
+
+Instruction was to verify results and code quality top to bottom, leaving
+nothing unverified or unciteable. Six defects found. Five were in the
+verification apparatus itself, not in the paper, which is the uncomfortable
+pattern: **every one of them was invisible from reading the code and appeared
+only on running it against a case it had never been given.**
+
+### 1. No analysis script ran from a clean clone
+
+`results/sweep` is 389 MB and gitignored. Only the 1,540 manifests are tracked.
+All four analysis entry points reached per-cell output, so from a clone a reader
+could run the test suite and nothing else. Proven by building a clone at
+`/tmp/clone` and running them: `FileNotFoundError` on the first.
+
+Fix: `analysis/export_records.py` writes the records `load_records` returns plus
+the two per-cell facts `sweep_facts` supplies, 2.78 MB of JSON compressing to
+**0.14 MB**, committed. `scripts/analyse.py` prefers raw output and falls back to
+the export. The export deliberately omits `top_edges`, the bulk of the raw data:
+`tab:bins` needs only the (layer band, component fraction) pair derived from it,
+so the cut is there and the table still recomputes every bin edge it reports.
+
+VERIFIED: all four scripts now run from a clone with zero `result.json`, and
+`verify_all_claims`, `emit_tables` and `check_manuscript_numbers` produce output
+**identical** to the raw run, with the figure PNG byte-identical.
+
+Regression guard: `tests/test_clone_reproducibility.py` fails if any analysis
+script names a per-cell artefact directly. Confirmed to fail on the pre-fix code,
+naming exactly the two scripts that were broken.
+
+### 2. The number audit had never seen the IASEAI submission
+
+Known since v1 and now fixed properly rather than by hand. `check_manuscript_numbers.py`
+hardcoded `paper/manuscript.md`. It now takes paths, defaults to both live
+manuscripts, and strips LaTeX before tokenising. Without that stripping the
+IASEAI paper reported **47 unmatched tokens, every one an artefact**: `32{,}491`
+is one number to a reader and two to a naive regex, `95\%` escapes the percent,
+and two hits were inside `%` comments.
+
+After stripping: **336 of 336 matched, 0 unmatched.** First time that file has
+ever been audited.
+
+### 3. The audit could not fail
+
+It ended in `sys.exit(0)`. It printed unmatched tokens and still exited clean, so
+nothing downstream could ever gate on it. Now exits 1.
+
+### 4. It flagged correctly rounded numbers
+
+Python's `round` is round-half-even, so 3780.5 registers as 3780 while the paper
+correctly writes 3,781. Both conventions are now registered.
+
+### 5. The ceiling was verified against the wrong number, and passed
+
+The worst of the six. `verify_all_claims.py` checked `1-1/k` against 0.8889 and
+called it an upper bound. `check_manuscript_numbers.py` registered 0.8889 as a
+source constant. The corrected figure in the paper, 0.8890, matched **only
+because `round(0.8889, 3) == 0.889` collided with it**. 0.889006 existed nowhere
+in the code. A number check that matches the right figure for the wrong reason is
+worse than none, because it reports a pass.
+
+`max_flip_rate(n, k)` is now in `src/p1/multiverse.py`. With `N = qk + r` the most
+even split gives
+
+    F_max = 1 - [ r (q+1) q + (k - r) q (q - 1) ] / (N (N - 1))
+
+VERIFIED against exhaustive brute force over every composition of N into k parts
+at small N, and it reproduces 0.889006 at N = 7,561, k = 9 against an asymptotic
+0.888889, with the observed F at 82.3% of it. The verifier went from 36 checks to
+**39**, all passing; `paper/manuscript.md` updated from the asymptotic statement.
+
+### 6. A constant the audit trusted was itself unchecked
+
+`paper/manuscript.md` claimed 319 tests through a run reporting 157 of 157
+matched, because 319 was registered as a source value. The audit was confirming
+the paper agreed with a stale constant. `tests/test_manuscript_constants.py` now
+asserts `N_TESTS` against what pytest actually collects. It caught its own
+staleness twice during this session, which is the behaviour wanted.
+
+### Reproducibility of the committed analysis outputs
+
+All **seven** tracked `results/analysis/*.json` regenerated from raw sweep output
+and compared: `stage1_claims`, `stage2_jbar`, `stage3_decomposition`, `h4`,
+`stage4_inputs`, `stage4_null`, `stage4_null_by_size`. **Every one byte-identical**,
+including the 1,000-replicate null multiverse, which was resumed across budget
+windows to completion.
+
+### Code quality
+
+- Coverage on `src/p1` is **98%**, 16 uncovered statements of 819.
+  `multiverse.py` and `null_multiverse.py` are at 100%.
+- Nine `zip()` calls made `strict=True` after reading each in context. One was
+  **deliberately ragged** and would have broken: `repair.py` zips the full 32,491
+  edge ranking against the banked prefix to report a divergence rank. Truncated
+  explicitly instead. The highest-stakes of the nine is `spec.py`, where the zip
+  builds the `cell_id` hash that the sweep resumes from; a silent truncation
+  there would have hashed a partial payload.
+- Six dead imports removed. `max_flip_rate` added to `__all__`.
+- The three blind `except Exception` are all deliberate and now say so: a
+  provenance recorder and a smoke run must bank the failure, never propagate it.
+  `git_commit` returning UNKNOWN on all 1,540 manifests is a recorded design
+  delta, not a defect: the Colab runs had no `.git`.
+- Zero TODO, FIXME, XXX or HACK markers anywhere in the tree.
+- `ruff --select F,B,BLE,PLW1510` clean across `src/`, `scripts/`, `analysis/`.
+
+Remaining ruff output is stylistic and deliberate: `PLC0415` imports inside
+functions, `PLR2004` magic values in tests, `E501`, and the terse one-line style
+of the analysis scripts.
+
+### Not done
+
+- Annex IV 2(c) and point 4 still read from a mirror, not EUR-Lex. Re-verify
+  before submission.
+- Related Work still has no regulatory or compliance scholarship.
+- The IASEAI paper has not been compiled in this session; page count unmeasured
+  against the 10-page limit.
+- The 924-cell Pythia grid still needs a GPU.

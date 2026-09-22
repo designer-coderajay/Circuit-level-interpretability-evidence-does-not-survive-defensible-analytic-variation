@@ -108,7 +108,7 @@ def attention_rows_for(model, prompts, roles_list, device):
     tok = model.tokenizer
     bos_tok = tok.bos_token
 
-    for prompt, roles in zip(prompts, roles_list):
+    for prompt, roles in zip(prompts, roles_list, strict=True):
         # Tokenise with the raw tokenizer, exactly as `load_datasets_from_json`
         # does, rather than through transformer-lens.
         #

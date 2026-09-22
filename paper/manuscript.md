@@ -3,7 +3,7 @@
 Ajay Pravin Mahale
 
 Draft, 2026-08-12. Every number traces to `results/analysis/*.json` and is
-independently recomputed by `analysis/verify_all_claims.py`, 36 checks, 0
+independently recomputed by `analysis/verify_all_claims.py`, 39 checks, 0
 failures. Citations marked with a dagger are not yet verified and must not
 survive to submission.
 
@@ -145,8 +145,13 @@ The modal share is `pi* = max_c n_c / N`.
 `pi* >= 1 - alpha`. This is the deliverable: a criterion a standards body can
 write into a procedure, with a number attached.
 
-Note the ceiling. `F <= 1 - 1/k` for `k` claim classes, so a reported flip rate
-must be read against the number of classes the map can produce.
+Note the ceiling, and note that it is not `1 - 1/k`. That expression is the limit
+as `N` grows, not a bound at finite `N`. The attainable maximum is set by the most
+even integer split of `N` over the `k` classes, and is strictly larger. At
+`N = 7,561` and `k = 9` it is 0.889006, against an asymptotic 0.888889. A reported
+flip rate must be read against that maximum and against the number of classes the
+map can produce. Computed by `max_flip_rate` in `src/p1/multiverse.py`, which is
+tested exhaustively against brute force at small `N`.
 
 ---
 
@@ -379,8 +384,8 @@ Every reported number traces to a config, a seed and an environment fingerprint.
 The confirmatory sweep ran under a single environment across all 1,320 cells,
 verified from the results archive rather than asserted. The analysis layer runs
 without a GPU. `analysis/verify_all_claims.py` recomputes every headline quantity
-from raw results and asserts against what is reported: 36 checks, 0 failures. The
-test suite is 319 tests.
+from raw results and asserts against what is reported: 39 checks, 0 failures. The
+test suite is 368 tests.
 
 Deviations from the pre-registration are recorded in an append-only file, with
 their dates and whether each was decided before or after the affected result was

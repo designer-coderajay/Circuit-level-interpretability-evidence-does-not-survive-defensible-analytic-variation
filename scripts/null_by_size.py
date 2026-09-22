@@ -81,7 +81,7 @@ def main() -> int:
         rng = _replicate_rng(r)
         for i, k in enumerate(sizes):
             got = index.claims(index.sample(k, rng), NULL_GRANULARITIES)
-            for n, claim in zip(names, got):
+            for n, claim in zip(names, got, strict=True):
                 null_labels[n][r, i] = claim
 
     ladder = sorted(set(sizes))

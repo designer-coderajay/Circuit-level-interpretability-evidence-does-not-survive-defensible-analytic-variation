@@ -785,3 +785,34 @@ from "did not execute on IOI in our environment" to "the `mse` answer function i
 unreachable for any task whose answers are token ids".** That is a materially
 stronger and materially more contestable sentence, so it is not written until the
 dtype is read.
+
+## 2026-09-21 / 22. The analysis reads a committed export when raw output is absent
+
+**Brief:** `results/` holds raw outputs; `analysis/` reads `results/`.
+
+**Reality:** `results/sweep` is 389 MB and correctly gitignored, so nothing in
+`analysis/` ran for anyone but the author. Every entry point failed on a clean
+clone.
+
+**Delta:** `results/analysis/specifications.json.gz`, 0.14 MB, is a committed
+**derived artefact** produced by `analysis/export_records.py`. `scripts/analyse.py`
+prefers raw output and reads the export only when the raw directory is missing or
+empty, so an author with the data never touches it.
+
+It is not a second source of truth and must be regenerated whenever the sweep is.
+It carries the records `load_records` returns plus two per-cell facts, and
+deliberately omits `top_edges`. VERIFIED 2026-09-22: output from the export is
+identical to output from raw for all four analysis scripts, figure PNG
+byte-identical.
+
+## 2026-09-21 / 22. The F ceiling is computed, not asserted as 1 - 1/k
+
+**Brief and arXiv v1:** `F <= 1 - 1/k`, ceiling 0.8889 at k = 9.
+
+**Reality:** that bound is asymptotic and is not attained at finite N. The
+attainable maximum is set by the most even integer split of N over k and is
+strictly larger: 0.889006 at N = 7,561.
+
+**Delta:** `p1.multiverse.max_flip_rate`, tested exhaustively against brute force
+at small N. The arXiv v1 statement stands as published and is corrected in the
+IASEAI paper and in `paper/manuscript.md`. The correction does not move 82.3%.

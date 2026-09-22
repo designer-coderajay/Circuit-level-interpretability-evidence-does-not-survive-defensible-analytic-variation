@@ -221,7 +221,11 @@ def main() -> int:
                 timings["discovery_s"] / timings["evaluation_per_cut_s"], 2
             )
 
-    except Exception:
+    except Exception:  # noqa: BLE001
+        # Deliberately broad. The point of a smoke run is to find out what
+        # breaks, so every failure must be banked with its traceback rather
+        # than propagated. The manifest below is written either way, and a
+        # failed run recorded as failed is a result, not an error.
         status = "failed"
         notes.append("TRACEBACK:\n" + traceback.format_exc())
 

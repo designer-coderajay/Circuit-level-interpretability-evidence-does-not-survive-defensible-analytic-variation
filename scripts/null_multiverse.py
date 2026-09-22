@@ -39,7 +39,7 @@ from analyse import (  # noqa: E402
     PRIMARY_MAP,
     load_records,
 )
-from p1.claim_map import Granularity, phi_overseer  # noqa: E402
+from p1.claim_map import Granularity  # noqa: E402
 from p1.multiverse import bootstrap_over_specifications, flip_rate, modal_share  # noqa: E402
 from p1.null_multiverse import EdgeComponentIndex  # noqa: E402
 
@@ -98,7 +98,7 @@ def null_distributions(
         labels: dict[str, list[str]] = {n: [] for n in names}
         for k in sizes:
             got = index.claims(index.sample(k, rng), NULL_GRANULARITIES)
-            for n, claim in zip(names, got):
+            for n, claim in zip(names, got, strict=True):
                 labels[n].append(claim)
         for n in names:
             f_vals[n][done] = flip_rate(labels[n])

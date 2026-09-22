@@ -1,9 +1,9 @@
-import sys, json, yaml, glob, itertools, math
+import sys, json, yaml, itertools
 from pathlib import Path
 from collections import Counter
 import numpy as np
 sys.path.insert(0,'src'); sys.path.insert(0,'scripts')
-from analyse import load_records, PRIMARY_MAP, PRIMARY_GRANULARITY, AXES
+from analyse import load_records, sweep_facts, PRIMARY_MAP, PRIMARY_GRANULARITY, AXES
 
 ok=[]; bad=[]
 def chk(name, got, want, tol=5e-4):
@@ -45,8 +45,15 @@ shares=[c/N for _,c in cnt.most_common()]
 chk("shares sum to 1", sum(shares), 1.0, 1e-12)
 chk("pi* = max share", max(shares), 0.4109, 5e-4)
 chk("n classes", len(cnt), 9, 0)
-chk("F upper bound 1-1/k", 1-1/len(cnt), 0.8889, 1e-3)
-print(f"     F/ceiling = {F_formula/(1-1/len(cnt)):.3f}")
+# 1-1/k is the limit as N grows, NOT the ceiling at finite N. The attainable
+# maximum is set by the most even integer split of N over k, and is strictly
+# larger. arXiv v1 states the asymptotic form as a bound; the correction is here
+# so the figure the paper reports is computed.
+from p1.multiverse import max_flip_rate
+chk("asymptotic bound 1-1/k", 1-1/len(cnt), 0.888889, 1e-6)
+chk("attainable max at finite N", max_flip_rate(N, len(cnt)), 0.889006, 5e-7)
+chk("attainable max exceeds the limit", 1.0 if max_flip_rate(N, len(cnt)) > 1-1/len(cnt) else 0.0, 1.0, 0)
+chk("F as share of attainable max", F_formula/max_flip_rate(N, len(cnt)), 0.823, 5e-4)
 chk("filable at alpha=0.20 requires pi*>=0.80", 1.0 if max(shares)>=0.80 else 0.0, 0.0, 0)
 
 print("\n=== 4. H4 ARITHMETIC ===")
@@ -60,8 +67,8 @@ chk("gap CI lower > threshold", 1.0 if h4['gap_ci95'][0]>0.10 else 0.0, 1.0, 0)
 print("\n=== 5. EDGE NAMESPACE, CLOSED FORM ===")
 tot=sum(3*12*(1+13*b) + (1+13*b) + 12 for b in range(12)) + (1+12*13)
 chk("combinatorial edge count", tot, 32491, 0)
-d=json.load(open(sorted(glob.glob('results/sweep/*/result.json'))[0]))
-chk("instrument reports same", d['n_edges'], 32491, 0)
+_facts = sweep_facts(Path('results/sweep'))
+chk(f"instrument reports same, all {_facts['n_cells']} cells", _facts['n_edges'], 32491, 0)
 chk("components 12*12+12", 12*12+12, 156, 0)
 
 print("\n=== 6. J_BAR ===")
