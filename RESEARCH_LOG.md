@@ -4426,3 +4426,59 @@ the publisher record.
 
 Rebuild: 18 bibliography entries, **9 pages**, 0 errors, 0 overfull boxes,
 0 undefined citations. Still one page under the limit.
+
+### 2026-09-22. Reproducibility Checklist, and three gaps it exposed
+
+Filling the AAAI checklist honestly meant reading the paper for what it
+actually contains. Three items could not be answered yes as the paper stood.
+All three were fixed in the paper rather than answered down, because in each
+case the fact existed and was verified but had never been written.
+
+**Infrastructure was stated nowhere.** No GPU, no OS, no library versions. Now
+a paragraph, taken from the banked manifests rather than recalled: a single
+NVIDIA L4, Linux 6.6, Python 3.12.13, auto-circuit 1.0.1, transformer-lens
+2.18.0, torch 2.11.0+cu128, numpy 1.26.4, scipy 1.16.3, statsmodels 0.14.6. It
+also states the fact that makes the rest of it load-bearing: all 1,540
+manifests carry one identical environment fingerprint, so no reported number
+depends on a library version that changed mid-sweep.
+
+**The bootstrap seed was not stated.** B was given, the seed was not. Now "from
+a fixed seed of 0", which is what `scripts/analyse.py` uses.
+
+**The seed axis was never explained.** The paper listed five seeds and never
+said what a seed does. Added: it selects which prompts enter the evaluation
+set, so the axis is evaluation-set variability and not nondeterminism in
+discovery. This is interpretive as well as procedural. A reader who assumes
+nondeterminism would misread the near-zero seed variance component.
+
+### The checklist paragraph broke the number audit, silently
+
+Adding the Infrastructure paragraph introduced eight numeric tokens: 6.6, 3.12,
+1.0, 2.18, 2.11, 1.26, 1.16, 0.14. The audit reported **346 of 346 matched, zero
+unmatched**. It looked like a clean pass.
+
+Every one of those eight was a coincidental collision with a rounded result in
+the source set. Software versions are facts about the environment, not claims,
+and matching them against results is meaningless. This is the same failure mode
+as the F ceiling earlier in this audit: the check reported success for the wrong
+reason, and reporting success is what makes it dangerous.
+
+`_plain` now strips versions by package name. Token count drops 346 to 338,
+exactly the eight, with no collateral loss (manuscript.md unchanged at 161).
+
+Answers that are not yes, and why:
+
+- **Proofs of all novel claims: partial.** The flip-rate closed form and the
+  finite-N maximum are stated formally and demonstrated by exhaustive test
+  against brute force, not by written proof in the paper.
+- **Code in an appendix: no**, twice. The submission is double-anonymous and
+  the repository is not anonymised. The release-on-publication answer is yes.
+- **Significance judged by statistical tests: partial.** Deliberate. No
+  p-value is computed across specifications anywhere, because specifications
+  are a designed grid and not an independent sample. Inference is a
+  nonparametric bootstrap over specifications plus a size-matched random-circuit
+  null. Answering yes would imply a test the paper argues against.
+
+Checklist compiles standalone: 2 pages, 0 errors, 31 of 31 questions answered,
+every answer inside its allowed option set. Paper rebuild: **9 pages**, 0
+errors, 0 overfull boxes, 0 undefined citations.

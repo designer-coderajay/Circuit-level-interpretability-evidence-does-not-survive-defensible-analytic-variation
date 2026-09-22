@@ -163,6 +163,18 @@ def _plain(path: Path) -> str:
         text = re.sub(r'\\(cite|ref|label|eqref|citet|citep)\{[^}]*\}', ' ', text)
         text = re.sub(r'\\begin\{tabular\}\{[^}]*\}', ' ', text)
 
+    # Software versions are facts about the environment, not results, and they
+    # must not be matched against the source set. When the Infrastructure
+    # paragraph was added on 2026-09-22 it introduced eight numeric tokens
+    # (6.6, 3.12, 1.0, 2.18, 2.11, 1.26, 1.16, 0.14) and the audit reported all
+    # eight as matched. Every one was a coincidental collision with a rounded
+    # result. A pass for the wrong reason is the failure mode this whole file
+    # exists to prevent, so the versions are stripped by name.
+    text = re.sub(
+        r'\b(?:auto-circuit|transformer-lens|torch|numpy|scipy|statsmodels|'
+        r'Python|Linux|CUDA|cu)[\s-]*v?\d+(?:\.\d+)*(?:\+\S+)?',
+        ' ', text, flags=re.I)
+
     text = re.sub(r'doi:\S+|10\.\d{4}/\S+', ' ', text)
     text = re.sub(r'arXiv:\d{4}\.\d{4,5}(v\d)?', ' ', text)
     text = re.sub(r'CELEX \S+|\(EU\) \d+/\d+', ' ', text)
