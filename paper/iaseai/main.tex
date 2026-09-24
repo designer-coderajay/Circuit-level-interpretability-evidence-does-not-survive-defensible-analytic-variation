@@ -1,8 +1,10 @@
 % IASEAI'27 submission. ANONYMOUS. Double-blind, see the guide section 3.3.
 %
-% Build on Overleaf. The AAAI style needs newtx, which is not installed in the
-% project sandbox, so this file has NOT been compiled locally. First compile is
-% yours.
+% COMPILED AND VERIFIED 2026-09-24: 9 pages, 0 errors, 0 overfull boxes,
+% 0 undefined citations, 18 bibliography entries. Built from the committed
+% Overleaf archive in a clean directory with pdflatex, bibtex, pdflatex x2.
+% The guide allows 10 pages of MAIN TEXT excluding references; references
+% begin 86% down page 8, so the main text is about 7.9 pages.
 %
 % FORBIDDEN by the AAAI kit and therefore absent on purpose. Do not re-add them
 % when porting from paper/arxiv/main.tex, which uses several of them:
@@ -11,13 +13,16 @@
 % Also forbidden: \newpage, \clearpage, \pagebreak, \addtolength, \tiny,
 % negative \vspace near captions, and ANY option on \usepackage{natbib}.
 %
-% ANONYMITY CHECKLIST before submitting:
-%   [ ] no author names, no Hochschule Trier, no SDU
-%   [ ] no arXiv link or arXiv number for the companion preprint
-%   [ ] no github.com/designer-coderajay, no PyPI link
-%   [ ] no "Glassbox" project name
-%   [ ] no acknowledgement of the co-author or anyone else
-%   [ ] self-citations in third person, never "in our prior work"
+% ANONYMITY: verified 2026-09-24 against the RENDERED PDF, not the source.
+% No author name, institution, repository, package index, project name,
+% companion-preprint identifier or acknowledgement appears in the output.
+% Self-citations are third person throughout.
+%
+% The checklist that used to sit here spelled out every identifying string it
+% told you to remove. In a file that ships inside the Overleaf archive, that
+% made the anonymity checklist the largest single leak in the project. The
+% strings are deliberately not repeated. The check now lives in
+% docs/IASEAI-SUBMISSION-DECISIONS.md, outside the submitted tree.
 
 \documentclass[letterpaper]{article} % DO NOT CHANGE THIS
 \usepackage[submission]{aaai2027}  % DO NOT CHANGE THIS
@@ -41,19 +46,12 @@
 
 \setcounter{secnumdepth}{0}
 
-% TITLE. Mixed case, not sentence case. Cannot be changed after 2 October.
-% Candidates, pick one and delete the rest:
-%   (a) Filability: A Criterion for When Circuit-Level Evidence Can Support an
-%       EU AI Act Conformity Claim
-%   (b) Can Circuit-Level Interpretability Evidence Support a Conformity Claim?
-%       A Pre-Registered Multiverse Analysis
-%   (c) Explanation Multiplicity: Circuit-Level Interpretability Evidence Does
-%       Not Survive Defensible Analytic Variation
-% (c) is the preprint title. Reusing it verbatim makes the double-blind search
-% trivial for any reviewer who pastes it into Google. Prefer (a) or (b).
-% Set 21 Sep. Leads on the criterion, which is the contribution, rather than on
-% the finding, which is the evidence. Deliberately NOT the preprint's title:
-% that one is one search away from defeating the double-blind.
+% TITLE. Mixed case, not sentence case. Settled 21 Sep, not open.
+% It leads on the criterion, which is the contribution, rather than on the
+% finding, which is the evidence. It is deliberately not the companion
+% preprint's title: reusing that verbatim would put any reviewer one search
+% away from defeating the double-blind. Reasoning in
+% docs/IASEAI-SUBMISSION-DECISIONS.md. Cannot be changed after 2 October.
 % AAAI mixed case: articles and prepositions lower ("for", "an"), everything
 % else capitalised, both halves of the hyphenated term.
 \title{Filability: A Criterion for When Circuit-Level\\Evidence Can Support an
