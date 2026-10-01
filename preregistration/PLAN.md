@@ -367,6 +367,20 @@ the flip rate you wanted".
 | Constant | Value | Justification |
 |---|---|---|
 | `DEFAULT_SIZE_BINS` | `(0.01, "sparse")`, `(0.08, "moderate")`, `(1.01, "distributed")` | Anchored to `EDGE_COUNT_LADDER`, not chosen freehand |
+
+> **SUPERSEDED, annotated 2026-10-01. The values in the row above are not the
+> ones that ran.** The justification for 1% and 8% was computed against edge
+> counts, but `phi` bins on the fraction of the model's 156 components a circuit
+> touches, which is a node count. The bound from a ladder rung to the nodes its
+> edges touch is empirical, not analytic, so the margin argument did not hold.
+> The committed values are `(0.112202, "sparse")`, `(0.446684, "moderate")`,
+> `(1.01, "distributed")`, selected by the rule in `CALIBRATION.md` Calibration 3
+> and implemented in `p1.claim_map.select_size_bins`. The full account, including
+> the earlier 2%/10% values, is in the `DEFAULT_SIZE_BINS` docstring in
+> `src/p1/claim_map.py` and in `docs/RED-TEAM-2026-08-11.md`.
+>
+> This row is left as written because a pre-registration is a record of what was
+> planned. It is annotated, not edited.
 | `DEFAULT_BAND_NAMES` | `("early", "middle", "late")` | Equal thirds of depth; the neutral choice |
 | segment labels | `seq_labels` emitted by `p1.prompts.generate_ioi_dataset` | Single source, so the claim map and the dataset cannot drift apart |
 
@@ -395,6 +409,15 @@ to yield small circuits. Three levels cost no additional discovery, because `tau
 is a post-hoc cut on an existing ranking.
 
 ## 6. Statistical treatment
+
+> **SUPERSEDED, annotated 2026-10-01.** `N = 14,280` predates the corruption
+> axis expanding to four sourced levels on 2026-08-06, recorded earlier in this
+> file, which took the grid to 1,540 discovery cells and 18,480 specifications.
+> The realised figure after the non-executing `LOGIT_MSE` arm is 15,840, and
+> that is the number every result, the paper and `analysis/verify_all_claims.py`
+> use. The hypothesis statements below were not swept when the axis grew.
+> Annotated rather than edited, for the same reason as above.
+
 
 **No p-value is computed across specifications anywhere.** Specifications are a
 designed grid, not an independent sample. `N = 14,280` is a grid size and will

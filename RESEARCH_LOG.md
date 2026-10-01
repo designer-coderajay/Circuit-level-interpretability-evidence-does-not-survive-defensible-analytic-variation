@@ -4482,3 +4482,51 @@ Answers that are not yes, and why:
 Checklist compiles standalone: 2 pages, 0 errors, 31 of 31 questions answered,
 every answer inside its allowed option set. Paper rebuild: **9 pages**, 0
 errors, 0 overfull boxes, 0 undefined citations.
+
+### 2026-10-01. Galke's review, and an external repository review
+
+**Galke's abstract comments.** Eleven, of which six were one complaint: the
+abstract used undefined terms. `modal claim`, `commands`, `flips`, `claim`,
+`specification space` and `near-disjoint` all went. The abstract now shows an
+actual Annex IV statement rather than naming one, which answers four of the six
+at once, and reports that the two largest claim classes contradict each other:
+41.1% early-and-distributed against 28.5% late-and-sparse, on the same
+behaviour. That is more persuasive than any single percentage and it was already
+in the data.
+
+His sharpest comment was "is this a negative result for the main idea of the
+paper?" Answered in one line: it is a result about this evidence, not about the
+criterion, which applies to any interpretability method. **Ajay's sign-off
+needed on that framing.** Two of his markers, `\today{...}` and
+`\cite{what does command mean here}`, would have broken the build.
+
+**Two repository inconsistencies, both confirmed, both documentation lag.**
+
+`PLAN.md` states the grid as 1,540 cells and 18,480 specifications in its
+arithmetic, then says `N = 14,280` in the hypothesis statements. The expansion
+is recorded in the same file: the corruption axis went to four sourced levels on
+2026-08-06. The hypothesis text was never swept.
+
+`PLAN.md` documents `DEFAULT_SIZE_BINS` as 0.01 and 0.08; the code uses 0.112202
+and 0.446684. The correction is documented in three places already:
+`claim_map.py`, `CALIBRATION.md` Calibration 3, and
+`docs/RED-TEAM-2026-08-11.md`. The code calls it "the only error on this project
+so far that reached both the pre-registration and the test suite".
+
+**Both are annotated, not edited.** A pre-registration is a record of what was
+planned. Changing its numbers after the results are in is the behaviour this
+programme exists to criticise, so each site now carries a dated SUPERSEDED note
+pointing at the correction, and the original wording stands.
+
+**One substantive catch.** See the citation ledger: the manuscript claimed every
+axis level came from a published implementation, which its own code contradicts
+for sufficiency and comprehensiveness. Fixed in three places, ERASER verified
+and cited. The number audit could not have caught this, because it checks
+figures and not whether a sentence about provenance is true.
+
+**Two operational facts from the submission guide, neither previously noted.**
+The author list cannot be changed after submission. Appendices are excluded from
+the page limit entirely.
+
+Rebuild: 19 bibliography entries, 9 pages, 0 errors, 0 overfull boxes, 0
+undefined citations. 367 tests, 39 of 39 claim checks, number audit clean.

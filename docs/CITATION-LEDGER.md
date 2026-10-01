@@ -751,3 +751,31 @@ finding it does not state.
 
 Bibliography now **18 entries**. Rebuild: 9 pages, 0 errors, 0 overfull boxes,
 0 undefined citations.
+
+---
+
+## 2026-10-01. ERASER, added to make a provenance claim exact
+
+| Field | Value |
+|---|---|
+| Key | `deyoung2020` |
+| Title | ERASER: A Benchmark to Evaluate Rationalized NLP Models |
+| Authors | Jay DeYoung, Sarthak Jain, Nazneen Fatema Rajani, Eric Lehman, Caiming Xiong, Richard Socher, Byron C. Wallace |
+| Venue | ACL 2020, per the arXiv Comments field |
+| arXiv | 1911.03429, v2 24 April 2020 |
+| State | VERIFIED against the arXiv abs page, full seven-author list |
+
+**Why it was needed.** The paper said "every level of every axis is taken from a
+published implementation. None was invented for this study." `src/p1/spec.py`
+line 178 says the opposite for two of the four metrics: "Sufficiency and
+comprehensiveness are adaptations, not reproductions". ERASER defines them on
+predicted-class probability; this study computes them on logits.
+
+So the manuscript overclaimed provenance in three places, against its own code.
+Changed to "grounded in a published method" in the abstract and introduction,
+and the body now states the adaptation and cites the source. The claim is now
+exactly as strong as the code supports and no stronger.
+
+Found by an external review of the repository. Worth recording that the number
+audit could never have caught it: it checks figures, not the accuracy of a
+sentence about where a method came from.

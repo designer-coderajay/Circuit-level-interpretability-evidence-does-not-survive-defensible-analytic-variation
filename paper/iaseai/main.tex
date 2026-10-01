@@ -70,30 +70,36 @@ EU AI Act Conformity Claim}
 \begin{abstract}
 \noindent
 The EU AI Act requires providers of high-risk systems to file technical
-documentation describing how the system reaches its decisions. Annex~IV names no
-method. We set out a reading of it under which circuit-level interpretability
-evidence is the relevant evidence, mark that reading explicitly as an
-interpretive choice, and then ask whether such evidence can support a conformity
-claim.
+documentation describing how the system reaches its decisions. It does not say
+what would satisfy that duty. We deliberately read the requirement as a demand
+for circuit-level interpretability evidence.
 
-We give a criterion. Evidence is \emph{filable at tolerance} $\alpha$ if the
-modal claim commands at least $1 - \alpha$ of the space of defensible analytic
-specifications. We then measure it. Across 15{,}840 pre-registered
-specifications on GPT-2 small and the indirect object identification task, with
-every axis level drawn from a published implementation, the derived Annex~IV
-statement flips across 73.2\% of specification pairs (95\% CI 0.725 to 0.738)
-and the modal claim commands 41.1\% of the space. The evidence is not filable at
-any tolerance a conformity assessment body would plausibly accept.
+We give a criterion. Circuit discovery needs analytic choices that the
+literature does not settle, among them the attribution objective, the ablation
+operator, the faithfulness metric and where to cut the ranking. Each complete
+set of choices is a \emph{specification}. Deterministic code turns the circuit a
+specification returns into a structured Annex~IV statement, such as ``the
+response is attributable principally to components in the early layers, forming
+a distributed subgraph''. Evidence is \emph{filable at tolerance} $\alpha$ when
+one statement is produced by at least $1 - \alpha$ of all defensible
+specifications.
 
-Standardising the evaluation metric, the largest single lever, leaves 59.4\%.
-Removing circuit size from the claim and holding it fixed leaves 27.1\%. The
-underlying circuits are near-disjoint, at a median pairwise Jaccard overlap of
-4\%, and functionally uncorrelated, at a Cohen's kappa of 0.015. The instability
-is therefore not one mechanism described in different words.
+We then measure it. Across 15{,}840 pre-registered specifications on GPT-2 small
+and indirect object identification, every choice grounded in a published
+method, two specifications disagree on the statement in 73.2\% of pairs
+(95\% CI 0.725 to 0.738). The most frequent statement accounts for 41.1\% of the
+space. The next, at 28.5\%, places the same behaviour in the late rather than the
+early layers. Fixing the evaluation metric, the most influential single choice,
+still leaves 59.4\%. The circuits behind conflicting statements share a median
+4\% of their edges and agree on individual predictions at a Cohen's kappa of
+0.015, so these are distinct mechanisms.
 
-Annex~IV point 4 already requires providers to justify the appropriateness of
-their performance metrics. Our results make that requirement load-bearing rather
-than formal. The study covers one model and one task.
+The evidence fails the criterion at every tolerance such a body would plausibly
+accept. That is a result about this evidence and not about the criterion, which
+applies to any interpretability method. Annex~IV point 4 already obliges
+providers to justify the appropriateness of their performance metrics. Our
+results attach a number to that obligation. The study covers one model and one
+task, which is the limitation most likely to change the number.
 \end{abstract}
 
 % =====================================================================
@@ -138,10 +144,10 @@ We do that. We state a reading of Annex~IV under which circuit-level evidence is
 the relevant evidence, and we mark the reading as an interpretive choice rather
 than a legal conclusion. We define a criterion, filability, that a conformity
 procedure can apply. We then measure it over a pre-registered grid of 15{,}840
-specifications, with every level of every axis taken from a published
-implementation, and map each discovered circuit through deterministic code to a
-structured Annex~IV statement. The statement flips across 73.2\% of
-specification pairs. No single analytic choice rescues it, and the circuits
+specifications, with every level of every axis grounded in a published
+method, and map each discovered circuit through deterministic code to a
+structured Annex~IV statement. Two specifications disagree on that statement in 73.2\% of
+pairs. No single analytic choice rescues it, and the circuits
 behind the conflicting statements are neither structurally nor functionally
 interchangeable. The study covers one model and one task, which is the
 limitation most likely to change the number.
@@ -198,7 +204,7 @@ so this study is a stress test of the tooling by the tooling's own definitions.
 find that structurally distinct circuits can implement the same computation, and
 they call this phantom specialisation. This is the strongest objection to our
 design. If circuit discovery samples from an equivalence class of behaviourally
-identical subgraphs, then a flip rate over claims measures only which member was
+identical subgraphs, then disagreement over claims measures only which member was
 sampled. We answer the objection with a measurement rather than an argument, in
 the section on structure versus function below. Our circuits are not
 functionally interchangeable.
@@ -496,8 +502,11 @@ nondeterminism in discovery. Corruption is nested within ablation rather than
 crossed with it, because two of the seven ablation operators never read the
 corrupt distribution. Crossing them would emit duplicate specifications.
 
-Every level of every axis is taken from a published implementation. None was
-invented for this study. Discovery uses the edge attribution patching family
+Every level of every axis is grounded in a published method. None was invented
+for this study. Two of the four metrics are adaptations rather than
+reproductions: sufficiency and comprehensiveness are the definitions of
+\citet{deyoung2020}, stated there on predicted-class probability and computed
+here on logits. Discovery uses the edge attribution patching family
 \citep{syed2023} and integrated edge gradients, as implemented in the library
 released with \citet{miller2024}. The automated circuit discovery lineage is
 \citet{conmy2023}. The four corruption constructions are taken from
@@ -975,8 +984,9 @@ We asked whether circuit-level interpretability evidence survives the condition
 under which it would be relied upon: two competent analysts, the same system,
 the same tool, different defensible settings. On GPT-2 small and indirect object
 identification, across 15{,}840 pre-registered specifications, it does not. The
-derived Annex~IV statement flips across 73.2\% of specification pairs, the modal
-claim commands 41.1\% of the space, and the evidence fails the filability
+derived Annex~IV statement differs across 73.2\% of specification pairs, the most
+frequent statement accounts for 41.1\% of the space, and the evidence fails the
+filability
 criterion at every tolerance a conformity assessment body would plausibly
 accept.
 
