@@ -4530,3 +4530,15 @@ the page limit entirely.
 
 Rebuild: 19 bibliography entries, 9 pages, 0 errors, 0 overfull boxes, 0
 undefined citations. 367 tests, 39 of 39 claim checks, number audit clean.
+
+## 2026-10-25: README one-look rewrite
+
+Docs only. No code, config, result or preregistration file changed. Added the
+interactive bench figure (`docs/anatomy/`), three illustrations
+(`docs/illustrations/`, hand-authored vector drawings) and a step-by-step
+section to `README.md`. Re-ran in this session: `python3 -m pytest tests/`
+gave 367 passed, 1 skipped; `analysis/verify_all_claims.py` gave 39 passed, 0
+failed. The README badge and counts said 343 tests and 36 checks; both were
+stale and are corrected. The knob positions and claim slips in the figures are
+illustrative; only F = 0.7316, 15,840, 7,561 and the seven axes are from the
+study.

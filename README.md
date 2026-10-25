@@ -4,7 +4,7 @@
 
 [![Paper](https://img.shields.io/badge/arXiv-2608.13754-b31b1b.svg)](https://arxiv.org/abs/2608.13754)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/tests-343%20passing-brightgreen.svg)](tests/)
+[![Tests](https://img.shields.io/badge/tests-367%20passing-brightgreen.svg)](tests/)
 [![Pre-registered](https://img.shields.io/badge/pre--registered-2%20plans-blue.svg)](preregistration/)
 
 An audit means two auditors reach the same conclusion. That is not a definition
@@ -16,6 +16,50 @@ interpretability is the obvious source of that evidence, and circuit discovery i
 its most developed instrument. This repository measures whether that evidence
 survives the condition under which it would be relied upon: **two competent
 analysts, the same system, the same tool, different defensible settings.**
+
+## The idea in one look
+
+<p align="center">
+  <img src="docs/illustrations/01-same-tool.png" alt="Two analysts each turn seven knobs on their own panel, slightly differently. Both feed the same instrument, which produces one claim each." width="860"><br>
+  <sub><b>Same system, same tool, same task.</b> Two analysts make different but defensible choices on seven settings. The instrument is the same.</sub>
+</p>
+
+<p align="center">
+  <img src="docs/illustrations/02-claims-flip.png" alt="Two claims drawn as different circuit sketches with a not-equal sign between them, and the note that claims flip in 73.2 percent of pairs." width="860"><br>
+  <sub><b>The claims differ.</b> The filed claim flips in 73.2% of specification pairs (F = 0.7316).</sub>
+</p>
+
+<p align="center">
+  <img src="docs/illustrations/03-plan-first.png" alt="A creature stands beside a checked, timestamped plan; to the right a large heap of slips labelled 15,840 specifications." width="860"><br>
+  <sub><b>Plan first, then look.</b> The analysis plan was committed and tagged before the 15,840-specification sweep it governs.</sub>
+</p>
+
+### The whole study as one bench
+
+<p align="center">
+  <img src="docs/anatomy/multiplicity-bench.gif" alt="An animated isometric bench. Two panels of seven knobs are set one after the other. Two slips ride two belts under one shared press, which stamps a claim on each. The two claims arrive side by side and a dial gauge swings to 0.73." width="900">
+</p>
+
+| On the bench | In the study | Where to look |
+|---|---|---|
+| Two panels of seven knobs | Two analysts, each fixing the seven axes of a specification (discovery objective, ablation, corruption, prompt variant, seed, metric, threshold `tau`) | [`src/p1/spec.py`](src/p1/spec.py), [`configs/sweep.yaml`](configs/sweep.yaml) |
+| One gantry press over both belts | The same instrument, auto-circuit 1.0.1, unmodified | [The instrument](#the-instrument) |
+| A stamped slip | The claim, derived by the deterministic claim map `phi`, never by a language model | [`src/p1/claim_map.py`](src/p1/claim_map.py) |
+| Two slips side by side | A pair of specifications whose claims are compared | [`src/p1/multiverse.py`](src/p1/multiverse.py) |
+| The dial gauge | The claim flip rate `F` over pairs | [`analysis/verify_all_claims.py`](analysis/verify_all_claims.py) |
+
+Open [`docs/anatomy/multiplicity-bench-light.html`](docs/anatomy/multiplicity-bench-light.html) in a browser to scrub through it (details in [`docs/anatomy/README.md`](docs/anatomy/README.md)). The knob positions and claim slips are drawn for the picture; only `F`, the counts and the seven axes come from the study.
+
+### Step by step
+
+| Step | What happens | Why it matters |
+|---|---|---|
+| **1. Fix a specification** | One choice on each of seven axes. The confirmatory grid holds 15,840 of them, enumerated without a GPU. | A competent analyst has to make these choices before a circuit exists. None is obviously wrong. |
+| **2. Discover a circuit** | auto-circuit searches GPT-2 small on the indirect object identification task. | The instrument is fixed; only the specification changes. |
+| **3. Derive the claim** | The claim map `phi` turns the circuit into a structured statement, at three nested granularities. | The claim is what an auditor would file, so it is what must be stable. |
+| **4. Compare pairs** | Claims, circuit overlap (`J_bar`) and functional agreement (kappa) are compared across specification pairs. | This is where `F = 0.7316` comes from. |
+| **5. Check against a null** | A random-circuit null multiverse supplies joint inference. No p-value is computed across specifications. | The specifications are a designed grid, not a sample. |
+| **6. Verify** | `verify_all_claims.py` recomputes every headline number from raw results. | Every number traces to a config, a seed and an environment fingerprint. |
 
 ## Headline results
 
@@ -36,7 +80,7 @@ those claims are structurally near-disjoint and functionally uncorrelated, so th
 instability is **not** one mechanism described in different words.
 
 Every number above is recomputed from raw results by
-[`analysis/verify_all_claims.py`](analysis/verify_all_claims.py), 36 checks,
+[`analysis/verify_all_claims.py`](analysis/verify_all_claims.py), 39 checks,
 0 failures, with `F` derived by three independent routes including brute-force
 enumeration over all 28,580,580 specification pairs.
 
@@ -65,8 +109,8 @@ verifiable without the circuit pipeline.
 
 ```bash
 pip install -r requirements-analysis.txt
-python3 -m pytest tests/ -q                 # 343 tests
-python3 analysis/verify_all_claims.py       # 36 checks against raw results
+python3 -m pytest tests/ -q                 # 367 passed, 1 skipped
+python3 analysis/verify_all_claims.py       # 39 checks against raw results
 python3 analysis/emit_tables.py             # every paper table, from stored results
 python3 analysis/figure1.py --out paper/figures
 ```
@@ -95,8 +139,9 @@ analysis/         reads results/, produces figures, tables and verification
 preregistration/  analysis plans, calibration, and every deviation
 results/          per-cell manifests and analysis outputs
 paper/            manuscript and arXiv source
-docs/             findings, citation ledger, design deltas, research memory
-tests/            pytest, 343 tests
+docs/             findings, citation ledger, design deltas, research memory,
+                  anatomy/ (interactive figure) and illustrations/ (README images)
+tests/            pytest, 367 passed and 1 skipped
 RESEARCH_LOG.md   dated, append-only: what was run and what was learned
 ```
 
